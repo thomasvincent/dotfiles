@@ -1,74 +1,53 @@
 " Vim syntax file
-" Language:     JSON
-" Maintainer:   Jeroen Ruigrok van der Werven <asmodai@in-nomine.org>
-" Last Change:  2009-06-16
-" Version:      0.4
-" {{{1
+" Language: JSON
+" Maintainer: Jeroen Ruigrok van der Werven <asmodai@in-nomine.org>
+" Last Change: 2023-12-20 (Updated for best practices)
+" Version: 0.5
 
-" Syntax setup {{{2
-" For version 5.x: Clear all syntax items
-" For version 6.x: Quit when a syntax file was already loaded
-
-if !exists("main_syntax")
-	if version < 600
-		syntax clear
-	elseif exists("b:current_syntax")
-		finish
-	endif
-	let main_syntax = 'json'
+if exists('b:current_syntax')
+    finish
 endif
+let b:current_syntax = 'json'
 
-" Syntax: Strings {{{2
-syn region  jsonString    start=+"+  skip=+\\\\\|\\"+  end=+"+  contains=jsonEscape
-" Syntax: JSON does not allow strings with single quotes, unlike JavaScript.
-syn region  jsonStringSQ  start=+'+  skip=+\\\\\|\\"+  end=+'+
+" Syntax Highlighting Groups
+" (Define these first for clarity)
+hi def link jsonString String
+hi def link jsonEscape Special
+hi def link jsonNumber Number
+hi def link jsonBoolean Boolean
+hi def link jsonNull Function
+hi def link jsonBraces Delimiter  " Using 'Delimiter' is more appropriate
 
-" Syntax: Escape sequences {{{3
-syn match   jsonEscape    "\\["\\/bfnrt]" contained
-syn match   jsonEscape    "\\u\x\{4}" contained
+hi def link jsonNumError Error
+hi def link jsonStringSQ Error
+hi def link jsonNoQuotes Error
 
-" Syntax: Strings should always be enclosed with quotes.
-syn match   jsonNoQuotes  "\<\a\+\>"
+" Syntax Matching
+syn region jsonString start=+\"+ skip=+\\\\\|\\"+ end=+\"+ contains=jsonEscape
+syn region jsonStringSQ start=+'+ skip=+\\\\\|\\"+ end=+'+
+syn match jsonEscape +"\\["\\/bfnrt]+ contained
+syn match jsonEscape +\\u\x\{4}+ contained
 
-" Syntax: Numbers {{{2
-syn match   jsonNumber    "-\=\<\%(0\|[1-9]\d*\)\%(\.\d\+\)\=\%([eE][-+]\=\d\+\)\=\>"
+syn match jsonNumber +-\=\<\%(0\|[1-9]\d*\)\%(\.\d\+\)\=\%([eE][-+]\=\d\+\)\=\>+
+syn match jsonNumError +-\=\<0\d\.\d*\>+
 
-" Syntax: An integer part of 0 followed by other digits is not allowed.
-syn match   jsonNumError  "-\=\<0\d\.\d*\>"
+syn keyword jsonBoolean true false
+syn keyword jsonNull null
+syn match jsonBraces +[{}\[\]]+
 
-" Syntax: Boolean {{{2
-syn keyword jsonBoolean   true false
+" Error Highlighting (Explicitly match invalid patterns)
+syn match jsonError +\%([^,:{}\[\]0-9.eE -]\|[,:{}\[\]]\@<!\s*[,:{}\[\]]\)+
 
-" Syntax: Null {{{2
-syn keyword jsonNull      null
+" Advanced Configuration
+" (Uncomment and customize as needed)
 
-" Syntax: Braces {{{2
-syn match   jsonBraces   "[{}\[\]]"
+" Enable syntax folding for better navigation
+" setlocal foldmethod=syntax
+" setlocal foldlevelstart=1
 
-" Define the default highlighting. {{{1
-" For version 5.7 and earlier: only when not done already
-" For version 5.8 and later: only when an item doesn't have highlighting yet
-if version >= 508 || !exists("did_json_syn_inits")
-  if version < 508
-    let did_json_syn_inits = 1
-    command -nargs=+ HiLink hi link <args>
-  else
-    command -nargs=+ HiLink hi def link <args>
-  endif
-  HiLink jsonString      String
-  HiLink jsonEscape      Special
-  HiLink jsonNumber      Number
-  HiLink jsonBraces      Operator
-  HiLink jsonNull        Function
-  HiLink jsonBoolean     Boolean
-
-  HiLink jsonNumError    Error
-  HiLink jsonStringSQ    Error
-  HiLink jsonNoQuotes    Error
-  delcommand HiLink
-endif
-
-let b:current_syntax = "json"
-if main_syntax == 'json'
-	unlet main_syntax
-endif
+" Enable concealing of quotes for cleaner visuals
+" syntax conceal jsonString
+" syntax conceal jsonEscape
+" syntax conceal jsonNumber
+" syntax conceal jsonBoolean
+" syntax conceal jsonNull
