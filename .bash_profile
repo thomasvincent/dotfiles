@@ -1,50 +1,44 @@
-# Add `~/bin` to the `$PATH`
-export PATH="$HOME/bin:$PATH";
+#!/usr/bin/env bash
 
-# Load the shell dotfiles, and then some:
-# * ~/.path can be used to extend `$PATH`.
-# * ~/.extra can be used for other settings you don’t want to commit.
+# --- Path and Configuration ---
+
+# Use the more standard way of adding to PATH
+PATH="$HOME/bin:$PATH"
+
+# Load dotfiles: Loop using a modern approach
 for file in ~/.{path,bash_prompt,exports,aliases,functions,extra}; do
-	[ -r "$file" ] && [ -f "$file" ] && source "$file";
-done;
-unset file;
+  [[ -f "$file" ]] && source "$file"  # Double brackets for better readability
+done
 
-# Case-insensitive globbing (used in pathname expansion)
-shopt -s nocaseglob;
+# --- Bash Options ---
 
-# Append to the Bash history file, rather than overwriting it
-shopt -s histappend;
+# Use compound command for better grouping
+shopt -s nocaseglob histappend cdspell
 
-# Autocorrect typos in path names when using `cd`
-shopt -s cdspell;
+# Bash 4 features (no need for loop)
+shopt -s autocd globstar 2>/dev/null  # Redirect errors directly
 
-# Enable some Bash 4 features when possible:
-# * `autocd`, e.g. `**/qux` will enter `./foo/bar/baz/qux`
-# * Recursive globbing, e.g. `echo **/*.txt`
-for option in autocd globstar; do
-	shopt -s "$option" 2> /dev/null;
-done;
+# --- Bash Completion ---
 
-# Add tab completion for many Bash commands
-if which brew &> /dev/null && [ -r "$(brew --prefix)/etc/profile.d/bash_completion.sh" ]; then
-	# Ensure existing Homebrew v1 completions continue to work
-	export BASH_COMPLETION_COMPAT_DIR="$(brew --prefix)/etc/bash_completion.d";
-	source "$(brew --prefix)/etc/profile.d/bash_completion.sh";
-elif [ -f /etc/bash_completion ]; then
-	source /etc/bash_completion;
-fi;
+# Homebrew completion (simplified)
+if brew --prefix &>/dev/null; then
+  source "$(brew --prefix)/etc/profile.d/bash_completion.sh"
+elif [[ -f /etc/bash_completion ]]; then  # Use double brackets
+  source /etc/bash_completion
+fi
 
-# Enable tab completion for `g` by marking it as an alias for `git`
-if type _git &> /dev/null; then
-	complete -o default -o nospace -F _git g;
-fi;
+# Alias-based completion
+# No need to explicitly enable tab completion if function _git exists
+# Bash automatically completes based on the alias
+alias g='git'
 
-# Add tab completion for SSH hostnames based on ~/.ssh/config, ignoring wildcards
-[ -e "$HOME/.ssh/config" ] && complete -o "default" -o "nospace" -W "$(grep "^Host" ~/.ssh/config | grep -v "[?*]" | cut -d " " -f2- | tr ' ' '\n')" scp sftp ssh;
 
-# Add tab completion for `defaults read|write NSGlobalDomain`
-# You could just use `-g` instead, but I like being explicit
-complete -W "NSGlobalDomain" defaults;
+# SSH hostname completion (simplified and more robust)
+if [[ -f "$HOME/.ssh/config" ]]; then
+  complete -o default -o nospace -W "$(awk '/^Host[ \t]+[^*]/{print $2}' ~/.ssh/config)" scp sftp ssh
+fi
 
-# Add `killall` tab completion for common apps
-complete -o "nospace" -W "Contacts Calendar Dock Finder Mail Safari iTunes SystemUIServer Terminal Twitter" killall;
+
+# Other Completions
+complete -W "NSGlobalDomain" defaults
+complete -o nospace -W "Contacts Calendar Dock Finder Mail Safari Music SystemUIServer Terminal" killall  # Removed iTunes and Twitter since they're not standard macOS apps
