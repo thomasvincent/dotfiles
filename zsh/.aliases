@@ -1,0 +1,484 @@
+#!/usr/bin/env zsh
+
+# .aliases
+# Author: Thomas Vincent
+# GitHub: https://github.com/thomasvincent/dotfiles
+#
+# This file contains all the useful aliases for the shell.
+
+# General aliases
+alias reload="source ~/.zshrc"
+alias zshrc="$EDITOR ~/.zshrc"
+alias aliases="$EDITOR ~/.aliases"
+alias functions="$EDITOR ~/.functions"
+alias exports="$EDITOR ~/.exports"
+alias dotfiles="cd $DOTFILES"
+
+# Navigation
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+alias .....="cd ../../../.."
+alias ~="cd ~"
+alias -- -="cd -"
+alias cdot="cd $DOTFILES"
+alias cproj="cd ~/Documents/Projects"
+alias cdown="cd ~/Downloads"
+alias cdoc="cd ~/Documents"
+alias cdesk="cd ~/Desktop"
+
+# Directory listing
+# Use exa if available, otherwise use ls with colors
+if command -v exa &> /dev/null; then
+  alias ls="exa"
+  alias ll="exa -la"
+  alias la="exa -a"
+  alias lt="exa -T"
+  alias lg="exa -la --git"
+  alias lm="exa -la --sort=modified"
+  alias lsize="exa -la --sort=size"
+else
+  alias ls="ls -G"
+  alias ll="ls -la"
+  alias la="ls -a"
+  alias lm="ls -la -t"
+  alias lsize="ls -la -S"
+fi
+
+# File operations
+alias cp="cp -i"
+alias mv="mv -i"
+alias rm="rm -i"
+alias mkdir="mkdir -p"
+alias md="mkdir -p"
+alias rd="rmdir"
+
+# Use bat instead of cat if available
+if command -v bat &> /dev/null; then
+  alias cat="bat"
+  alias catp="bat -p"  # Plain mode (no line numbers, no file header)
+fi
+
+# Use fd instead of find if available
+if command -v fd &> /dev/null; then
+  alias find="fd"
+fi
+
+# Use ripgrep instead of grep if available
+if command -v rg &> /dev/null; then
+  alias grep="rg"
+fi
+
+# Use htop instead of top if available
+if command -v htop &> /dev/null; then
+  alias top="htop"
+fi
+
+# Use ncdu instead of du if available
+if command -v ncdu &> /dev/null; then
+  alias du="ncdu --color dark -rr -x"
+fi
+
+# Use prettyping instead of ping if available
+if command -v prettyping &> /dev/null; then
+  alias ping="prettyping --nolegend"
+fi
+
+# Use tldr instead of man if available
+if command -v tldr &> /dev/null; then
+  alias tldr="tldr -t ocean"
+fi
+
+# Git aliases
+alias g="git"
+alias ga="git add"
+alias gaa="git add --all"
+alias gb="git branch"
+alias gba="git branch -a"
+alias gbd="git branch -d"
+alias gbD="git branch -D"
+alias gc="git commit -v"
+alias gcm="git commit -m"
+alias gca="git commit -v --amend"
+alias gcl="git clone"
+alias gco="git checkout"
+alias gcb="git checkout -b"
+alias gcp="git cherry-pick"
+alias gd="git diff"
+alias gds="git diff --staged"
+alias gf="git fetch"
+alias gfo="git fetch origin"
+alias gl="git pull"
+alias glog="git log --oneline --decorate --graph"
+alias gloga="git log --oneline --decorate --graph --all"
+alias gm="git merge"
+alias gp="git push"
+alias gpo="git push origin"
+alias gpf="git push --force-with-lease"
+alias gr="git remote"
+alias grv="git remote -v"
+alias gra="git remote add"
+alias grb="git rebase"
+alias grbi="git rebase -i"
+alias grbm="git rebase master"
+alias grbc="git rebase --continue"
+alias grba="git rebase --abort"
+alias grs="git reset"
+alias grsh="git reset --hard"
+alias grss="git reset --soft"
+alias gs="git status"
+alias gss="git status -s"
+alias gst="git stash"
+alias gstp="git stash pop"
+alias gstc="git stash clear"
+alias gstl="git stash list"
+alias gsw="git switch"
+alias gswc="git switch -c"
+alias gt="git tag"
+alias gtl="git tag -l"
+alias gta="git tag -a"
+alias gtd="git tag -d"
+
+# If lazygit is installed
+if command -v lazygit &> /dev/null; then
+  alias lg="lazygit"
+fi
+
+# Docker aliases
+alias d="docker"
+alias dc="docker-compose"
+alias dps="docker ps"
+alias dpsa="docker ps -a"
+alias di="docker images"
+alias dex="docker exec -it"
+alias drun="docker run -it"
+alias drm="docker rm"
+alias drmi="docker rmi"
+alias dprune="docker system prune -a"
+alias dstop="docker stop"
+alias dstart="docker start"
+alias drestart="docker restart"
+alias dlogs="docker logs"
+alias dlogsf="docker logs -f"
+alias dip="docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"
+
+# Kubernetes aliases
+alias k="kubectl"
+alias kgp="kubectl get pods"
+alias kgs="kubectl get services"
+alias kgd="kubectl get deployments"
+alias kgn="kubectl get nodes"
+alias kgc="kubectl get configmaps"
+alias kgs="kubectl get secrets"
+alias kgpvc="kubectl get pvc"
+alias kgpv="kubectl get pv"
+alias kgns="kubectl get namespaces"
+alias kd="kubectl describe"
+alias kdp="kubectl describe pod"
+alias kds="kubectl describe service"
+alias kdd="kubectl describe deployment"
+alias kdn="kubectl describe node"
+alias kdc="kubectl describe configmap"
+alias kds="kubectl describe secret"
+alias kdpvc="kubectl describe pvc"
+alias kdpv="kubectl describe pv"
+alias kdns="kubectl describe namespace"
+alias kl="kubectl logs"
+alias klf="kubectl logs -f"
+alias kex="kubectl exec -it"
+alias kcp="kubectl cp"
+alias kroll="kubectl rollout restart deployment"
+alias krollh="kubectl rollout history deployment"
+alias krolls="kubectl rollout status deployment"
+alias krollu="kubectl rollout undo deployment"
+alias kctx="kubectx"
+alias kns="kubens"
+
+# If k9s is installed
+if command -v k9s &> /dev/null; then
+  alias k9="k9s"
+fi
+
+# Terraform aliases
+alias tf="terraform"
+alias tfi="terraform init"
+alias tfp="terraform plan"
+alias tfa="terraform apply"
+alias tfaa="terraform apply -auto-approve"
+alias tfd="terraform destroy"
+alias tfda="terraform destroy -auto-approve"
+alias tfo="terraform output"
+alias tfs="terraform state"
+alias tfsl="terraform state list"
+alias tfss="terraform state show"
+alias tfv="terraform validate"
+alias tfw="terraform workspace"
+alias tfwl="terraform workspace list"
+alias tfws="terraform workspace select"
+alias tfwn="terraform workspace new"
+alias tfwd="terraform workspace delete"
+alias tfg="terraform graph | dot -Tsvg > graph.svg && open graph.svg"
+alias tfc="terraform console"
+alias tfr="terraform refresh"
+alias tffmt="terraform fmt -recursive"
+
+# If terragrunt is installed
+if command -v terragrunt &> /dev/null; then
+  alias tg="terragrunt"
+  alias tgp="terragrunt plan"
+  alias tga="terragrunt apply"
+  alias tgaa="terragrunt apply -auto-approve"
+  alias tgd="terragrunt destroy"
+  alias tgda="terragrunt destroy -auto-approve"
+  alias tgo="terragrunt output"
+fi
+
+# AWS aliases
+alias awsls="aws ec2 describe-instances --query 'Reservations[].Instances[].[InstanceId, State.Name, InstanceType, PublicIpAddress, Tags[?Key==\`Name\`].Value | [0]]' --output table"
+alias awslb="aws elb describe-load-balancers --query 'LoadBalancerDescriptions[].[LoadBalancerName, DNSName]' --output table"
+alias awss3="aws s3 ls"
+alias awss3ls="aws s3 ls s3://"
+alias awsrds="aws rds describe-db-instances --query 'DBInstances[].[DBInstanceIdentifier, Engine, DBInstanceStatus, Endpoint.Address]' --output table"
+alias awssg="aws ec2 describe-security-groups --query 'SecurityGroups[].[GroupId, GroupName, Description]' --output table"
+alias awsvpc="aws ec2 describe-vpcs --query 'Vpcs[].[VpcId, CidrBlock, Tags[?Key==\`Name\`].Value | [0]]' --output table"
+alias awssub="aws ec2 describe-subnets --query 'Subnets[].[SubnetId, VpcId, CidrBlock, AvailabilityZone, Tags[?Key==\`Name\`].Value | [0]]' --output table"
+alias awsiam="aws iam list-users --query 'Users[].[UserName, Arn, CreateDate]' --output table"
+alias awsrole="aws iam list-roles --query 'Roles[].[RoleName, Arn, CreateDate]' --output table"
+alias awsregion="aws ec2 describe-regions --query 'Regions[].[RegionName]' --output table"
+alias awsaz="aws ec2 describe-availability-zones --query 'AvailabilityZones[].[ZoneName, State]' --output table"
+alias awsami="aws ec2 describe-images --owners self --query 'Images[].[ImageId, Name, CreationDate]' --output table"
+alias awsssm="aws ssm get-parameters-by-path --path / --recursive --query 'Parameters[].[Name, Value]' --output table"
+alias awsecr="aws ecr describe-repositories --query 'repositories[].[repositoryName, repositoryUri]' --output table"
+alias awsecs="aws ecs list-clusters --query 'clusterArns[]' --output table"
+alias awslambda="aws lambda list-functions --query 'Functions[].[FunctionName, Runtime, Timeout, MemorySize]' --output table"
+alias awscf="aws cloudformation list-stacks --query 'StackSummaries[].[StackName, StackStatus, CreationTime]' --output table"
+
+# DigitalOcean aliases
+alias dolist="doctl compute droplet list"
+alias dosize="doctl compute size list"
+alias doregion="doctl compute region list"
+alias doimage="doctl compute image list"
+alias dossh="doctl compute ssh"
+alias dosnap="doctl compute snapshot list"
+alias dovol="doctl compute volume list"
+alias dolb="doctl compute load-balancer list"
+alias dofw="doctl compute firewall list"
+alias dodom="doctl compute domain list"
+alias dodb="doctl databases list"
+alias dok8s="doctl kubernetes cluster list"
+
+# Network aliases
+alias ip="curl -s https://ipinfo.io/ip"
+alias localip="ipconfig getifaddr en0"
+alias ips="ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }'"
+alias whois="whois -h whois-servers.net"
+alias ports="sudo lsof -i -P -n | grep LISTEN"
+alias netstat="netstat -tulanp"
+alias ping="ping -c 5"
+alias speedtest="curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python -"
+alias dnsclear="sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder"
+alias hosts="sudo $EDITOR /etc/hosts"
+
+# macOS aliases
+alias showfiles="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
+alias hidefiles="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
+alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
+alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
+alias afk="open -a /System/Library/CoreServices/ScreenSaverEngine.app"
+alias lock="/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend"
+alias screensaver="open -a ScreenSaverEngine"
+alias trash="rm -rf ~/.Trash/*"
+alias emptytrash="sudo rm -rfv /Volumes/*/.Trashes; sudo rm -rfv ~/.Trash; sudo rm -rfv /private/var/log/asl/*.asl; sqlite3 ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV* 'delete from LSQuarantineEvent'"
+alias update="sudo softwareupdate -i -a; brew update; brew upgrade; brew cleanup; npm install npm -g; npm update -g; sudo gem update --system; sudo gem update; sudo gem cleanup"
+alias cleanup="find . -type f -name '*.DS_Store' -ls -delete"
+alias sleepoff="sudo pmset -a sleep 0; sudo pmset -a hibernatemode 0; sudo pmset -a disablesleep 1"
+alias sleepon="sudo pmset -a sleep 1; sudo pmset -a hibernatemode 3; sudo pmset -a disablesleep 0"
+alias spotoff="sudo mdutil -a -i off"
+alias spoton="sudo mdutil -a -i on"
+alias killaudio="sudo kill `ps -ax | grep 'coreaudiod' | grep 'sbin' |awk '{print $1}'`"
+alias stfu="osascript -e 'set volume output muted true'"
+alias pumpitup="osascript -e 'set volume output volume 100'"
+alias volume="osascript -e 'set volume output volume'"
+alias restart="sudo shutdown -r now"
+alias shutdown="sudo shutdown -h now"
+
+# PHP aliases
+alias composer="php -d memory_limit=-1 /usr/local/bin/composer"
+alias phpunit="vendor/bin/phpunit"
+alias artisan="php artisan"
+alias tinker="php artisan tinker"
+alias phpstan="vendor/bin/phpstan"
+alias phpcs="vendor/bin/phpcs"
+alias phpcbf="vendor/bin/phpcbf"
+alias phpmd="vendor/bin/phpmd"
+alias phpdbg="phpdbg -qrr"
+alias wp="wp-cli"
+
+# Python aliases
+alias py="python3"
+alias py2="python2"
+alias pip="pip3"
+alias pip2="pip2"
+alias pyenv="python -m venv venv"
+alias pyact="source venv/bin/activate"
+alias pydeact="deactivate"
+alias jupyter="jupyter notebook"
+alias pipup="pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | xargs -n1 pip install -U"
+alias piplist="pip list"
+alias pipfreeze="pip freeze > requirements.txt"
+alias pipreq="pip install -r requirements.txt"
+
+# Ruby aliases
+alias be="bundle exec"
+alias bi="bundle install"
+alias bu="bundle update"
+alias bo="bundle outdated"
+alias bx="bundle exec"
+alias rails="bundle exec rails"
+alias rake="bundle exec rake"
+alias rspec="bundle exec rspec"
+alias rubocop="bundle exec rubocop"
+alias gemup="gem update --system && gem update && gem cleanup"
+
+# Node.js aliases
+alias ni="npm install"
+alias nid="npm install --save-dev"
+alias nig="npm install -g"
+alias nu="npm update"
+alias nug="npm update -g"
+alias nrb="npm run build"
+alias nrd="npm run dev"
+alias nrs="npm run start"
+alias nrt="npm run test"
+alias nrl="npm run lint"
+alias yi="yarn install"
+alias ya="yarn add"
+alias yad="yarn add --dev"
+alias yag="yarn global add"
+alias yu="yarn upgrade"
+alias yug="yarn global upgrade"
+alias ys="yarn start"
+alias yt="yarn test"
+alias yl="yarn lint"
+alias yb="yarn build"
+
+# Vim aliases
+alias vi="vim"
+alias v="vim"
+if command -v nvim &> /dev/null; then
+  alias vim="nvim"
+  alias vi="nvim"
+  alias v="nvim"
+fi
+
+# VSCode aliases
+if command -v code &> /dev/null; then
+  alias c="code"
+  alias c.="code ."
+fi
+
+# Tmux aliases
+alias t="tmux"
+alias ta="tmux attach"
+alias tls="tmux ls"
+alias tn="tmux new -s"
+alias tk="tmux kill-session -t"
+
+# Utility aliases
+alias h="history"
+alias j="jobs"
+alias c="clear"
+alias path="echo $PATH | tr ':' '\n'"
+alias now="date +\"%T\""
+alias nowdate="date +\"%d-%m-%Y\""
+alias week="date +%V"
+alias timer="echo 'Timer started. Stop with Ctrl-D.' && date && time cat && date"
+alias weather="curl -s wttr.in"
+alias myip="curl -s https://ipinfo.io/ip"
+alias qr="qrencode -t ANSI -o -"
+alias calc="bc -l"
+alias calendar="cal"
+alias count="wc -l"
+alias untar="tar -zxvf"
+alias wget="wget -c"
+alias sha="shasum -a 256"
+alias trim="awk '{\$1=\$1};1'"
+alias random="openssl rand -hex"
+alias urlencode="python -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))'"
+alias urldecode="python -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))'"
+alias jsonpretty="python -m json.tool"
+alias xmlpretty="xmllint --format -"
+alias http="python -m http.server"
+alias sshkey="cat ~/.ssh/id_rsa.pub | pbcopy && echo 'SSH key copied to clipboard.'"
+alias genpass="openssl rand -base64 16"
+alias rot13="tr 'A-Za-z' 'N-ZA-Mn-za-m'"
+alias lines="find . -type f -name '*.py' | xargs wc -l"
+alias ducks="du -cksh * | sort -hr | head -n 15"
+alias psg="ps aux | grep -v grep | grep -i -e VSZ -e"
+alias psmem="ps aux | sort -nr -k 4 | head -10"
+alias pscpu="ps aux | sort -nr -k 3 | head -10"
+alias histg="history | grep"
+alias cpwd="pwd | tr -d '\n' | pbcopy"
+alias checkport="sudo lsof -i"
+alias df="df -h"
+alias du="du -h"
+alias free="top -l 1 -s 0 | grep PhysMem"
+alias meminfo="top -l 1 -s 0 | head -n 10"
+alias cpuinfo="sysctl -n machdep.cpu.brand_string"
+alias reloadshell="exec $SHELL -l"
+alias editdns="sudo $EDITOR /etc/hosts"
+alias flushdns="sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder"
+alias lscleanup="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user && killall Finder"
+alias lsregister="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -dump"
+alias resetlaunchpad="defaults write com.apple.dock ResetLaunchPad -bool true && killall Dock"
+alias resetdock="defaults delete com.apple.dock && killall Dock"
+alias resetfinder="killall Finder"
+alias resetmenu="killall SystemUIServer"
+alias resetaudio="sudo killall coreaudiod"
+alias resetprinting="sudo launchctl unload /System/Library/LaunchDaemons/org.cups.cupsd.plist && sudo launchctl load /System/Library/LaunchDaemons/org.cups.cupsd.plist"
+alias resetwifi="sudo ifconfig en0 down && sudo ifconfig en0 up"
+alias resetbluetooth="sudo kextunload -b com.apple.iokit.BroadcomBluetoothHostControllerUSBTransport && sudo kextload -b com.apple.iokit.BroadcomBluetoothHostControllerUSBTransport"
+alias resetos="sudo nvram boot-args='-x' && sudo reboot"
+alias resetpram="sudo nvram -c && sudo reboot"
+alias resetscreensharing="sudo launchctl unload /System/Library/LaunchDaemons/com.apple.screensharing.plist && sudo launchctl load /System/Library/LaunchDaemons/com.apple.screensharing.plist"
+alias resetspotlight="sudo mdutil -E /"
+alias resettime="sudo ntpdate -u time.apple.com"
+alias resetusb="sudo kextunload -b com.apple.driver.AppleUSBHub && sudo kextload -b com.apple.driver.AppleUSBHub"
+alias resetvideo="sudo killall VDCAssistant"
+alias resetairdrop="sudo ifconfig awdl0 down && sudo ifconfig awdl0 up"
+alias resetapplewatch="sudo killall -STOP -c usbd && sudo killall -CONT -c usbd"
+alias reseticloud="sudo killall cloudd"
+alias reseticloudphoto="sudo killall cloudphotosd"
+alias resetimessage="sudo killall imagent"
+alias resetmaildata="sudo killall Mail && rm -rf ~/Library/Containers/com.apple.mail/Data/Library/Mail\ Downloads/*"
+alias resetmailindex="sudo killall Mail && rm -rf ~/Library/Mail/V2/MailData/Envelope\ Index"
+alias resetmailrules="sudo killall Mail && rm -rf ~/Library/Mail/V2/MailData/SyncedRules.plist"
+alias resetmailsignatures="sudo killall Mail && rm -rf ~/Library/Mail/V2/MailData/Signatures/*"
+alias resetmailsmartmailboxes="sudo killall Mail && rm -rf ~/Library/Mail/V2/MailData/SmartMailboxes.plist"
+alias resetmailviews="sudo killall Mail && rm -rf ~/Library/Mail/V2/MailData/MessageViewerState.plist"
+alias resetmailzoom="sudo killall Mail && rm -rf ~/Library/Containers/com.apple.mail/Data/Library/Preferences/com.apple.mail.plist"
+alias resetnotificationcenter="sudo killall NotificationCenter"
+alias resetphotos="sudo killall Photos"
+alias resetphotosdatabase="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database"
+alias resetphotosfaces="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/apdb"
+alias resetphotosthumbnails="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/resources/derivatives"
+alias resetphotoscloud="sudo killall cloudphotosd"
+alias resetphotosimport="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/resources/media"
+alias resetphotosmoments="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/momentanalysis"
+alias resetphotosplaces="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/search"
+alias resetphotosprojects="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/projects"
+alias resetphotosslideshows="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/slideshows"
+alias resetphotosalbums="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/albums"
+alias resetphotosfaces="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/faces"
+alias resetphotoskeywords="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/keywords"
+alias resetphotosmetadata="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/metadata"
+alias resetphotosplaces="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/places"
+alias resetphotosprojects="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/projects"
+alias resetphotosslideshows="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/slideshows"
+alias resetphotosalbums="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/albums"
+alias resetphotosfaces="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/faces"
+alias resetphotoskeywords="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/keywords"
+alias resetphotosmetadata="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/metadata"
+alias resetphotosplaces="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/places"
+alias resetphotosprojects="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/projects"
+alias resetphotosslideshows="sudo killall Photos && rm -rf ~/Pictures/Photos\ Library.photoslibrary/database/slideshows"

@@ -1,0 +1,375 @@
+# starship.toml
+# Author: Thomas Vincent
+# GitHub: https://github.com/thomasvincent/dotfiles
+#
+# This file contains Starship prompt configuration.
+
+# Get editor completions based on the config schema
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Don't print a new line at the start of the prompt
+add_newline = true
+
+# Wait 10 milliseconds for starship to check files under the current directory.
+scan_timeout = 10
+
+# Timeout for commands executed by starship (in milliseconds).
+command_timeout = 500
+
+# Replace the "❯" symbol in the prompt with "➜"
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[✗](bold red)"
+vimcmd_symbol = "[V](bold green)"
+vimcmd_replace_one_symbol = "[R](bold purple)"
+vimcmd_replace_symbol = "[R](bold purple)"
+vimcmd_visual_symbol = "[V](bold yellow)"
+
+# Disable the package module, hiding it from the prompt completely
+[package]
+disabled = false
+format = "via [📦 $version](208 bold) "
+
+# Configure the format of the prompt
+format = """
+$username\
+$hostname\
+$localip\
+$shlvl\
+$singularity\
+$kubernetes\
+$directory\
+$vcsh\
+$git_branch\
+$git_commit\
+$git_state\
+$git_metrics\
+$git_status\
+$hg_branch\
+$docker_context\
+$terraform\
+$aws\
+$gcloud\
+$azure\
+$env_var\
+$custom\
+$sudo\
+$cmd_duration\
+$line_break\
+$jobs\
+$battery\
+$time\
+$status\
+$container\
+$shell\
+$character"""
+
+# Configure individual prompt segments
+
+[aws]
+format = 'on [$symbol($profile )(\($region\) )(\[$duration\] )]($style)'
+symbol = "☁️ "
+style = "bold yellow"
+disabled = false
+expiration_symbol = "X"
+force_display = false
+
+[aws.region_aliases]
+us-east-1 = "va"
+us-east-2 = "oh"
+us-west-1 = "ca"
+us-west-2 = "or"
+eu-west-1 = "irl"
+eu-west-2 = "lon"
+eu-west-3 = "par"
+eu-central-1 = "fra"
+ap-northeast-1 = "tok"
+ap-northeast-2 = "sel"
+ap-southeast-1 = "sg"
+ap-southeast-2 = "syd"
+sa-east-1 = "sp"
+
+[battery]
+full_symbol = "🔋"
+charging_symbol = "⚡️"
+discharging_symbol = "💀"
+disabled = true
+
+[[battery.display]]
+threshold = 10
+style = "bold red"
+
+[[battery.display]]
+threshold = 30
+style = "bold yellow"
+
+[cmd_duration]
+min_time = 500
+format = "took [$duration](bold yellow)"
+show_milliseconds = false
+disabled = false
+show_notifications = false
+min_time_to_notify = 45000
+
+[directory]
+truncation_length = 3
+truncation_symbol = "…/"
+home_symbol = "~"
+read_only_style = "red"
+read_only = "🔒"
+format = "in [$path]($style)[$read_only]($read_only_style) "
+style = "bold cyan"
+disabled = false
+fish_style_pwd_dir_length = 0
+use_logical_path = true
+truncate_to_repo = true
+
+[docker_context]
+format = "via [$symbol$context]($style) "
+symbol = "🐳 "
+style = "blue bold"
+only_with_files = true
+detect_files = ["docker-compose.yml", "docker-compose.yaml", "Dockerfile"]
+detect_folders = []
+disabled = false
+
+[gcloud]
+format = 'on [$symbol$account(@$domain)(\($region\))]($style) '
+symbol = "☁️ "
+style = "bold blue"
+disabled = false
+
+[git_branch]
+format = "on [$symbol$branch]($style) "
+symbol = "🌱 "
+style = "bold purple"
+truncation_length = 9223372036854775807
+truncation_symbol = "…"
+only_attached = false
+always_show_remote = false
+disabled = false
+ignore_branches = []
+
+[git_commit]
+commit_hash_length = 7
+format = '[\($hash$tag\)]($style) '
+style = "green bold"
+only_detached = true
+disabled = false
+tag_symbol = " 🏷 "
+tag_disabled = false
+
+[git_state]
+rebase = "REBASING"
+merge = "MERGING"
+revert = "REVERTING"
+cherry_pick = "CHERRY-PICKING"
+bisect = "BISECTING"
+am = "AM"
+am_or_rebase = "AM/REBASE"
+style = "bold yellow"
+format = '\([$state( $progress_current/$progress_total)]($style)\) '
+disabled = false
+
+[git_metrics]
+added_style = "bold green"
+deleted_style = "bold red"
+only_nonzero_diffs = true
+format = '([+$added]($added_style) )([-$deleted]($deleted_style) )'
+disabled = false
+
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+style = "bold red"
+stashed = '\$'
+ahead = '⇡'
+behind = '⇣'
+diverged = '⇕'
+up_to_date = ''
+untracked = '?'
+modified = '!'
+staged = '+'
+renamed = '»'
+deleted = '✘'
+disabled = false
+conflicted = '='
+
+[hostname]
+ssh_only = true
+format = "[$ssh_symbol$hostname]($style) in "
+trim_at = "."
+style = "bold dimmed green"
+disabled = false
+ssh_symbol = "🌐 "
+
+[kubernetes]
+format = 'on [⛵ $context \($namespace\)](dimmed green) '
+disabled = false
+detect_files = ["k8s", "kubernetes", "Dockerfile", "docker-compose.yml", "docker-compose.yaml"]
+detect_folders = ["k8s", "kubernetes"]
+context_aliases = {}
+
+[localip]
+ssh_only = true
+format = "[$localipv4](bold red) "
+disabled = false
+
+[memory_usage]
+format = "via $symbol[$ram( | $swap)]($style) "
+threshold = 75
+style = "bold dimmed white"
+disabled = true
+symbol = "🧠 "
+
+[nodejs]
+format = "via [$symbol($version )]($style)"
+version_format = "v${raw}"
+symbol = "⬢ "
+detect_files = ["package.json", ".node-version"]
+detect_folders = ["node_modules"]
+style = "bold green"
+disabled = false
+not_capable_style = "bold red"
+
+[package]
+format = "via [$symbol$version]($style) "
+symbol = "📦 "
+style = "bold 208"
+display_private = false
+disabled = false
+version_format = "v${raw}"
+
+[php]
+format = "via [$symbol($version )]($style)"
+version_format = "v${raw}"
+symbol = "🐘 "
+detect_files = ["composer.json", ".php-version"]
+detect_folders = ["vendor"]
+style = "bold blue"
+disabled = false
+not_capable_style = "bold red"
+
+[python]
+format = "via [$symbol$pyenv_prefix($version )(\($virtualenv\) )]($style)"
+version_format = "v${raw}"
+symbol = "🐍 "
+style = "bold yellow"
+pyenv_version_name = false
+pyenv_prefix = "pyenv "
+python_binary = ["python", "python3", "python2"]
+detect_extensions = ["py"]
+detect_files = [".python-version", "Pipfile", "__init__.py", "pyproject.toml", "requirements.txt", "setup.py", "tox.ini"]
+detect_folders = []
+disabled = false
+
+[ruby]
+format = "via [$symbol($version )]($style)"
+version_format = "v${raw}"
+symbol = "💎 "
+detect_extensions = ["rb"]
+detect_files = ["Gemfile", ".ruby-version"]
+detect_folders = []
+detect_variables = ["RUBY_VERSION", "RBENV_VERSION"]
+style = "bold red"
+disabled = false
+not_capable_style = "bold red"
+
+[rust]
+format = "via [$symbol($version )]($style)"
+version_format = "v${raw}"
+symbol = "🦀 "
+detect_extensions = ["rs"]
+detect_files = ["Cargo.toml"]
+detect_folders = []
+style = "bold red"
+disabled = false
+not_capable_style = "bold red"
+
+[shell]
+format = "[$indicator]($style) "
+bash_indicator = "bash"
+fish_indicator = "fish"
+zsh_indicator = "zsh"
+powershell_indicator = "pwsh"
+ion_indicator = "ion"
+elvish_indicator = "elvish"
+tcsh_indicator = "tcsh"
+xonsh_indicator = "xonsh"
+cmd_indicator = "cmd"
+nu_indicator = "nu"
+unknown_indicator = "mystery shell"
+style = "bold blue"
+disabled = true
+
+[shlvl]
+threshold = 2
+format = "[$symbol$shlvl]($style) "
+symbol = "↕️ "
+repeat = false
+style = "bold yellow"
+disabled = false
+
+[status]
+format = "[$symbol$status]($style) "
+symbol = "✖"
+success_symbol = ""
+not_executable_symbol = "🚫"
+not_found_symbol = "🔍"
+sigint_symbol = "🧱"
+signal_symbol = "⚡"
+style = "bold red"
+map_symbol = false
+recognize_signal_code = true
+pipestatus = false
+pipestatus_separator = "|"
+pipestatus_format = '\[$pipestatus\] => [$symbol$common_meaning$signal_name$maybe_int]($style)'
+disabled = true
+
+[sudo]
+format = "[as $symbol]($style)"
+symbol = "🧙 "
+style = "bold blue"
+allow_windows = false
+disabled = true
+
+[terraform]
+format = "via [$symbol$workspace]($style) "
+symbol = "💠 "
+detect_extensions = ["tf", "tfplan", "tfstate"]
+detect_files = ["terraform.tf", ".terraform.lock.hcl"]
+detect_folders = [".terraform"]
+style = "bold 105"
+disabled = false
+
+[time]
+format = "at [$time]($style) "
+style = "bold yellow"
+use_12hr = false
+disabled = true
+utc_time_offset = "local"
+time_range = "-"
+time_format = "%R" # Hour:Minute format
+
+[username]
+style_root = "bold red"
+style_user = "bold yellow"
+format = "[$user]($style) "
+disabled = false
+show_always = false
+
+[vagrant]
+format = "via [$symbol($version )]($style)"
+version_format = "v${raw}"
+symbol = "⍱ "
+detect_extensions = []
+detect_files = ["Vagrantfile"]
+detect_folders = []
+style = "cyan bold"
+disabled = false
+not_capable_style = "bold red"
+
+[custom.git_email]
+command = "git config user.email"
+when = "git rev-parse --is-inside-work-tree"
+format = "as [$output]($style) "
+style = "bold yellow"

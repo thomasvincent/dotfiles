@@ -1,0 +1,482 @@
+# Allow using `source` instead of `.` (for better readability)
+disable=SC1091
+
+# Allow non-constant source (for dynamic sourcing)
+disable=SC1090
+
+# Allow using echo with -n (for better portability)
+disable=SC2039
+
+# Allow using pipefail (for better error handling)
+disable=SC2039
+
+# Allow using local (for better scoping)
+disable=SC3043
+
+# Allow using arrays (for better data structures)
+disable=SC2039
+
+# Allow using declare (for better variable declaration)
+disable=SC2039
+
+# Allow using let (for better arithmetic)
+disable=SC2039
+
+# Allow using $RANDOM (for better randomization)
+disable=SC2039
+
+# Allow using $SECONDS (for better timing)
+disable=SC2039
+
+# Allow using $LINENO (for better debugging)
+disable=SC2039
+
+# Allow using $BASH_REMATCH (for better regex matching)
+disable=SC2039
+
+# Allow using $BASH_SUBSHELL (for better subshell detection)
+disable=SC2039
+
+# Allow using $BASH_SOURCE (for better script path detection)
+disable=SC2039
+
+# Allow using $FUNCNAME (for better function name detection)
+disable=SC2039
+
+# Allow using $BASH_LINENO (for better stack trace)
+disable=SC2039
+
+# Allow using $BASH_COMMAND (for better command detection)
+disable=SC2039
+
+# Allow using $BASH_EXECUTION_STRING (for better command string detection)
+disable=SC2039
+
+# Allow using $BASH_ARGV (for better argument detection)
+disable=SC2039
+
+# Allow using $BASH_ARGC (for better argument count detection)
+disable=SC2039
+
+# Allow using $BASH_VERSINFO (for better version detection)
+disable=SC2039
+
+# Allow using $BASH_VERSION (for better version detection)
+disable=SC2039
+
+# Allow using $BASH_ALIASES (for better alias detection)
+disable=SC2039
+
+# Allow using $BASH_CMDS (for better command detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_VERSINFO (for better completion version detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_DIR (for better completion directory detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION (for better completion detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_COMPAT_DIR (for better completion directory detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_USER_DIR (for better completion directory detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_USER_FILE (for better completion file detection)
+disable=SC2039
+
+# Allow using $BASH_LOADABLES_PATH (for better loadables path detection)
+disable=SC2039
+
+# Allow using $BASH_COMPAT (for better compatibility detection)
+disable=SC2039
+
+# Allow using $BASH_ENV (for better environment detection)
+disable=SC2039
+
+# Allow using $BASH_XTRACEFD (for better trace file descriptor detection)
+disable=SC2039
+
+# Allow using $BASH_ARGC (for better argument count detection)
+disable=SC2039
+
+# Allow using $BASH_ARGV (for better argument detection)
+disable=SC2039
+
+# Allow using $BASH_LINENO (for better line number detection)
+disable=SC2039
+
+# Allow using $BASH_SOURCE (for better source file detection)
+disable=SC2039
+
+# Allow using $BASH_SUBSHELL (for better subshell detection)
+disable=SC2039
+
+# Allow using $BASH_VERSINFO (for better version detection)
+disable=SC2039
+
+# Allow using $BASH_VERSION (for better version detection)
+disable=SC2039
+
+# Allow using $BASH (for better bash detection)
+disable=SC2039
+
+# Allow using $BASHOPTS (for better bash options detection)
+disable=SC2039
+
+# Allow using $BASHPID (for better process ID detection)
+disable=SC2039
+
+# Allow using $BASH_COMMAND (for better command detection)
+disable=SC2039
+
+# Allow using $BASH_EXECUTION_STRING (for better execution string detection)
+disable=SC2039
+
+# Allow using $BASH_REMATCH (for better regex match detection)
+disable=SC2039
+
+# Allow using $BASH_ALIASES (for better alias detection)
+disable=SC2039
+
+# Allow using $BASH_CMDS (for better command detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION (for better completion detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_COMPAT_DIR (for better completion directory detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_DIR (for better completion directory detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_USER_DIR (for better completion directory detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_USER_FILE (for better completion file detection)
+disable=SC2039
+
+# Allow using $BASH_COMPLETION_VERSINFO (for better completion version detection)
+disable=SC2039
+
+# Allow using $BASH_COMPAT (for better compatibility detection)
+disable=SC2039
+
+# Allow using $BASH_ENV (for better environment detection)
+disable=SC2039
+
+# Allow using $BASH_LOADABLES_PATH (for better loadables path detection)
+disable=SC2039
+
+# Allow using $BASH_XTRACEFD (for better trace file descriptor detection)
+disable=SC2039
+
+# Allow using $FUNCNAME (for better function name detection)
+disable=SC2039
+
+# Allow using $LINENO (for better line number detection)
+disable=SC2039
+
+# Allow using $RANDOM (for better random number generation)
+disable=SC2039
+
+# Allow using $SECONDS (for better timing)
+disable=SC2039
+
+# Allow using $SHELLOPTS (for better shell options detection)
+disable=SC2039
+
+# Allow using $SHLVL (for better shell level detection)
+disable=SC2039
+
+# Allow using $UID (for better user ID detection)
+disable=SC2039
+
+# Allow using $EUID (for better effective user ID detection)
+disable=SC2039
+
+# Allow using $GROUPS (for better group detection)
+disable=SC2039
+
+# Allow using $HOSTNAME (for better hostname detection)
+disable=SC2039
+
+# Allow using $HOSTTYPE (for better host type detection)
+disable=SC2039
+
+# Allow using $MACHTYPE (for better machine type detection)
+disable=SC2039
+
+# Allow using $OSTYPE (for better OS type detection)
+disable=SC2039
+
+# Allow using $PPID (for better parent process ID detection)
+disable=SC2039
+
+# Allow using $PWD (for better current directory detection)
+disable=SC2039
+
+# Allow using $OLDPWD (for better previous directory detection)
+disable=SC2039
+
+# Allow using $SHELL (for better shell detection)
+disable=SC2039
+
+# Allow using $SHELLOPTS (for better shell options detection)
+disable=SC2039
+
+# Allow using $SHLVL (for better shell level detection)
+disable=SC2039
+
+# Allow using $TMOUT (for better timeout detection)
+disable=SC2039
+
+# Allow using $TERM (for better terminal detection)
+disable=SC2039
+
+# Allow using $TMPDIR (for better temporary directory detection)
+disable=SC2039
+
+# Allow using $USER (for better user detection)
+disable=SC2039
+
+# Allow using $USERNAME (for better username detection)
+disable=SC2039
+
+# Allow using $VISUAL (for better visual editor detection)
+disable=SC2039
+
+# Allow using $EDITOR (for better editor detection)
+disable=SC2039
+
+# Allow using $PAGER (for better pager detection)
+disable=SC2039
+
+# Allow using $MANPAGER (for better man pager detection)
+disable=SC2039
+
+# Allow using $MANPATH (for better man path detection)
+disable=SC2039
+
+# Allow using $INFOPATH (for better info path detection)
+disable=SC2039
+
+# Allow using $LESS (for better less detection)
+disable=SC2039
+
+# Allow using $LESSOPEN (for better less open detection)
+disable=SC2039
+
+# Allow using $LESSCLOSE (for better less close detection)
+disable=SC2039
+
+# Allow using $LESSCHARSET (for better less charset detection)
+disable=SC2039
+
+# Allow using $LESSHISTFILE (for better less history file detection)
+disable=SC2039
+
+# Allow using $LESSHISTSIZE (for better less history size detection)
+disable=SC2039
+
+# Allow using $LESSKEY (for better less key detection)
+disable=SC2039
+
+# Allow using $LESSPIPE (for better less pipe detection)
+disable=SC2039
+
+# Allow using $LESS_TERMCAP_mb (for better less termcap detection)
+disable=SC2039
+
+# Allow using $LESS_TERMCAP_md (for better less termcap detection)
+disable=SC2039
+
+# Allow using $LESS_TERMCAP_me (for better less termcap detection)
+disable=SC2039
+
+# Allow using $LESS_TERMCAP_se (for better less termcap detection)
+disable=SC2039
+
+# Allow using $LESS_TERMCAP_so (for better less termcap detection)
+disable=SC2039
+
+# Allow using $LESS_TERMCAP_ue (for better less termcap detection)
+disable=SC2039
+
+# Allow using $LESS_TERMCAP_us (for better less termcap detection)
+disable=SC2039
+
+# Allow using $LS_COLORS (for better ls colors detection)
+disable=SC2039
+
+# Allow using $LS_OPTIONS (for better ls options detection)
+disable=SC2039
+
+# Allow using $LSCOLORS (for better ls colors detection)
+disable=SC2039
+
+# Allow using $CLICOLOR (for better cli color detection)
+disable=SC2039
+
+# Allow using $CLICOLOR_FORCE (for better cli color force detection)
+disable=SC2039
+
+# Allow using $GREP_OPTIONS (for better grep options detection)
+disable=SC2039
+
+# Allow using $GREP_COLOR (for better grep color detection)
+disable=SC2039
+
+# Allow using $GREP_COLORS (for better grep colors detection)
+disable=SC2039
+
+# Allow using $CDPATH (for better cd path detection)
+disable=SC2039
+
+# Allow using $DIRSTACK (for better directory stack detection)
+disable=SC2039
+
+# Allow using $DIRSTACKSIZE (for better directory stack size detection)
+disable=SC2039
+
+# Allow using $FIGNORE (for better file ignore detection)
+disable=SC2039
+
+# Allow using $FPATH (for better function path detection)
+disable=SC2039
+
+# Allow using $GLOBIGNORE (for better glob ignore detection)
+disable=SC2039
+
+# Allow using $HISTCONTROL (for better history control detection)
+disable=SC2039
+
+# Allow using $HISTFILE (for better history file detection)
+disable=SC2039
+
+# Allow using $HISTFILESIZE (for better history file size detection)
+disable=SC2039
+
+# Allow using $HISTIGNORE (for better history ignore detection)
+disable=SC2039
+
+# Allow using $HISTSIZE (for better history size detection)
+disable=SC2039
+
+# Allow using $HISTTIMEFORMAT (for better history time format detection)
+disable=SC2039
+
+# Allow using $HOME (for better home directory detection)
+disable=SC2039
+
+# Allow using $HOSTFILE (for better host file detection)
+disable=SC2039
+
+# Allow using $HOSTNAME (for better hostname detection)
+disable=SC2039
+
+# Allow using $HOSTTYPE (for better host type detection)
+disable=SC2039
+
+# Allow using $IFS (for better internal field separator detection)
+disable=SC2039
+
+# Allow using $IGNOREEOF (for better ignore EOF detection)
+disable=SC2039
+
+# Allow using $INPUTRC (for better input rc detection)
+disable=SC2039
+
+# Allow using $LANG (for better language detection)
+disable=SC2039
+
+# Allow using $LC_ALL (for better locale detection)
+disable=SC2039
+
+# Allow using $LC_COLLATE (for better locale collate detection)
+disable=SC2039
+
+# Allow using $LC_CTYPE (for better locale ctype detection)
+disable=SC2039
+
+# Allow using $LC_MESSAGES (for better locale messages detection)
+disable=SC2039
+
+# Allow using $LC_MONETARY (for better locale monetary detection)
+disable=SC2039
+
+# Allow using $LC_NUMERIC (for better locale numeric detection)
+disable=SC2039
+
+# Allow using $LC_TIME (for better locale time detection)
+disable=SC2039
+
+# Allow using $LINES (for better lines detection)
+disable=SC2039
+
+# Allow using $COLUMNS (for better columns detection)
+disable=SC2039
+
+# Allow using $MACHTYPE (for better machine type detection)
+disable=SC2039
+
+# Allow using $MAILCHECK (for better mail check detection)
+disable=SC2039
+
+# Allow using $MAILPATH (for better mail path detection)
+disable=SC2039
+
+# Allow using $MAIL (for better mail detection)
+disable=SC2039
+
+# Allow using $OPTERR (for better option error detection)
+disable=SC2039
+
+# Allow using $PATH (for better path detection)
+disable=SC2039
+
+# Allow using $POSIXLY_CORRECT (for better POSIX detection)
+disable=SC2039
+
+# Allow using $PROMPT_COMMAND (for better prompt command detection)
+disable=SC2039
+
+# Allow using $PROMPT_DIRTRIM (for better prompt directory trim detection)
+disable=SC2039
+
+# Allow using $PS1 (for better prompt detection)
+disable=SC2039
+
+# Allow using $PS2 (for better prompt detection)
+disable=SC2039
+
+# Allow using $PS3 (for better prompt detection)
+disable=SC2039
+
+# Allow using $PS4 (for better prompt detection)
+disable=SC2039
+
+# Allow using $SHELL (for better shell detection)
+disable=SC2039
+
+# Allow using $TIMEFORMAT (for better time format detection)
+disable=SC2039
+
+# Allow using $TMOUT (for better timeout detection)
+disable=SC2039
+
+# Allow using $TMPDIR (for better temporary directory detection)
+disable=SC2039
+
+# Allow using $auto_resume (for better auto resume detection)
+disable=SC2039
+
+# Allow using $histchars (for better history characters detection)
+disable=SC2039
+
+# Allow using $PROMPT_COMMAND (for better prompt command detection)
+disable=SC2039

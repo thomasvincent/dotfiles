@@ -1,0 +1,814 @@
+#!/usr/bin/env zsh
+
+# .functions
+# Author: Thomas Vincent
+# GitHub: https://github.com/thomasvincent/dotfiles
+#
+# This file contains useful shell functions.
+
+# Make a directory and change to it
+mkcd() {
+  mkdir -p "$1" && cd "$1"
+}
+
+# Change directory and list contents
+cdl() {
+  cd "$1" && ls
+}
+
+# Extract most known archives with one command
+extract() {
+  if [ -f $1 ] ; then
+    case $1 in
+      *.tar.bz2)   tar xjf $1     ;;
+      *.tar.gz)    tar xzf $1     ;;
+      *.bz2)       bunzip2 $1     ;;
+      *.rar)       unrar e $1     ;;
+      *.gz)        gunzip $1      ;;
+      *.tar)       tar xf $1      ;;
+      *.tbz2)      tar xjf $1     ;;
+      *.tgz)       tar xzf $1     ;;
+      *.zip)       unzip $1       ;;
+      *.Z)         uncompress $1  ;;
+      *.7z)        7z x $1        ;;
+      *)           echo "'$1' cannot be extracted via extract()" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+# Create a new directory and enter it
+function md() {
+  mkdir -p "$@" && cd "$@"
+}
+
+# Find shorthand
+function f() {
+  find . -name "$1" 2>&1 | grep -v 'Permission denied'
+}
+
+# List all files, long format, colorized, permissions in octal
+function la(){
+  ls -la "$@" | awk '
+    {
+      k=0;
+      for (i=0;i<=8;i++)
+        k+=((substr($1,i+2,1)~/[rwx]/) *2^(8-i));
+      if (k)
+        printf("%0o ",k);
+      printf(" %9s  %3s %2s %5s  %6s  %s %s %s\n", $3, $6, $7, $8, $5, $9,$10, $11);
+    }'
+}
+
+# Copy w/ progress
+cp_p () {
+  rsync -WavP --human-readable --progress $1 $2
+}
+
+# Get gzipped size
+function gz() {
+  echo "orig size    (bytes): "
+  cat "$1" | wc -c
+  echo "gzipped size (bytes): "
+  gzip -c "$1" | wc -c
+}
+
+# Test if HTTP compression (RFC 2616 + SDCH) is enabled for a given URL.
+# Send a fake UA string for sites that sniff it instead of using the Accept-Encoding header. (Looking at you, ajax.googleapis.com!)
+function httpcompression() {
+  encoding="$(curl -LIs -H 'User-Agent: Mozilla/5 Gecko' -H 'Accept-Encoding: gzip,deflate,compress,sdch' "$1" | grep '^Content-Encoding:')" && echo "$1 is encoded using ${encoding#* }" || echo "$1 is not using any encoding"
+}
+
+# Syntax-highlight JSON strings or files
+# Usage: `json '{"foo":42}'` or `echo '{"foo":42}' | json`
+function json() {
+  if [ -t 0 ]; then # argument
+    python -m json.tool <<< "$*" | pygmentize -l javascript
+  else # pipe
+    python -m json.tool | pygmentize -l javascript
+  fi
+}
+
+# Run `dig` and display the most useful info
+function digga() {
+  dig +nocmd "$1" any +multiline +noall +answer
+}
+
+# Show all the names (CNs and SANs) listed in the SSL certificate for a given domain
+function getcertnames() {
+  if [ -z "${1}" ]; then
+    echo "ERROR: No domain specified."
+    return 1
+  fi
+
+  local domain="${1}"
+  echo "Testing ${domain}…"
+  echo ""; # newline
+
+  local tmp
+  tmp=$(echo -e "GET / HTTP/1.0\nEOT" \
+    | openssl s_client -connect "${domain}:443" 2>&1)
+
+  if [[ "${tmp}" = *"-----BEGIN CERTIFICATE-----"* ]]; then
+    local certText
+    certText=$(echo "${tmp}" \
+      | openssl x509 -text -certopt "no_header, no_serial, no_version, \
+      no_signame, no_validity, no_issuer, no_pubkey, no_sigdump, no_aux")
+    echo "Common Name:"
+    echo ""; # newline
+    echo "${certText}" | grep "Subject:" | sed -e "s/^.*CN=//"
+    echo ""; # newline
+    echo "Subject Alternative Name(s):"
+    echo ""; # newline
+    echo "${certText}" | grep -A 1 "Subject Alternative Name:" \
+      | sed -e "2s/DNS://g" -e "s/ //g" | tr "," "\n" | tail -n +2
+    return 0
+  else
+    echo "ERROR: Certificate not found."
+    return 1
+  fi
+}
+
+# `v` with no arguments opens the current directory in Vim, otherwise opens the given location
+function v() {
+  if [ $# -eq 0 ]; then
+    vim .
+  else
+    vim "$@"
+  fi
+}
+
+# `o` with no arguments opens the current directory, otherwise opens the given location
+function o() {
+  if [ $# -eq 0 ]; then
+    open .
+  else
+    open "$@"
+  fi
+}
+
+# `tre` is a shorthand for `tree` with hidden files and color enabled, ignoring
+# the `.git` directory, listing directories first. The output gets piped into
+# `less` with options to preserve color and line numbers, unless the output is
+# small enough for one screen.
+function tre() {
+  tree -aC -I '.git' --dirsfirst "$@" | less -FRNX
+}
+
+# Create a .tar.gz archive, using `zopfli`, `pigz` or `gzip` for compression
+function targz() {
+  local tmpFile="${1%/}.tar"
+  tar -cf "${tmpFile}" --exclude=".DS_Store" "${1}" || return 1
+
+  size=$(
+    stat -f"%z" "${tmpFile}" 2> /dev/null; # OS X `stat`
+    stat -c"%s" "${tmpFile}" 2> /dev/null # GNU `stat`
+  )
+
+  local cmd=""
+  if (( size < 52428800 )) && hash zopfli 2> /dev/null; then
+    # the .tar file is smaller than 50 MB and Zopfli is available; use it
+    cmd="zopfli"
+  else
+    if hash pigz 2> /dev/null; then
+      cmd="pigz"
+    else
+      cmd="gzip"
+    fi
+  fi
+
+  echo "Compressing .tar using \`${cmd}\`…"
+  "${cmd}" -v "${tmpFile}" || return 1
+  [ -f "${tmpFile}" ] && rm "${tmpFile}"
+  echo "${tmpFile}.gz created successfully."
+}
+
+# Determine size of a file or total size of a directory
+function fs() {
+  if du -b /dev/null > /dev/null 2>&1; then
+    local arg=-sbh
+  else
+    local arg=-sh
+  fi
+  if [[ -n "$@" ]]; then
+    du $arg -- "$@"
+  else
+    du $arg .[^.]* *
+  fi
+}
+
+# Use Git's colored diff when available
+hash git &>/dev/null
+if [ $? -eq 0 ]; then
+  function diff() {
+    git diff --no-index --color-words "$@"
+  }
+fi
+
+# Create a data URL from a file
+function dataurl() {
+  local mimeType=$(file -b --mime-type "$1")
+  if [[ $mimeType == text/* ]]; then
+    mimeType="${mimeType};charset=utf-8"
+  fi
+  echo "data:${mimeType};base64,$(openssl base64 -in "$1" | tr -d '\n')"
+}
+
+# Create a git.io short URL
+function gitio() {
+  if [ -z "${1}" -o -z "${2}" ]; then
+    echo "Usage: \`gitio slug url\`"
+    return 1
+  fi
+  curl -i https://git.io/ -F "url=${2}" -F "code=${1}"
+}
+
+# Start an HTTP server from a directory, optionally specifying the port
+function server() {
+  local port="${1:-8000}"
+  sleep 1 && open "http://localhost:${port}/" &
+  # Set the default Content-Type to `text/plain` instead of `application/octet-stream`
+  # And serve everything as UTF-8 (although not technically correct, this doesn't break anything for binary files)
+  python -c $'import SimpleHTTPServer;\nmap = SimpleHTTPServer.SimpleHTTPRequestHandler.extensions_map;\nmap[""] = "text/plain";\nfor key, value in map.items():\n\tmap[key] = value + ";charset=UTF-8";\nSimpleHTTPServer.test();' "$port"
+}
+
+# Compare original and gzipped file size
+function gz() {
+  local origsize=$(wc -c < "$1")
+  local gzipsize=$(gzip -c "$1" | wc -c)
+  local ratio=$(echo "$gzipsize * 100 / $origsize" | bc -l)
+  printf "orig: %d bytes\n" "$origsize"
+  printf "gzip: %d bytes (%2.2f%%)\n" "$gzipsize" "$ratio"
+}
+
+# Run `dig` and display the most useful info
+function digga() {
+  dig +nocmd "$1" any +multiline +noall +answer
+}
+
+# Show all the names (CNs and SANs) listed in the SSL certificate for a given domain
+function getcertnames() {
+  if [ -z "${1}" ]; then
+    echo "ERROR: No domain specified."
+    return 1
+  fi
+
+  local domain="${1}"
+  echo "Testing ${domain}…"
+  echo ""; # newline
+
+  local tmp
+  tmp=$(echo -e "GET / HTTP/1.0\nEOT" \
+    | openssl s_client -connect "${domain}:443" 2>&1)
+
+  if [[ "${tmp}" = *"-----BEGIN CERTIFICATE-----"* ]]; then
+    local certText
+    certText=$(echo "${tmp}" \
+      | openssl x509 -text -certopt "no_header, no_serial, no_version, \
+      no_signame, no_validity, no_issuer, no_pubkey, no_sigdump, no_aux")
+    echo "Common Name:"
+    echo ""; # newline
+    echo "${certText}" | grep "Subject:" | sed -e "s/^.*CN=//"
+    echo ""; # newline
+    echo "Subject Alternative Name(s):"
+    echo ""; # newline
+    echo "${certText}" | grep -A 1 "Subject Alternative Name:" \
+      | sed -e "2s/DNS://g" -e "s/ //g" | tr "," "\n" | tail -n +2
+    return 0
+  else
+    echo "ERROR: Certificate not found."
+    return 1
+  fi
+}
+
+# Normalize `open` across Linux, macOS, and Windows.
+# This is needed to make the `o` function (see below) cross-platform.
+if [ ! $(uname -s) = 'Darwin' ]; then
+  if grep -q Microsoft /proc/version; then
+    # Ubuntu on Windows using the Linux subsystem
+    alias open='explorer.exe'
+  else
+    alias open='xdg-open'
+  fi
+fi
+
+# `o` with no arguments opens the current directory, otherwise opens the given
+# location
+function o() {
+  if [ $# -eq 0 ]; then
+    open .
+  else
+    open "$@"
+  fi
+}
+
+# `tre` is a shorthand for `tree` with hidden files and color enabled, ignoring
+# the `.git` directory, listing directories first. The output gets piped into
+# `less` with options to preserve color and line numbers, unless the output is
+# small enough for one screen.
+function tre() {
+  tree -aC -I '.git|node_modules|bower_components' --dirsfirst "$@" | less -FRNX
+}
+
+# Call from a local repo to open the repository on github/bitbucket in browser
+function repo() {
+  local giturl=$(git config --get remote.origin.url | sed 's/git@/\/\//g' | sed 's/\.git$//' | sed 's/https://g' | sed 's/:/\//g')
+  if [[ $giturl == "" ]]; then
+    echo "Not a git repository or no remote.origin.url set"
+    return 1
+  fi
+  local gitbranch=$(git rev-parse --abbrev-ref HEAD)
+  local giturl="https:${giturl}"
+
+  if [[ $gitbranch != "master" ]]; then
+    if echo "${giturl}" | grep -i "bitbucket" > /dev/null ; then
+      local giturl="${giturl}/branch/${gitbranch}"
+    else
+      local giturl="${giturl}/tree/${gitbranch}"
+    fi
+  fi
+
+  echo $giturl
+  open $giturl
+}
+
+# Get colors in manual pages
+function man() {
+  env \
+    LESS_TERMCAP_mb=$(printf "\e[1;31m") \
+    LESS_TERMCAP_md=$(printf "\e[1;31m") \
+    LESS_TERMCAP_me=$(printf "\e[0m") \
+    LESS_TERMCAP_se=$(printf "\e[0m") \
+    LESS_TERMCAP_so=$(printf "\e[1;44;33m") \
+    LESS_TERMCAP_ue=$(printf "\e[0m") \
+    LESS_TERMCAP_us=$(printf "\e[1;32m") \
+    man "$@"
+}
+
+# Use fzf to find and cd into a directory
+function fcd() {
+  local dir
+  dir=$(find ${1:-.} -path '*/\.*' -prune \
+                  -o -type d -print 2> /dev/null | fzf +m) &&
+  cd "$dir"
+}
+
+# Use fzf to find a file and open it in the default editor
+function fe() {
+  local file
+  file=$(fzf --query="$1" --select-1 --exit-0)
+  [ -n "$file" ] && ${EDITOR:-vim} "$file"
+}
+
+# Use fzf to find a file and open it in VS Code
+function fcode() {
+  local file
+  file=$(fzf --query="$1" --select-1 --exit-0)
+  [ -n "$file" ] && code "$file"
+}
+
+# Use fzf to search through git commits
+function fco() {
+  local commits commit
+  commits=$(git log --pretty=oneline --abbrev-commit --reverse) &&
+  commit=$(echo "$commits" | fzf --tac +s +m -e) &&
+  git checkout $(echo "$commit" | sed "s/ .*//")
+}
+
+# Use fzf to search through git branches
+function fbr() {
+  local branches branch
+  branches=$(git --no-pager branch -vv) &&
+  branch=$(echo "$branches" | fzf +m) &&
+  git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
+}
+
+# Use fzf to search through git tags
+function ftag() {
+  local tags tag
+  tags=$(git tag --sort -version:refname) &&
+  tag=$(echo "$tags" | fzf --height 50% --reverse) &&
+  git checkout tags/$tag
+}
+
+# Use fzf to search through git commits and show the diff
+function fshow() {
+  local out sha q
+  while out=$(
+      git log --decorate=short --graph --oneline --color=always |
+      fzf --ansi --multi --no-sort --reverse --query="$q" --print-query); do
+    q=$(head -1 <<< "$out")
+    sha=$(head -2 <<< "$out" | tail -1 | awk '{print $2}')
+    [ -n "$sha" ] && git show --color=always $sha | less -R
+  done
+}
+
+# Use fzf to search through git stashes
+function fstash() {
+  local out q k sha
+  while out=$(
+    git stash list --pretty="%C(yellow)%h %>(14)%Cgreen%cr %C(blue)%gs" |
+    fzf --ansi --no-sort --query="$q" --print-query \
+        --expect=ctrl-d,ctrl-b);
+  do
+    q=$(head -1 <<< "$out")
+    k=$(head -2 <<< "$out" | tail -1)
+    sha=$(tail -1 <<< "$out" | cut -d' ' -f1)
+    [ -z "$sha" ] && continue
+    if [ "$k" = 'ctrl-d' ]; then
+      git diff $sha
+    elif [ "$k" = 'ctrl-b' ]; then
+      git stash branch "stash-$sha" $sha
+      break;
+    else
+      git stash show -p $sha
+    fi
+  done
+}
+
+# Use fzf to search through docker containers
+function fdock() {
+  local container
+  container=$(docker ps --format "{{.Names}}" | fzf)
+  if [[ -n $container ]]; then
+    docker exec -it $container /bin/bash || docker exec -it $container /bin/sh
+  fi
+}
+
+# Use fzf to search through docker images
+function fdocki() {
+  local image
+  image=$(docker images --format "{{.Repository}}:{{.Tag}}" | fzf)
+  if [[ -n $image ]]; then
+    docker run -it $image /bin/bash || docker run -it $image /bin/sh
+  fi
+}
+
+# Use fzf to search through kubernetes pods
+function fkube() {
+  local pod
+  pod=$(kubectl get pods --all-namespaces | fzf | awk '{print $2 " -n " $1}')
+  if [[ -n $pod ]]; then
+    kubectl exec -it $pod -- /bin/bash || kubectl exec -it $pod -- /bin/sh
+  fi
+}
+
+# Use fzf to search through kubernetes contexts
+function fkubectx() {
+  local context
+  context=$(kubectl config get-contexts | fzf | awk '{print $1}')
+  if [[ -n $context ]]; then
+    kubectl config use-context $context
+  fi
+}
+
+# Use fzf to search through kubernetes namespaces
+function fkubens() {
+  local namespace
+  namespace=$(kubectl get namespaces | fzf | awk '{print $1}')
+  if [[ -n $namespace ]]; then
+    kubectl config set-context --current --namespace=$namespace
+  fi
+}
+
+# Use fzf to search through AWS profiles
+function faws() {
+  local profile
+  profile=$(grep '\[profile' ~/.aws/config | sed -e 's/\[profile \(.*\)\]/\1/' | fzf)
+  if [[ -n $profile ]]; then
+    export AWS_PROFILE=$profile
+    echo "AWS Profile set to $profile"
+  fi
+}
+
+# Use fzf to search through AWS EC2 instances
+function fec2() {
+  local instance
+  instance=$(aws ec2 describe-instances --query 'Reservations[].Instances[].[InstanceId, Tags[?Key==`Name`].Value | [0], State.Name, PrivateIpAddress, PublicIpAddress]' --output text | column -t | fzf | awk '{print $1}')
+  if [[ -n $instance ]]; then
+    aws ec2 describe-instances --instance-ids $instance
+  fi
+}
+
+# Use fzf to search through AWS S3 buckets
+function fs3() {
+  local bucket
+  bucket=$(aws s3 ls | awk '{print $3}' | fzf)
+  if [[ -n $bucket ]]; then
+    aws s3 ls s3://$bucket
+  fi
+}
+
+# Use fzf to search through Terraform workspaces
+function ftfw() {
+  local workspace
+  workspace=$(terraform workspace list | sed 's/\* //g' | fzf)
+  if [[ -n $workspace ]]; then
+    terraform workspace select $workspace
+  fi
+}
+
+# Use fzf to search through Terraform resources
+function ftfr() {
+  local resource
+  resource=$(terraform state list | fzf)
+  if [[ -n $resource ]]; then
+    terraform state show $resource
+  fi
+}
+
+# Use fzf to search through Terraform outputs
+function ftfo() {
+  local output
+  output=$(terraform output | awk '{print $1}' | fzf)
+  if [[ -n $output ]]; then
+    terraform output $output
+  fi
+}
+
+# Use fzf to search through npm scripts
+function fnpm() {
+  local script
+  script=$(cat package.json | jq -r '.scripts | keys[] ' | fzf)
+  if [[ -n $script ]]; then
+    npm run $script
+  fi
+}
+
+# Use fzf to search through yarn scripts
+function fyarn() {
+  local script
+  script=$(cat package.json | jq -r '.scripts | keys[] ' | fzf)
+  if [[ -n $script ]]; then
+    yarn $script
+  fi
+}
+
+# Use fzf to search through composer scripts
+function fcomposer() {
+  local script
+  script=$(cat composer.json | jq -r '.scripts | keys[] ' | fzf)
+  if [[ -n $script ]]; then
+    composer run-script $script
+  fi
+}
+
+# Use fzf to search through make targets
+function fmake() {
+  local target
+  target=$(make -qp | awk -F':' '/^[a-zA-Z0-9][^$#\/\t=]*:([^=]|$)/ {split($1,A,/ /);for(i in A)print A[i]}' | sort -u | fzf)
+  if [[ -n $target ]]; then
+    make $target
+  fi
+}
+
+# Use fzf to search through environment variables
+function fenv() {
+  local var
+  var=$(env | fzf)
+  if [[ -n $var ]]; then
+    echo $var
+  fi
+}
+
+# Use fzf to search through aliases
+function falias() {
+  local alias
+  alias=$(alias | fzf)
+  if [[ -n $alias ]]; then
+    echo $alias
+  fi
+}
+
+# Use fzf to search through functions
+function ffunc() {
+  local func
+  func=$(declare -f | grep -E '^[a-zA-Z0-9_]+ \(\)' | sed 's/ ()//' | fzf)
+  if [[ -n $func ]]; then
+    declare -f $func
+  fi
+}
+
+# Use fzf to search through history
+function fhist() {
+  local cmd
+  cmd=$(history | fzf | sed 's/ *[0-9]* *//')
+  if [[ -n $cmd ]]; then
+    echo $cmd
+  fi
+}
+
+# Use fzf to search through processes
+function fproc() {
+  local pid
+  pid=$(ps -ef | sed 1d | fzf -m | awk '{print $2}')
+  if [[ -n $pid ]]; then
+    echo $pid
+  fi
+}
+
+# Use fzf to search through ports
+function fport() {
+  local port
+  port=$(sudo lsof -i -P -n | fzf | awk '{print $9}')
+  if [[ -n $port ]]; then
+    echo $port
+  fi
+}
+
+# Use fzf to search through files and directories
+function ff() {
+  local file
+  file=$(find . -type f -not -path "*/\.*" | fzf)
+  if [[ -n $file ]]; then
+    echo $file
+  fi
+}
+
+# Use fzf to search through directories
+function fd() {
+  local dir
+  dir=$(find . -type d -not -path "*/\.*" | fzf)
+  if [[ -n $dir ]]; then
+    echo $dir
+  fi
+}
+
+# Use fzf to search through files and directories with preview
+function ffp() {
+  local file
+  file=$(find . -type f -not -path "*/\.*" | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    echo $file
+  fi
+}
+
+# Use fzf to search through directories with preview
+function fdp() {
+  local dir
+  dir=$(find . -type d -not -path "*/\.*" | fzf --preview "ls -la {}")
+  if [[ -n $dir ]]; then
+    echo $dir
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep
+function frg() {
+  local file
+  file=$(rg --files | fzf)
+  if [[ -n $file ]]; then
+    echo $file
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview
+function frgp() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    echo $file
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and open in editor
+function frge() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    ${EDITOR:-vim} $file
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and open in VS Code
+function frgc() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    code $file
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and open in browser
+function frgb() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    open $file
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and copy to clipboard
+function frgcp() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    echo $file | pbcopy
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and copy content to clipboard
+function frgcpc() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    cat $file | pbcopy
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content
+function frgcat() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat $file
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers
+function frgcatn() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n $file
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers and syntax highlighting
+function frgcats() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n --color=always $file
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers and syntax highlighting and paging
+function frgcatp() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n --color=always $file | less -R
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers and syntax highlighting and paging and line wrapping
+function frgcatw() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n --color=always --wrap=never $file | less -R
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers and syntax highlighting and paging and line wrapping and line numbers
+function frgcatwn() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n --color=always --wrap=never $file | less -RN
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers and syntax highlighting and paging and line wrapping and line numbers and line highlighting
+function frgcatwnh() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n --color=always --wrap=never $file | less -RNF
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers and syntax highlighting and paging and line wrapping and line numbers and line highlighting and line numbers
+function frgcatwnhn() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n --color=always --wrap=never $file | less -RNFS
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers and syntax highlighting and paging and line wrapping and line numbers and line highlighting and line numbers and line numbers
+function frgcatwhnnn() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n --color=always --wrap=never $file | less -RNFSX
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers and syntax highlighting and paging and line wrapping and line numbers and line highlighting and line numbers and line numbers and line numbers
+function frgcatwhnnnn() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n --color=always --wrap=never $file | less -RNFSXM
+  fi
+}
+
+# Use fzf to search through files and directories with ripgrep and preview and print content with line numbers and syntax highlighting and paging and line wrapping and line numbers and line highlighting and line numbers and line numbers and line numbers and line numbers
+function frgcatwhnnnnnn() {
+  local file
+  file=$(rg --files | fzf --preview "bat --style=numbers --color=always {}")
+  if [[ -n $file ]]; then
+    bat -n --color=always --wrap=never $file | less -

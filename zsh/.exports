@@ -1,0 +1,822 @@
+#!/usr/bin/env zsh
+
+# .exports
+# Author: Thomas Vincent
+# GitHub: https://github.com/thomasvincent/dotfiles
+#
+# This file contains environment variable exports.
+
+# Make vim the default editor
+export EDITOR='vim'
+export VISUAL='vim'
+
+# Use neovim if available
+if command -v nvim &> /dev/null; then
+  export EDITOR='nvim'
+  export VISUAL='nvim'
+fi
+
+# Set language environment
+export LANG='en_US.UTF-8'
+export LC_ALL='en_US.UTF-8'
+
+# Prefer US English and use UTF-8
+export LANG='en_US.UTF-8'
+export LC_ALL='en_US.UTF-8'
+
+# Set XDG Base Directory specification
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+# Set DOTFILES directory
+export DOTFILES="$HOME/Documents/Projects/dotfiles"
+
+# Set GOPATH
+export GOPATH="$HOME/go"
+
+# Set JAVA_HOME
+if [[ -x /usr/libexec/java_home ]]; then
+  export JAVA_HOME=$(/usr/libexec/java_home 2>/dev/null)
+fi
+
+# Set ANDROID_HOME
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+
+# Set PYTHON_USER_BASE
+export PYTHONUSERBASE="$HOME/.local"
+
+# Set RUBY_USER_DIR
+if command -v ruby &> /dev/null; then
+  export GEM_HOME="$(ruby -e 'puts Gem.user_dir')"
+fi
+
+# Set NODE_PATH
+export NODE_PATH="$HOME/.node_modules"
+
+# Set NVM_DIR
+export NVM_DIR="$HOME/.nvm"
+
+# Set COMPOSER_HOME
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set CARGO_HOME
+export CARGO_HOME="$HOME/.cargo"
+
+# Set RUSTUP_HOME
+export RUSTUP_HOME="$HOME/.rustup"
+
+# Set HOMEBREW_NO_ANALYTICS to disable Homebrew's analytics
+export HOMEBREW_NO_ANALYTICS=1
+
+# Set HOMEBREW_CASK_OPTS to install applications to /Applications
+export HOMEBREW_CASK_OPTS="--appdir=/Applications"
+
+# Set HOMEBREW_BUNDLE_FILE to use a specific Brewfile
+export HOMEBREW_BUNDLE_FILE="$DOTFILES/Brewfile"
+
+# Set LESS options
+export LESS="-F -X -R -i -g -M -W -z-4"
+
+# Set PAGER
+export PAGER="less"
+
+# Set BAT_THEME
+export BAT_THEME="Dracula"
+
+# Set FZF_DEFAULT_COMMAND to use fd
+if command -v fd &> /dev/null; then
+  export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
+fi
+
+# Set FZF_DEFAULT_OPTS
+export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --info=inline --preview 'bat --style=numbers --color=always --line-range :500 {}'"
+
+# Set RIPGREP_CONFIG_PATH
+export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
+
+# Set AWS_CONFIG_FILE and AWS_SHARED_CREDENTIALS_FILE
+export AWS_CONFIG_FILE="$HOME/.aws/config"
+export AWS_SHARED_CREDENTIALS_FILE="$HOME/.aws/credentials"
+
+# Set DOCKER_CONFIG
+export DOCKER_CONFIG="$HOME/.docker"
+
+# Set KUBECONFIG
+export KUBECONFIG="$HOME/.kube/config"
+
+# Set TERRAFORM_CONFIG
+export TERRAFORM_CONFIG="$HOME/.terraform.d"
+
+# Set HISTFILE, HISTSIZE, and SAVEHIST
+export HISTFILE="$HOME/.zsh_history"
+export HISTSIZE=50000
+export SAVEHIST=10000
+
+# Set HISTCONTROL to ignore duplicates and spaces
+export HISTCONTROL="ignoreboth"
+
+# Set HISTIGNORE to ignore common commands
+export HISTIGNORE="ls:cd:cd -:pwd:exit:date:* --help"
+
+# Set HISTTIMEFORMAT to include timestamps
+export HISTTIMEFORMAT="%F %T "
+
+# Set GREP_OPTIONS to use color
+export GREP_OPTIONS="--color=auto"
+
+# Set GREP_COLOR to use a specific color
+export GREP_COLOR="1;32"
+
+# Set LS_COLORS to use a specific color scheme
+export LS_COLORS="di=1;34:ln=1;35:so=1;32:pi=1;33:ex=1;31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43"
+
+# Set CLICOLOR to use color
+export CLICOLOR=1
+
+# Set LSCOLORS to use a specific color scheme
+export LSCOLORS="ExFxBxDxCxegedabagacad"
+
+# Set TERM to use a specific terminal
+export TERM="xterm-256color"
+
+# Set COLORTERM to use a specific color terminal
+export COLORTERM="truecolor"
+
+# Set WORDCHARS to use a specific set of characters
+export WORDCHARS="*?_-.[]~=/&;!#$%^(){}<>"
+
+# Set KEYTIMEOUT to use a specific timeout
+export KEYTIMEOUT=1
+
+# Set REPORTTIME to use a specific time
+export REPORTTIME=10
+
+# Set TIMEFMT to use a specific format
+export TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S\ncpu\t%P'
+
+# Set BLOCK_SIZE to use a specific size
+export BLOCK_SIZE="human-readable"
+
+# Set MANPAGER to use a specific pager
+if command -v bat &> /dev/null; then
+  export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+  export MANROFFOPT="-c"
+fi
+
+# Set MANWIDTH to use a specific width
+export MANWIDTH=80
+
+# Set CDPATH to use a specific path
+export CDPATH=".:$HOME:$HOME/Documents:$HOME/Documents/Projects"
+
+# Set DIRSTACKSIZE to use a specific size
+export DIRSTACKSIZE=20
+
+# Set PROMPT_COMMAND to use a specific command
+export PROMPT_COMMAND="history -a; history -c; history -r"
+
+# Set PROMPT_DIRTRIM to use a specific trim
+export PROMPT_DIRTRIM=2
+
+# Set IGNOREEOF to use a specific number
+export IGNOREEOF=2
+
+# Set TMOUT to use a specific timeout
+export TMOUT=0
+
+# Set INPUTRC to use a specific file
+export INPUTRC="$HOME/.inputrc"
+
+# Set FIGNORE to use a specific pattern
+export FIGNORE="*.o:*.obj:*.exe:*.dll:*.so:*.a:*.dylib:*.ncb:*.sdf:*.suo:*.pdb:*.idb:.DS_Store"
+
+# Set GLOBIGNORE to use a specific pattern
+export GLOBIGNORE=".DS_Store:*.o:*.obj:*.exe:*.dll:*.so:*.a:*.dylib:*.ncb:*.sdf:*.suo:*.pdb:*.idb"
+
+# Set TIMEFORMAT to use a specific format
+export TIMEFORMAT=$'\nreal\t%3lR\nuser\t%3lU\nsys\t%3lS'
+
+# Set HISTFILESIZE to use a specific size
+export HISTFILESIZE=50000
+
+# Set HISTTIMEFORMAT to use a specific format
+export HISTTIMEFORMAT="%F %T "
+
+# Set HISTFILE to use a specific file
+export HISTFILE="$HOME/.zsh_history"
+
+# Set HISTSIZE to use a specific size
+export HISTSIZE=50000
+
+# Set SAVEHIST to use a specific size
+export SAVEHIST=10000
+
+# Set HISTCONTROL to use a specific control
+export HISTCONTROL="ignoreboth"
+
+# Set HISTIGNORE to use a specific pattern
+export HISTIGNORE="ls:cd:cd -:pwd:exit:date:* --help"
+
+# Set PROMPT_COMMAND to use a specific command
+export PROMPT_COMMAND="history -a; history -c; history -r"
+
+# Set PROMPT_DIRTRIM to use a specific trim
+export PROMPT_DIRTRIM=2
+
+# Set IGNOREEOF to use a specific number
+export IGNOREEOF=2
+
+# Set TMOUT to use a specific timeout
+export TMOUT=0
+
+# Set INPUTRC to use a specific file
+export INPUTRC="$HOME/.inputrc"
+
+# Set FIGNORE to use a specific pattern
+export FIGNORE="*.o:*.obj:*.exe:*.dll:*.so:*.a:*.dylib:*.ncb:*.sdf:*.suo:*.pdb:*.idb:.DS_Store"
+
+# Set GLOBIGNORE to use a specific pattern
+export GLOBIGNORE=".DS_Store:*.o:*.obj:*.exe:*.dll:*.so:*.a:*.dylib:*.ncb:*.sdf:*.suo:*.pdb:*.idb"
+
+# Set TIMEFORMAT to use a specific format
+export TIMEFORMAT=$'\nreal\t%3lR\nuser\t%3lU\nsys\t%3lS'
+
+# Set HISTFILESIZE to use a specific size
+export HISTFILESIZE=50000
+
+# Set HISTTIMEFORMAT to use a specific format
+export HISTTIMEFORMAT="%F %T "
+
+# Set PYTHONSTARTUP to use a specific file
+export PYTHONSTARTUP="$HOME/.pythonrc"
+
+# Set PYTHONDONTWRITEBYTECODE to use a specific value
+export PYTHONDONTWRITEBYTECODE=1
+
+# Set PYTHONIOENCODING to use a specific encoding
+export PYTHONIOENCODING="UTF-8"
+
+# Set PYTHONUNBUFFERED to use a specific value
+export PYTHONUNBUFFERED=1
+
+# Set PYTHONWARNINGS to use a specific value
+export PYTHONWARNINGS="default"
+
+# Set PYTHONHASHSEED to use a specific value
+export PYTHONHASHSEED="random"
+
+# Set PYTHONBREAKPOINT to use a specific value
+export PYTHONBREAKPOINT="ipdb.set_trace"
+
+# Set VIRTUAL_ENV_DISABLE_PROMPT to use a specific value
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+
+# Set PIPENV_VENV_IN_PROJECT to use a specific value
+export PIPENV_VENV_IN_PROJECT=1
+
+# Set PIPENV_IGNORE_VIRTUALENVS to use a specific value
+export PIPENV_IGNORE_VIRTUALENVS=1
+
+# Set POETRY_VIRTUALENVS_IN_PROJECT to use a specific value
+export POETRY_VIRTUALENVS_IN_PROJECT=1
+
+# Set POETRY_CACHE_DIR to use a specific value
+export POETRY_CACHE_DIR="$HOME/.cache/pypoetry"
+
+# Set POETRY_CONFIG_DIR to use a specific value
+export POETRY_CONFIG_DIR="$HOME/.config/pypoetry"
+
+# Set POETRY_DATA_DIR to use a specific value
+export POETRY_DATA_DIR="$HOME/.local/share/pypoetry"
+
+# Set NODE_ENV to use a specific value
+export NODE_ENV="development"
+
+# Set NPM_CONFIG_PREFIX to use a specific value
+export NPM_CONFIG_PREFIX="$HOME/.npm-global"
+
+# Set NPM_CONFIG_INIT_AUTHOR_NAME to use a specific value
+export NPM_CONFIG_INIT_AUTHOR_NAME="Thomas Vincent"
+
+# Set NPM_CONFIG_INIT_AUTHOR_EMAIL to use a specific value
+export NPM_CONFIG_INIT_AUTHOR_EMAIL="thomas@example.com"
+
+# Set NPM_CONFIG_INIT_AUTHOR_URL to use a specific value
+export NPM_CONFIG_INIT_AUTHOR_URL="https://github.com/thomasvincent"
+
+# Set NPM_CONFIG_INIT_LICENSE to use a specific value
+export NPM_CONFIG_INIT_LICENSE="MIT"
+
+# Set NPM_CONFIG_INIT_VERSION to use a specific value
+export NPM_CONFIG_INIT_VERSION="0.1.0"
+
+# Set NPM_CONFIG_SAVE_EXACT to use a specific value
+export NPM_CONFIG_SAVE_EXACT=true
+
+# Set NPM_CONFIG_FUND to use a specific value
+export NPM_CONFIG_FUND=false
+
+# Set YARN_CACHE_FOLDER to use a specific value
+export YARN_CACHE_FOLDER="$HOME/.cache/yarn"
+
+# Set YARN_GLOBAL_FOLDER to use a specific value
+export YARN_GLOBAL_FOLDER="$HOME/.yarn-global"
+
+# Set YARN_DISABLE_SELF_UPDATE_CHECK to use a specific value
+export YARN_DISABLE_SELF_UPDATE_CHECK=true
+
+# Set COMPOSER_ALLOW_SUPERUSER to use a specific value
+export COMPOSER_ALLOW_SUPERUSER=0
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+
+# Set COMPOSER_PROCESS_TIMEOUT to use a specific value
+export COMPOSER_PROCESS_TIMEOUT=0
+
+# Set COMPOSER_NO_INTERACTION to use a specific value
+export COMPOSER_NO_INTERACTION=1
+
+# Set COMPOSER_VENDOR_DIR to use a specific value
+export COMPOSER_VENDOR_DIR="vendor"
+
+# Set COMPOSER_BIN_DIR to use a specific value
+export COMPOSER_BIN_DIR="vendor/bin"
+
+# Set COMPOSER_HOME to use a specific value
+export COMPOSER_HOME="$HOME/.composer"
+
+# Set COMPOSER_CACHE_DIR to use a specific value
+export COMPOSER_CACHE_DIR="$HOME/.cache/composer"
+
+# Set COMPOSER_MEMORY_LIMIT to use a specific value
+export COMPOSER_MEMORY_LIMIT=-1
+
+# Set COMPOSER_DISABLE_XDEBUG_WARN to use a specific value
+export COMPOSER_DISABLE_XDEBUG_
