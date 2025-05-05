@@ -1,0 +1,19 @@
+# Local configuration files that shouldn't be committed
+.zsh/local.zsh
+.zsh/secrets.zsh
+
+# Backup directories
+*_backup_*/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Cache and temp files
+.zsh/cache/
+.zsh/logs/
+
+# Environment-specific files
+.env
