@@ -220,6 +220,16 @@ fi
 # Ensure path arrays don't contain duplicates
 typeset -U PATH path fpath
 
+# Fix for Terraform completion
+if command -v terraform &>/dev/null; then
+  complete -o nospace -C $(which terraform) terraform 2>/dev/null || true
+fi
+
+# Build BAT cache if needed
+if command -v bat &>/dev/null && [[ ! -f "$HOME/.cache/bat/themes.bin" ]]; then
+  bat cache --build &>/dev/null || true
+fi
+
 # Report startup time if taking longer than 0.5 seconds
 if [[ -n "$ZSHRC_START_TIME" ]]; then
   ZSHRC_END_TIME=$EPOCHREALTIME
@@ -228,8 +238,7 @@ if [[ -n "$ZSHRC_START_TIME" ]]; then
   unset ZSHRC_START_TIME ZSHRC_END_TIME ZSHRC_LOAD_TIME
 fi
 
-# Show profiling report if enabled (only if function exists)
-(( $+functions[zsh_profile_report] )) && zsh_profile_report || true
-
-# Print welcome message and platform info
+# Welcome message only (no error-prone reporting functions)
 echo "👋 Welcome back, ${USER}! Running on $(uname) - Platform: ${PLATFORM:=unknown}"
+autoload -U +X bashcompinit && bashcompinit
+complete -o nospace -C /opt/homebrew/bin/terraform terraform

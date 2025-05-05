@@ -65,9 +65,9 @@ dcleanall() {
 }
 
 # Get inside a running container
-dexec() {
+function docker_exec() {
   if [[ -z "$1" ]]; then
-    echo "Usage: dexec <container_name> [command]"
+    echo "Usage: docker_exec <container_name> [command]"
     return 1
   fi
   
@@ -76,6 +76,7 @@ dexec() {
   
   docker exec -it "$container" "$cmd"
 }
+alias dexec='docker_exec'
 
 # Show container stats
 dstats() {
