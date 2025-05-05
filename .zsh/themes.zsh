@@ -156,13 +156,35 @@ load_theme() {
   
   local theme_file="$THEMES_DIR/${theme_name}.theme"
   
+  # Create default theme if it doesn't exist
+  if [[ ! -f "$THEMES_DIR/dark.theme" ]]; then
+    # Create parent directory if needed
+    mkdir -p "$THEMES_DIR"
+    
+    # Create a basic dark theme
+    cat > "$THEMES_DIR/dark.theme" << 'EOL'
+# Dark Theme
+export BAT_THEME="ansi"
+export FZF_DEFAULT_OPTS="--color=dark"
+export THEME_MODE="dark"
+EOL
+    
+    echo "Created default dark theme"
+  fi
+  
+  # Now use the theme
   if [[ -f "$theme_file" ]]; then
     source "$theme_file"
     echo "$theme_name" > "$CURRENT_THEME_FILE"
     echo "Switched to ${theme_name} theme"
   else
-    echo "Theme '${theme_name}' not found"
-    return 1
+    if [[ -f "$THEMES_DIR/dark.theme" ]]; then
+      source "$THEMES_DIR/dark.theme"
+      echo "dark" > "$CURRENT_THEME_FILE"
+      echo "Theme '${theme_name}' not found, using dark theme instead"
+    else
+      echo "No themes available. Using system defaults."
+    fi
   fi
 }
 

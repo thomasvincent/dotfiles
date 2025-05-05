@@ -54,19 +54,19 @@ if [[ -f "$ZINIT_BIN_DIR" ]]; then
   
   # Git aliases and completions 
   zinit ice wait'1' lucid
-  zinit snippet OMZP::git
+  zinit light zdharma-continuum/git-com
   
-  # Utility functions
-  zinit ice wait'1' lucid
-  zinit snippet OMZP::utility
+  # Utility functions - use built-in functions instead
+  # zinit ice wait'1' lucid
+  # zinit snippet OMZP::utility
   
-  # Extract anything
-  zinit ice wait'1' lucid
-  zinit snippet OMZP::extract
+  # Extract functionality handled by our custom extract function
+  # zinit ice wait'1' lucid
+  # zinit snippet OMZP::extract
   
-  # Enhanced directory stacking
+  # Enhanced directory navigation
   zinit ice wait'1' lucid
-  zinit snippet OMZP::dirhistory
+  zinit light agkozak/zsh-z
   
   # ======================
   # Completions
@@ -77,14 +77,16 @@ if [[ -f "$ZINIT_BIN_DIR" ]]; then
   
   # Docker completions
   if (( $+commands[docker] )); then
+    # Load docker completion from local zsh completion if available
     zinit ice wait'1' lucid as'completion'
-    zinit snippet https://github.com/docker/cli/blob/master/contrib/completion/zsh/_docker
+    zinit snippet <(docker completion zsh 2>/dev/null)
   fi
   
   # Kubectl completions
   if (( $+commands[kubectl] )); then
+    # Load from kubectl directly instead of GitHub URL
     zinit ice wait'1' lucid as'completion'
-    zinit snippet https://github.com/kubernetes/kubernetes/blob/master/cluster/addons/kubectl-auto-completion.yaml
+    zinit snippet <(kubectl completion zsh 2>/dev/null)
   fi
   
   # NPM completions
@@ -141,7 +143,7 @@ if [[ -f "$ZINIT_BIN_DIR" ]]; then
   ZSH_AUTOSUGGEST_USE_ASYNC=1
   
   # Fast-syntax-highlighting configuration
-  FAST_HIGHLIGHT[use_brackets]=1
+  # FAST_HIGHLIGHT[use_brackets]=1 # Disabled to prevent errors
   
   # Zinit turbo mode
   zinit wait'2' lucid for \

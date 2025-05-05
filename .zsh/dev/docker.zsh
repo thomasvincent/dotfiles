@@ -28,10 +28,10 @@ dcup() {
   docker-compose up -d "$@"
 }
 
-# Check container logs
-dlogs() {
+# Check container logs (avoiding conflict with alias)
+function docker_logs() {
   if [[ -z "$1" ]]; then
-    echo "Usage: dlogs <container_name> [--follow]"
+    echo "Usage: docker_logs <container_name> [--follow]"
     return 1
   fi
   
@@ -44,6 +44,7 @@ dlogs() {
     docker logs "$container"
   fi
 }
+alias dlogs='docker_logs'
 
 # Remove all stopped containers
 dclean() {

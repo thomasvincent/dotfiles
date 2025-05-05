@@ -6,10 +6,11 @@ lock() {
   /System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend
 }
 
-# Force empty trash
-emptytrash() {
+# Force empty trash (renamed to avoid conflict with alias)
+function empty_trash() {
   rm -rf ~/.Trash/* && echo "Trash emptied"
 }
+alias emptytrash='empty_trash'
 
 # Show/hide hidden files in Finder
 showhidden() {
