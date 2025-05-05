@@ -12,10 +12,18 @@
 #
 
 # ====================================
-# 1. INITIALIZATION
+# 1. PERFORMANCE SETUP
 # ====================================
-# Performance monitoring
+# Record startup time and enable performance monitoring
 ZSHRC_START_TIME=$EPOCHREALTIME
+EPOCHREALTIME_AT_STARTUP=$EPOCHREALTIME
+
+# Load performance optimization tools early
+[[ -f "${ZDOTDIR:-$HOME}/.zsh/performance.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zsh/performance.zsh"
+
+# ====================================
+# 2. INITIALIZATION
+# ====================================
 
 # Skip if non-interactive
 [[ -o interactive ]] || return 0
@@ -26,7 +34,7 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # ====================================
-# 2. ZSH OPTIONS
+# 3. ZSH OPTIONS
 # ====================================
 # History
 HISTSIZE=50000
@@ -64,66 +72,34 @@ setopt PROMPT_SUBST         # Parameter expansion in prompts
 setopt NO_BEEP              # No beep on error
 
 # ====================================
-# 3. ZINIT PLUGIN MANAGER
-# ====================================
-ZINIT_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
-if [[ ! -f "$ZINIT_HOME/zinit.zsh" ]]; then
-  mkdir -p "$(dirname "$ZINIT_HOME")"
-  git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME" &>/dev/null
-  if [[ $? -ne 0 ]]; then
-    echo "Warning: Failed to clone zinit. Some features will be disabled."
-  fi
-fi
-
-if [[ -f "$ZINIT_HOME/zinit.zsh" ]]; then
-  source "$ZINIT_HOME/zinit.zsh"
-  
-  # Turbo mode - load plugins in the background
-  zinit ice wait'0' lucid
-  zinit light zsh-users/zsh-autosuggestions
-  
-  zinit ice wait'0' lucid
-  zinit light zsh-users/zsh-syntax-highlighting
-  
-  zinit ice wait'0' lucid
-  zinit light zsh-users/zsh-history-substring-search
-  
-  # Load prompt
-  if [[ -n $P10K_LEAN ]]; then
-    # Lean variant of P10K (faster for slow connections/machines)
-    zinit ice depth=1
-    zinit light romkatv/powerlevel10k
-  else
-    # Standard P10K (default)
-    zinit ice depth=1
-    zinit light romkatv/powerlevel10k
-  fi
-  
-  # Additional useful plugins
-  zinit ice wait'1' lucid
-  zinit light zdharma-continuum/fast-syntax-highlighting
-  
-  zinit ice wait'1' lucid as"program" pick"fzf-git.sh"
-  zinit light junegunn/fzf-git.sh
-else
-  # Fallback prompt if zinit failed to load
-  PS1="%F{blue}%n@%m%f:%F{green}%~%f$ "
-fi
-
-# ====================================
-# 4. LOAD CONFIGURATION FILES
+# 3. CONFIGURATION DIRECTORIES
 # ====================================
 ZSH_CONFIG_DIR="${ZDOTDIR:-$HOME}/.zsh"
+
+# ====================================
+# 4. PLUGIN MANAGEMENT
+# ====================================
+# Load enhanced plugin management
+[[ -f "$ZSH_CONFIG_DIR/plugins.zsh" ]] && source "$ZSH_CONFIG_DIR/plugins.zsh"
+
+# ====================================
+# 5. LOAD CONFIGURATION FILES
+# ====================================
 
 # Create directory structure if it doesn't exist
 [[ -d "$ZSH_CONFIG_DIR" ]] || mkdir -p "$ZSH_CONFIG_DIR"/{functions.d,completions,cache}
 
 # Load modules in a specific order
 typeset -a config_modules=(
+  "$ZSH_CONFIG_DIR/platform.zsh"      # Platform detection
+  "$ZSH_CONFIG_DIR/homebrew.zsh"      # Homebrew configuration
   "$ZSH_CONFIG_DIR/path.zsh"          # Path configuration
   "$ZSH_CONFIG_DIR/env.zsh"           # Environment variables
   "$ZSH_CONFIG_DIR/aliases.zsh"       # Aliases
   "$ZSH_CONFIG_DIR/completions.zsh"   # Completion system
+  "$ZSH_CONFIG_DIR/themes.zsh"        # Terminal themes
+  "$ZSH_CONFIG_DIR/backup.zsh"        # Backup and sync
+  "$ZSH_CONFIG_DIR/dev/index.zsh"     # Developer environments
 )
 
 # Source configuration modules
@@ -148,13 +124,13 @@ if [[ -d "$ZSH_CONFIG_DIR/functions.d" ]]; then
 fi
 
 # ====================================
-# 5. POWERLEVEL10K CONFIGURATION
+# 6. POWERLEVEL10K CONFIGURATION
 # ====================================
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh
 [[ -f "${ZDOTDIR:-$HOME}/.p10k.zsh" ]] && source "${ZDOTDIR:-$HOME}/.p10k.zsh"
 
 # ====================================
-# 6. COMPLETION SYSTEM
+# 7. COMPLETION SYSTEM
 # ====================================
 # Load completion system if not already loaded
 if ! whence -w compdef >/dev/null; then
@@ -196,7 +172,7 @@ if ! whence -w compdef >/dev/null; then
 fi
 
 # ====================================
-# 7. KEY BINDINGS
+# 8. KEY BINDINGS
 # ====================================
 # Emacs key bindings
 bindkey -e
@@ -210,7 +186,7 @@ bindkey '^[[F' end-of-line
 [[ -f "/usr/local/opt/fzf/shell/key-bindings.zsh" ]] && source "/usr/local/opt/fzf/shell/key-bindings.zsh"
 
 # ====================================
-# 8. TOOL INTEGRATIONS
+# 9. TOOL INTEGRATIONS
 # ====================================
 # direnv - directory environment manager
 if command -v direnv >/dev/null; then
@@ -233,13 +209,13 @@ fi
 [[ -e "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
 
 # ====================================
-# 9. LOCAL CUSTOMIZATIONS
+# 10. LOCAL CUSTOMIZATIONS
 # ====================================
 # Load local settings that should not be committed to source control
 [[ -f "$ZSH_CONFIG_DIR/local.zsh" ]] && source "$ZSH_CONFIG_DIR/local.zsh"
 
 # ====================================
-# 10. FINISHING TOUCHES
+# 11. FINISHING TOUCHES
 # ====================================
 # Ensure path arrays don't contain duplicates
 typeset -U PATH path fpath
@@ -251,6 +227,9 @@ if [[ -n "$ZSHRC_START_TIME" ]]; then
   [[ $ZSHRC_LOAD_TIME -gt 500 ]] && echo "zshrc loaded in ${ZSHRC_LOAD_TIME}ms"
   unset ZSHRC_START_TIME ZSHRC_END_TIME ZSHRC_LOAD_TIME
 fi
+
+# Show profiling report if enabled
+zsh_profile_report
 
 # Print welcome message (comment this out if you prefer a clean terminal on startup)
 # echo "👋 Welcome back, ${USER}!"
