@@ -54,7 +54,7 @@ if [[ -f "$ZINIT_BIN_DIR" ]]; then
   
   # Git aliases and completions 
   zinit ice wait'1' lucid
-  zinit light zdharma-continuum/git-com
+  zinit light zdharma-continuum/zinit-annex-meta-plugins
   
   # Utility functions - use built-in functions instead
   # zinit ice wait'1' lucid
@@ -77,16 +77,17 @@ if [[ -f "$ZINIT_BIN_DIR" ]]; then
   
   # Docker completions
   if (( $+commands[docker] )); then
-    # Load docker completion from local zsh completion if available
-    zinit ice wait'1' lucid as'completion'
-    zinit snippet <(docker completion zsh 2>/dev/null)
+    # Skip Docker completion for now
+    # zinit ice wait'1' lucid as'completion'
+    # zinit snippet <(docker completion zsh 2>/dev/null)
   fi
   
   # Kubectl completions
   if (( $+commands[kubectl] )); then
-    # Load from kubectl directly instead of GitHub URL
-    zinit ice wait'1' lucid as'completion'
-    zinit snippet <(kubectl completion zsh 2>/dev/null)
+    # Skip Kubectl completion for now
+    # zinit ice wait'1' lucid as'completion'
+    # zinit snippet <(kubectl completion zsh 2>/dev/null)
+    
   fi
   
   # NPM completions

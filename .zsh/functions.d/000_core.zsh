@@ -69,6 +69,7 @@ extract() {
 }
 
 # Display disk usage of current directory, sorted
-dud() {
+function disk_usage_dir() {
   du -d ${1:-1} -h | sort -hr
 }
+alias dud='disk_usage_dir'

@@ -12,7 +12,7 @@ function create_venv() {
 alias venv='create_venv'
 
 # Activate Python virtual environment
-act() {
+function activate_venv() {
   local envdir=${1:-.venv}
   if [[ -f "$envdir/bin/activate" ]]; then
     source "$envdir/bin/activate"
@@ -21,6 +21,7 @@ act() {
     return 1
   fi
 }
+alias act='activate_venv'
 
 # Generate a secure random password
 genpass() {
