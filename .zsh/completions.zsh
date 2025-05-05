@@ -129,9 +129,11 @@ fi
 
 # Terraform completion
 if command -v terraform &>/dev/null; then
-  complete -o nospace -C $(which terraform) terraform
+  # Use zsh-compatible completion instead of the problematic complete command
+  autoload -U +X bashcompinit && bashcompinit
+  terraform -install-autocomplete 2>/dev/null || true
   # terraform aliases
-  compdef tf=terraform
+  compdef tf=terraform 2>/dev/null || true
 fi
 
 # Homebrew completion

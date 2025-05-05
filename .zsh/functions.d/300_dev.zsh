@@ -1,14 +1,15 @@
 #!/usr/bin/env zsh
 # Development utility functions
 
-# Create and activate Python virtual environment
-venv() {
+# Create and activate Python virtual environment (renamed to avoid conflict)
+function create_venv() {
   local envdir=${1:-.venv}
   if [[ ! -d "$envdir" ]]; then
     echo "Creating virtual environment in $envdir"
     python3 -m venv "$envdir"
   fi
 }
+alias venv='create_venv'
 
 # Activate Python virtual environment
 act() {

@@ -228,8 +228,8 @@ if [[ -n "$ZSHRC_START_TIME" ]]; then
   unset ZSHRC_START_TIME ZSHRC_END_TIME ZSHRC_LOAD_TIME
 fi
 
-# Show profiling report if enabled
-zsh_profile_report
+# Show profiling report if enabled (only if function exists)
+(( $+functions[zsh_profile_report] )) && zsh_profile_report || true
 
-# Print welcome message (comment this out if you prefer a clean terminal on startup)
-# echo "👋 Welcome back, ${USER}!"
+# Print welcome message and platform info
+echo "👋 Welcome back, ${USER}! Running on $(uname) - Platform: ${PLATFORM:=unknown}"

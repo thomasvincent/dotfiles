@@ -3,10 +3,11 @@
 
 # === Git Aliases and Functions ===
 
-# Enhanced git status
-gst() {
+# Enhanced git status (avoiding conflict with alias)
+function git_status() {
   git status -sb
 }
+alias gst='git_status'
 
 # Interactive add with patch
 gaa() {

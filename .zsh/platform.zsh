@@ -5,38 +5,42 @@
 # Platform Detection
 # ====================================
 
-# Define variables for platform detection
-export PLATFORM="unknown"
-export PLATFORM_LINUX=0
-export PLATFORM_MAC=0
-export PLATFORM_BSD=0
-export PLATFORM_WSL=0
-export PLATFORM_CYGWIN=0
+# Simple platform detection that works consistently
+if [[ "$(uname)" == "Darwin" ]]; then
+  export PLATFORM="mac"
+  export PLATFORM_MAC=1
+  export PLATFORM_LINUX=0
+  export PLATFORM_BSD=0
+  export PLATFORM_WSL=0
+elif [[ "$(uname)" == "Linux" ]]; then
+  export PLATFORM="linux"
+  export PLATFORM_MAC=0
+  export PLATFORM_LINUX=1
+  export PLATFORM_BSD=0
+  
+  # Check for WSL
+  if grep -q -i microsoft /proc/version 2>/dev/null; then
+    export PLATFORM="wsl"
+    export PLATFORM_WSL=1
+  else
+    export PLATFORM_WSL=0
+  fi
+elif [[ "$(uname)" =~ "BSD" || "$(uname)" == "DragonFly" ]]; then
+  export PLATFORM="bsd"
+  export PLATFORM_MAC=0
+  export PLATFORM_LINUX=0
+  export PLATFORM_BSD=1
+  export PLATFORM_WSL=0
+else
+  export PLATFORM="unknown"
+  export PLATFORM_MAC=0
+  export PLATFORM_LINUX=0
+  export PLATFORM_BSD=0
+  export PLATFORM_WSL=0
+fi
 
-# Detect platform
-case "$(uname -s)" in
-  Linux*)
-    PLATFORM="linux"
-    PLATFORM_LINUX=1
-    # Detect WSL (Windows Subsystem for Linux)
-    if grep -q Microsoft /proc/version 2>/dev/null || grep -q microsoft /proc/version 2>/dev/null; then
-      PLATFORM="wsl"
-      PLATFORM_WSL=1
-    fi
-    ;;
-  Darwin*)
-    PLATFORM="mac"
-    PLATFORM_MAC=1
-    ;;
-  FreeBSD*|NetBSD*|OpenBSD*|DragonFly*)
-    PLATFORM="bsd"
-    PLATFORM_BSD=1
-    ;;
-  CYGWIN*|MINGW*|MSYS*)
-    PLATFORM="cygwin"
-    PLATFORM_CYGWIN=1
-    ;;
-esac
+# Debug output (uncomment for debugging)
+# echo "Detected platform: $PLATFORM"
 
 # Detect if we're running in a container
 if [ -f /.dockerenv ] || grep -q docker /proc/1/cgroup 2>/dev/null; then

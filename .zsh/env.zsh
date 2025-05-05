@@ -114,9 +114,17 @@ export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
 
 # Bat (cat alternative)
-export BAT_THEME="Monokai Extended"
+export BAT_THEME="ansi" # Use simple theme that's always available
 export BAT_STYLE="numbers,changes,header"
 export BAT_CONFIG_PATH="$XDG_CONFIG_HOME/bat/config"
+
+# Bat cache initialization - run once if bat is available
+if command -v bat >/dev/null 2>&1; then
+  if [ ! -d "$HOME/.cache/bat" ]; then
+    mkdir -p "$HOME/.cache/bat"
+    bat cache --build >/dev/null 2>&1 || true
+  fi
+fi
 
 # Ripgrep
 export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
@@ -130,6 +138,24 @@ export PROJECTS_DIR="$HOME/Projects"  # Personal projects directory
 
 # Check if we're running on a remote host via SSH
 [[ -n "$SSH_CONNECTION" ]] && export IS_REMOTE_HOST=1
+
+# Set platform if not already set
+if [[ -z "$PLATFORM" ]]; then
+  case "$(uname)" in
+    Darwin)
+      export PLATFORM="mac"
+      ;;
+    Linux)
+      export PLATFORM="linux"
+      ;;
+    FreeBSD|NetBSD|OpenBSD|DragonFly)
+      export PLATFORM="bsd"
+      ;;
+    *)
+      export PLATFORM="unknown"
+      ;;
+  esac
+fi
 
 # Load any secret/private environment variables from a separate file
 [[ -f "$HOME/.zsh/secrets.zsh" ]] && source "$HOME/.zsh/secrets.zsh"

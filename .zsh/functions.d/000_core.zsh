@@ -7,10 +7,11 @@ reload() {
   echo "ZSH configuration reloaded"
 }
 
-# Manage dotfiles
-dotfiles() {
+# Manage dotfiles (function renamed to avoid conflict with alias)
+function goto_dotfiles() {
   cd "$HOME/dotfiles" 2>/dev/null || echo "Dotfiles directory not found"
 }
+alias dotfiles='goto_dotfiles'
 
 # Print the directory structure in a tree format
 treedir() {
