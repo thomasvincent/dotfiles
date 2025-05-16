@@ -93,20 +93,20 @@ _check_doctl() {
     echo "Install with: brew install doctl (macOS) or snap install doctl (Linux)"
     return 1
   fi
-  
+
   if ! doctl account get >/dev/null 2>&1; then
     echo "Error: doctl not authenticated."
     echo "Run 'doctl auth init' to authenticate with DigitalOcean."
     return 1
   fi
-  
+
   return 0
 }
 
 # List DigitalOcean droplets with details
 do-droplets() {
   _check_doctl || return 1
-  
+
   echo "Listing DigitalOcean droplets..."
   doctl compute droplet list --format "ID,Name,Public IPv4,Memory,VCPUs,Disk,Region,Status,Tags"
 }
@@ -118,9 +118,9 @@ do-create-droplet() {
   local region=${3:-"nyc1"}
   local image=${4:-"ubuntu-22-04-x64"}
   local ssh_key=${5:-""}
-  
+
   _check_doctl || return 1
-  
+
   if [[ -z "$name" ]]; then
     echo "Usage: do-create-droplet <name> [size] [region] [image] [ssh-key-id]"
     echo "Default size: s-1vcpu-1gb"
@@ -140,12 +140,12 @@ do-create-droplet() {
     doctl compute ssh-key list --format "ID,Name,Fingerprint"
     return 1
   fi
-  
+
   local ssh_key_param=""
   if [[ -n "$ssh_key" ]]; then
     ssh_key_param="--ssh-keys $ssh_key"
   fi
-  
+
   echo "Creating DigitalOcean droplet $name..."
   doctl compute droplet create "$name" \
     --size "$size" \
@@ -153,7 +153,7 @@ do-create-droplet() {
     --region "$region" \
     $ssh_key_param \
     --wait
-    
+
   # Show the new droplet details
   echo "Droplet created:"
   doctl compute droplet get "$name" --format "ID,Name,Public IPv4,Memory,VCPUs,Disk,Region,Status"
@@ -162,24 +162,24 @@ do-create-droplet() {
 # Delete a DigitalOcean droplet
 do-delete-droplet() {
   local droplet_id=$1
-  
+
   _check_doctl || return 1
-  
+
   if [[ -z "$droplet_id" ]]; then
     echo "Usage: do-delete-droplet <droplet-id>"
     echo "Available droplets:"
     doctl compute droplet list --format "ID,Name,Public IPv4,Status"
     return 1
   fi
-  
+
   echo "Warning: This will permanently delete the droplet with ID $droplet_id."
   read -p "Are you sure you want to continue? (y/N) " confirm
-  
+
   if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     echo "Operation canceled."
     return 0
   fi
-  
+
   echo "Deleting DigitalOcean droplet $droplet_id..."
   doctl compute droplet delete "$droplet_id" --force
 }
@@ -189,26 +189,26 @@ do-create-lamp() {
   local name=$1
   local size=${2:-"s-1vcpu-1gb"}
   local region=${3:-"nyc1"}
-  
+
   _check_doctl || return 1
-  
+
   if [[ -z "$name" ]]; then
     echo "Usage: do-create-lamp <name> [size] [region]"
     echo "Creates a LAMP stack one-click application droplet"
     return 1
   fi
-  
+
   echo "Creating LAMP stack droplet $name..."
   doctl compute droplet create "$name" \
     --size "$size" \
     --image "lamp-20-04" \
     --region "$region" \
     --wait
-    
+
   # Show the new droplet details
   echo "LAMP Stack droplet created:"
   doctl compute droplet get "$name" --format "ID,Name,Public IPv4,Memory,VCPUs,Status"
-  
+
   ip=$(doctl compute droplet get "$name" --format PublicIPv4 --no-header)
   echo ""
   echo "Your LAMP stack is being set up at: http://$ip"
@@ -220,26 +220,26 @@ do-create-wordpress() {
   local name=$1
   local size=${2:-"s-1vcpu-1gb"}
   local region=${3:-"nyc1"}
-  
+
   _check_doctl || return 1
-  
+
   if [[ -z "$name" ]]; then
     echo "Usage: do-create-wordpress <name> [size] [region]"
     echo "Creates a WordPress one-click application droplet"
     return 1
   fi
-  
+
   echo "Creating WordPress droplet $name..."
   doctl compute droplet create "$name" \
     --size "$size" \
     --image "wordpress-20-04" \
     --region "$region" \
     --wait
-    
+
   # Show the new droplet details
   echo "WordPress droplet created:"
   doctl compute droplet get "$name" --format "ID,Name,Public IPv4,Memory,VCPUs,Status"
-  
+
   ip=$(doctl compute droplet get "$name" --format PublicIPv4 --no-header)
   echo ""
   echo "Your WordPress site is being set up at: http://$ip"
@@ -250,7 +250,7 @@ do-create-wordpress() {
 # List DigitalOcean volumes
 do-volumes() {
   _check_doctl || return 1
-  
+
   echo "Listing DigitalOcean volumes..."
   doctl compute volume list --format "ID,Name,Size,Region,Filesystem Type,Droplet IDs"
 }
@@ -262,9 +262,9 @@ do-create-db() {
   local size=${3:-"db-s-1vcpu-1gb"}
   local region=${4:-"nyc1"}
   local version=${5:-"8"}
-  
+
   _check_doctl || return 1
-  
+
   if [[ -z "$name" ]]; then
     echo "Usage: do-create-db <name> [engine] [size] [region] [version]"
     echo "Default engine: mysql"
@@ -278,14 +278,14 @@ do-create-db() {
     doctl compute region list --format "Slug,Name,Available"
     return 1
   fi
-  
+
   echo "Creating $engine database cluster $name..."
   doctl databases create "$name" \
     --engine "$engine" \
     --size "$size" \
     --region "$region" \
     --version "$version"
-    
+
   # Show the new database details
   echo "Database cluster created:"
   doctl databases get "$name"
@@ -294,7 +294,7 @@ do-create-db() {
 # List Kubernetes clusters
 do-k8s() {
   _check_doctl || return 1
-  
+
   echo "Listing DigitalOcean Kubernetes clusters..."
   doctl kubernetes cluster list
 }
@@ -306,9 +306,9 @@ do-create-k8s() {
   local size=${3:-"s-2vcpu-2gb"}
   local count=${4:-"2"}
   local version=${5:-""}
-  
+
   _check_doctl || return 1
-  
+
   if [[ -z "$name" ]]; then
     echo "Usage: do-create-k8s <name> [region] [size] [node-count] [version]"
     echo "Default region: nyc1"
@@ -322,18 +322,18 @@ do-create-k8s() {
     doctl kubernetes options versions
     return 1
   fi
-  
+
   if [[ -z "$version" ]]; then
     version=$(doctl kubernetes options versions | grep -v "Slug" | head -1 | awk '{print $1}')
   fi
-  
+
   echo "Creating Kubernetes cluster $name..."
   doctl kubernetes cluster create "$name" \
     --region "$region" \
     --size "$size" \
     --count "$count" \
     --version "$version"
-    
+
   # Show the new cluster details
   echo "Kubernetes cluster created:"
   doctl kubernetes cluster get "$name"
@@ -342,19 +342,19 @@ do-create-k8s() {
 # Configure kubectl to use a DigitalOcean Kubernetes cluster
 do-k8s-config() {
   local cluster_id=$1
-  
+
   _check_doctl || return 1
-  
+
   if [[ -z "$cluster_id" ]]; then
     echo "Usage: do-k8s-config <cluster-id>"
     echo "Available clusters:"
     doctl kubernetes cluster list --format "ID,Name,Region,Version,Status"
     return 1
   fi
-  
+
   echo "Configuring kubectl for DigitalOcean Kubernetes cluster $cluster_id..."
   doctl kubernetes cluster kubeconfig save "$cluster_id"
-  
+
   # Verify the connection
   echo "Testing connection to cluster..."
   kubectl get nodes
@@ -364,30 +364,30 @@ do-k8s-config() {
 do-app-create() {
   local name=$1
   local region=${2:-"nyc"}
-  
+
   _check_doctl || return 1
-  
+
   if [[ -z "$name" ]]; then
     echo "Usage: do-app-create <name> [region]"
     echo "Creates a new App Platform app from the current directory"
     echo "Default region: nyc"
     return 1
   fi
-  
+
   if [[ ! -f "Dockerfile" && ! -f "docker-compose.yml" && ! -f "package.json" && ! -f "requirements.txt" ]]; then
     echo "Warning: No Dockerfile, docker-compose.yml, package.json, or requirements.txt found in the current directory."
     echo "DigitalOcean App Platform may not be able to detect the application type."
     read -p "Continue? (y/N) " confirm
-    
+
     if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
       echo "Operation canceled."
       return 0
     fi
   fi
-  
+
   echo "Creating App Platform app $name..."
   doctl apps create --spec <(doctl apps spec create --name "$name" --region "$region")
-  
+
   echo "App created! To deploy your code, follow the instructions from DigitalOcean."
 }
 

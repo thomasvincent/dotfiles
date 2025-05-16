@@ -10,27 +10,27 @@
 ansible-init-project() {
   local project_name=$1
   local directory=${2:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
-  
+
   if [[ -z "$project_name" ]]; then
     echo "Usage: ansible-init-project <project-name> [directory]"
     echo "Example: ansible-init-project my-infra ~/Projects/my-infra"
     return 1
   fi
-  
+
   # Check if Ansible is installed
   if ! command -v ansible >/dev/null 2>&1; then
     echo "Error: Ansible is not installed."
     echo "Install it with: pip install ansible"
     return 1
   fi
-  
+
   # Create project directory if it doesn't exist
   mkdir -p "$directory"
   cd "$directory" || return 1
-  
+
   # Create recommended directory structure
   mkdir -p {inventories,roles,group_vars,host_vars,playbooks,library,filter_plugins,files,templates}
-  
+
   # Create basic configuration files
   cat > ansible.cfg << 'EOF'
 [defaults]
@@ -78,11 +78,11 @@ EOF
   hosts: all
   become: true
   gather_facts: true
-  
+
   tasks:
     - name: Ping servers
       ping:
-      tags: 
+      tags:
         - always
 EOF
 
@@ -123,7 +123,7 @@ EOF
 
   # Initialize git repository
   git init
-  
+
   # Create .gitignore
   cat > .gitignore << 'EOF'
 *.retry
@@ -143,7 +143,7 @@ EOF
   # Create initial commit
   git add .
   git commit -m "Initial Ansible project setup"
-  
+
   echo "Ansible project '$project_name' initialized successfully at $directory"
   echo "Next steps:"
   echo "1. Edit the inventory file: $directory/inventories/hosts"
@@ -155,26 +155,26 @@ EOF
 ansible-new-role() {
   local role_name=$1
   local directory=${2:-"./roles"}
-  
+
   if [[ -z "$role_name" ]]; then
     echo "Usage: ansible-new-role <role-name> [directory]"
     echo "Example: ansible-new-role webserver ./roles"
     return 1
   fi
-  
+
   # Check if Ansible is installed
   if ! command -v ansible-galaxy >/dev/null 2>&1; then
     echo "Error: ansible-galaxy is not installed."
     echo "Install it with: pip install ansible"
     return 1
   fi
-  
+
   # Create role directory if it doesn't exist
   mkdir -p "$directory"
-  
+
   # Initialize the role
   ansible-galaxy init "$directory/$role_name"
-  
+
   echo "Ansible role '$role_name' created successfully at $directory/$role_name"
   echo "Next steps:"
   echo "1. Edit $directory/$role_name/tasks/main.yml to add your tasks"
@@ -187,25 +187,25 @@ ansible-run() {
   local playbook_path=$1
   local inventory=${2:-"inventories/hosts"}
   local options=${@:3}
-  
+
   if [[ -z "$playbook_path" ]]; then
     echo "Usage: ansible-run <playbook-path> [inventory-path] [options]"
     echo "Example: ansible-run playbooks/site.yml inventories/production --limit web_servers"
     return 1
   fi
-  
+
   # Check if playbook exists
   if [[ ! -f "$playbook_path" ]]; then
     echo "Error: Playbook not found at $playbook_path"
     return 1
   fi
-  
+
   # Check if inventory exists
   if [[ ! -f "$inventory" ]]; then
     echo "Error: Inventory not found at $inventory"
     return 1
   }
-  
+
   # Run the playbook
   ansible-playbook "$playbook_path" -i "$inventory" $options
 }
@@ -214,24 +214,24 @@ ansible-run() {
 ansible-new-vault() {
   local vault_file=$1
   local vault_dir=${2:-"./group_vars/all"}
-  
+
   if [[ -z "$vault_file" ]]; then
     echo "Usage: ansible-new-vault <vault-name> [vault-directory]"
     echo "Example: ansible-new-vault secrets ./group_vars/production"
     return 1
   fi
-  
+
   # Add .yml extension if not provided
   if [[ ! "$vault_file" =~ \.ya?ml$ ]]; then
     vault_file="${vault_file}.yml"
   fi
-  
+
   # Create directory if it doesn't exist
   mkdir -p "$vault_dir"
-  
+
   # Create the vault file
   ansible-vault create "$vault_dir/$vault_file"
-  
+
   echo "Ansible vault file created at $vault_dir/$vault_file"
   echo "To edit this file: ansible-vault edit $vault_dir/$vault_file"
 }
@@ -240,10 +240,10 @@ ansible-new-vault() {
 ansible-generate-inventory() {
   local output_file=${1:-"inventories/generated-hosts.yml"}
   local source=${2:-"manual"}
-  
+
   # Create the inventory directory if it doesn't exist
   mkdir -p "$(dirname "$output_file")"
-  
+
   if [[ "$source" == "manual" ]]; then
     # Generate an inventory template
     cat > "$output_file" << 'EOF'
@@ -291,7 +291,7 @@ EOF
       echo "Install it with: pip install awscli"
       return 1
     fi
-    
+
     # Create a dynamic inventory script for AWS
     cat > "$output_file" << 'EOF'
 #!/bin/bash
@@ -302,7 +302,7 @@ EOF
 
 if [[ "$1" == "--list" ]]; then
   aws ec2 describe-instances --query 'Reservations[*].Instances[*].[Tags[?Key==`Name`].Value[],InstanceId,PrivateIpAddress,PublicIpAddress,State.Name,Tags[?Key==`ansible_group`].Value[]]' --output json | \
-  jq -r '[.[] | .[] | select(.[4]=="running") | {(.![0]): {"ansible_host": (.[3] // .[2]), "instance_id": .[1], "groups": (.[5] // ["ungrouped"])}}] | reduce .[] as $item ({}; . * $item) | {"_meta": {"hostvars": .}, "all": {"children": ["aws_ec2"]}, "aws_ec2": {"hosts": [keys[]]}}' 
+  jq -r '[.[] | .[] | select(.[4]=="running") | {(.![0]): {"ansible_host": (.[3] // .[2]), "instance_id": .[1], "groups": (.[5] // ["ungrouped"])}}] | reduce .[] as $item ({}; . * $item) | {"_meta": {"hostvars": .}, "all": {"children": ["aws_ec2"]}, "aws_ec2": {"hosts": [keys[]]}}'
 elif [[ "$1" == "--host" ]]; then
   # Return empty dict for --host
   echo "{}"
@@ -337,9 +337,9 @@ for line in sys.stdin:
         name = parts[0]
         ip = parts[1]
         tags = parts[2].split(",") if len(parts) > 2 else ["ungrouped"]
-        
+
         droplets[name] = {"ansible_host": ip}
-        
+
         for tag in tags:
             if tag not in groups:
                 groups[tag] = {"hosts": []}
@@ -361,7 +361,7 @@ fi
 EOF
     chmod +x "$output_file"
   fi
-  
+
   echo "Inventory file generated at $output_file"
   if [[ "$source" != "manual" ]]; then
     echo "This is a dynamic inventory script. Make it executable: chmod +x $output_file"
@@ -375,19 +375,19 @@ ansible-adhoc() {
   local module=${2:-"ping"}
   local args=${3:-""}
   local inventory=${4:-"inventories/hosts"}
-  
+
   if [[ -z "$hosts" ]]; then
     echo "Usage: ansible-adhoc <hosts> [module] [args] [inventory]"
     echo "Example: ansible-adhoc webservers apt 'name=nginx state=latest' inventories/production"
     return 1
   fi
-  
+
   # Check if inventory exists
   if [[ ! -f "$inventory" ]]; then
     echo "Error: Inventory not found at $inventory"
     return 1
   fi
-  
+
   # Run the ad-hoc command
   if [[ -n "$args" ]]; then
     ansible "$hosts" -i "$inventory" -m "$module" -a "$args"
@@ -400,29 +400,29 @@ ansible-adhoc() {
 ansible-scan-network() {
   local network=$1
   local output_file=${2:-"inventories/scanned-hosts.yml"}
-  
+
   if [[ -z "$network" ]]; then
     echo "Usage: ansible-scan-network <network-cidr> [output-file]"
     echo "Example: ansible-scan-network 192.168.1.0/24 inventories/my-network.yml"
     return 1
   fi
-  
+
   # Check if nmap is installed
   if ! command -v nmap >/dev/null 2>&1; then
     echo "Error: nmap is not installed."
     echo "Install it with: brew install nmap (macOS) or apt install nmap (Linux)"
     return 1
   fi
-  
+
   echo "Scanning network $network for hosts..."
-  
+
   # Create output directory if it doesn't exist
   mkdir -p "$(dirname "$output_file")"
-  
+
   # Use nmap to scan for live hosts
   local temp_file=$(mktemp)
   nmap -sn "$network" -oG "$temp_file"
-  
+
   # Extract IP addresses and create inventory
   cat > "$output_file" << 'EOF'
 ---
@@ -431,22 +431,22 @@ all:
     discovered:
       hosts:
 EOF
-  
+
   # Parse nmap output and add hosts to inventory
   grep "Status: Up" "$temp_file" | awk '{print $2}' | while read -r host; do
     echo "        host_${host//./_}:" >> "$output_file"
     echo "          ansible_host: $host" >> "$output_file"
   done
-  
+
   # Add default variables
   cat >> "$output_file" << 'EOF'
   vars:
     ansible_user: root
 EOF
-  
+
   # Clean up
   rm "$temp_file"
-  
+
   echo "Inventory file created at $output_file with discovered hosts"
   echo "Edit the file to organize hosts into appropriate groups"
 }
@@ -454,41 +454,41 @@ EOF
 # Ansible playbook wizard - interactively create a playbook
 ansible-playbook-wizard() {
   local playbook_name=$1
-  
+
   if [[ -z "$playbook_name" ]]; then
     echo "Usage: ansible-playbook-wizard <playbook-name>"
     echo "Example: ansible-playbook-wizard deploy-web-app"
     return 1
   fi
-  
+
   # Add .yml extension if not provided
   if [[ ! "$playbook_name" =~ \.ya?ml$ ]]; then
     playbook_name="${playbook_name}.yml"
   fi
-  
+
   # Create playbooks directory if it doesn't exist
   mkdir -p "playbooks"
-  
+
   # Ask for basic playbook information
   echo "Creating Ansible playbook: $playbook_name"
-  
+
   read -p "Target hosts (e.g., all, webservers, db): " target_hosts
   target_hosts=${target_hosts:-"all"}
-  
+
   read -p "Should tasks run with sudo/become? (y/n): " become_answer
   if [[ "$become_answer" =~ ^[Yy]$ ]]; then
     become="true"
   else
     become="false"
   fi
-  
+
   read -p "Gather facts? (y/n): " facts_answer
   if [[ "$facts_answer" =~ ^[Yy]$ ]]; then
     gather_facts="true"
   else
     gather_facts="false"
   fi
-  
+
   # Create the playbook file
   cat > "playbooks/$playbook_name" << EOF
 ---
@@ -496,10 +496,10 @@ ansible-playbook-wizard() {
   hosts: $target_hosts
   become: $become
   gather_facts: $gather_facts
-  
+
   vars:
     # Define variables here
-    
+
   tasks:
     - name: Ensure system is updated
       apt:
@@ -509,16 +509,16 @@ ansible-playbook-wizard() {
       tags:
         - setup
         - update
-    
+
     # Add more tasks here
-    
+
   handlers:
     - name: restart nginx
       service:
         name: nginx
         state: restarted
 EOF
-  
+
   echo "Playbook created at playbooks/$playbook_name"
   echo "Edit the file to add your tasks and customize as needed"
 }

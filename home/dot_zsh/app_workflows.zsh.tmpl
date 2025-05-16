@@ -11,13 +11,13 @@
 gtd-capture() {
   local note_text=$1
   local inbox_folder="{{ .preferences.gtd_inbox_folder | default \"GTD/Inbox\" }}"
-  
+
   if [[ -z "$note_text" ]]; then
     echo "Usage: gtd-capture <note-text>"
     echo "Captures a quick note to your GTD inbox"
     return 1
   fi
-  
+
   # First try to use Apple Notes app (if on macOS)
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Make sure the folder exists in Notes
@@ -30,17 +30,17 @@ tell application "Notes"
       exit repeat
     end if
   end repeat
-  
+
   if not folderExists then
     make new folder with properties {name:"$inbox_folder"}
   end if
 end tell
 EOF
-    
+
     # Add the note to the folder
     local date=$(date '+%Y-%m-%d %H:%M')
     local title="Inbox: ${note_text:0:50}..."
-    
+
     osascript <<EOF
 tell application "Notes"
   tell folder "$inbox_folder"
@@ -48,15 +48,15 @@ tell application "Notes"
   end tell
 end tell
 EOF
-    
+
     echo "Note captured in Apple Notes ($inbox_folder folder)"
     return 0
   fi
-  
+
   # Fallback to reminders if Notes is not enabled but Reminders is
   if [[ "$USE_MACOS_REMINDERS" == "true" ]]; then
     local list="Inbox"
-    
+
     # Make sure the list exists in Reminders
     osascript <<EOF > /dev/null 2>&1
 tell application "Reminders"
@@ -65,7 +65,7 @@ tell application "Reminders"
   end if
 end tell
 EOF
-    
+
     # Add the reminder to the list
     osascript <<EOF
 tell application "Reminders"
@@ -74,15 +74,15 @@ tell application "Reminders"
   end tell
 end tell
 EOF
-    
+
     echo "Note captured in Reminders (Inbox list)"
     return 0
   fi
-  
+
   # Fallback to text file
   local inbox_file="{{ .preferences.gtd_inbox_file | default \"$HOME/.gtd/inbox.md\" }}"
   mkdir -p "$(dirname "$inbox_file")"
-  
+
   # Append to inbox file
   local date=$(date '+%Y-%m-%d %H:%M')
   echo "## Inbox Item: $date" >> "$inbox_file"
@@ -91,7 +91,7 @@ EOF
   echo "" >> "$inbox_file"
   echo "---" >> "$inbox_file"
   echo "" >> "$inbox_file"
-  
+
   echo "Note captured in $inbox_file"
 }
 
@@ -99,7 +99,7 @@ EOF
 gtd-review() {
   local review_template="{{ .preferences.gtd_templates_dir | default \"$HOME/.gtd/templates\" }}/weekly-review.md"
   local review_file="$HOME/Desktop/GTD-Weekly-Review-$(date '+%Y-%m-%d').md"
-  
+
   # Create the review template if it doesn't exist
   if [[ ! -f "$review_template" ]]; then
     mkdir -p "$(dirname "$review_template")"
@@ -145,18 +145,18 @@ gtd-review() {
 
 EOF
   fi
-  
+
   # Create a new review file from the template
   cp "$review_template" "$review_file"
-  
+
   # Replace {{DATE}} with the current date
   sed -i '' "s/{{DATE}}/$(date '+%Y-%m-%d')/g" "$review_file"
-  
+
   # Open the review file
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Create a note from the file
     local content=$(<"$review_file")
-    
+
     osascript <<EOF
 tell application "Notes"
   make new note with properties {name:"Weekly Review $(date '+%Y-%m-%d')", body:"$content"}
@@ -164,7 +164,7 @@ tell application "Notes"
   activate
 end tell
 EOF
-    
+
     # Remove the temp file since it's now in Notes
     rm "$review_file"
     echo "Weekly Review template opened in Apple Notes"
@@ -181,7 +181,7 @@ EOF
     {{ else -}}
     open "$review_file"
     {{ end -}}
-    
+
     echo "Weekly Review template created at $review_file"
   fi
 }
@@ -190,13 +190,13 @@ EOF
 gtd-new-project() {
   local project_name=$1
   local project_folder="{{ .preferences.gtd_projects_folder | default \"GTD/Projects\" }}"
-  
+
   if [[ -z "$project_name" ]]; then
     echo "Usage: gtd-new-project <project-name>"
     echo "Creates a new GTD project template"
     return 1
   fi
-  
+
   # Create a project note in Apple Notes if available
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Make sure the folder exists
@@ -209,13 +209,13 @@ tell application "Notes"
       exit repeat
     end if
   end repeat
-  
+
   if not folderExists then
     make new folder with properties {name:"$project_folder"}
   end if
 end tell
 EOF
-    
+
     # Create the project note with template
     local date=$(date '+%Y-%m-%d')
     local template="# Project: $project_name
@@ -230,19 +230,19 @@ What is the successful outcome of this project?
 Why am I doing this project?
 
 ## Next Actions
-- [ ] 
-- [ ] 
-- [ ] 
+- [ ]
+- [ ]
+- [ ]
 
 ## Waiting For
-- [ ] 
+- [ ]
 
 ## Reference Material
-* 
+*
 
 ## Notes
 "
-    
+
     osascript <<EOF
 tell application "Notes"
   tell folder "$project_folder"
@@ -252,17 +252,17 @@ tell application "Notes"
   activate
 end tell
 EOF
-    
+
     echo "Project note for '$project_name' created in Apple Notes ($project_folder folder)"
     return 0
   fi
-  
+
   # Fallback to text file
   local projects_dir="{{ .preferences.gtd_projects_dir | default \"$HOME/.gtd/projects\" }}"
   mkdir -p "$projects_dir"
-  
+
   local project_file="$projects_dir/${project_name// /_}.md"
-  
+
   # Create project file
   cat > "$project_file" << EOF
 # Project: $project_name
@@ -277,20 +277,20 @@ What is the successful outcome of this project?
 Why am I doing this project?
 
 ## Next Actions
-- [ ] 
-- [ ] 
-- [ ] 
+- [ ]
+- [ ]
+- [ ]
 
 ## Waiting For
-- [ ] 
+- [ ]
 
 ## Reference Material
-* 
+*
 
 ## Notes
 
 EOF
-  
+
   # Open the project file
   {{ if eq .preferences.editor "vscode" -}}
   code "$project_file"
@@ -303,14 +303,14 @@ EOF
   {{ else -}}
   open "$project_file"
   {{ end -}}
-  
+
   echo "Project file for '$project_name' created at $project_file"
 }
 
 # List GTD next actions
 gtd-next() {
   local context=$1
-  
+
   # Try to use macOS Reminders if available
   if [[ "$USE_MACOS_REMINDERS" == "true" ]]; then
     # Different behavior based on whether a context is specified
@@ -318,7 +318,7 @@ gtd-next() {
       # List all contexts with counts
       echo "GTD Next Actions by Context:"
       echo "==========================="
-      
+
       osascript <<EOF | sort
 tell application "Reminders"
   set allLists to name of lists
@@ -341,13 +341,13 @@ EOF
       # Show reminders for the specific context
       echo "Next Actions for $context:"
       echo "======================="
-      
+
       osascript <<EOF | awk '{print "- " $0}'
 tell application "Reminders"
   if not (exists list "$context") then
     return "Context list '$context' not found. Available contexts start with @."
   end if
-  
+
   set output to ""
   set theList to list "$context"
   set theReminders to (reminders in theList whose completed is false)
@@ -358,19 +358,19 @@ tell application "Reminders"
 end tell
 EOF
     fi
-    
+
     return 0
   fi
-  
+
   # Fallback to text files
   local next_actions_file="{{ .preferences.gtd_next_actions_file | default \"$HOME/.gtd/next-actions.md\" }}"
-  
+
   if [[ ! -f "$next_actions_file" ]]; then
     echo "Next actions file not found at $next_actions_file"
     echo "You can create it with your editor or by using gtd-capture"
     return 1
   fi
-  
+
   if [[ -z "$context" ]]; then
     # Show all contexts (lines starting with "## @")
     echo "GTD Next Actions by Context:"
@@ -380,7 +380,7 @@ EOF
     # Show items for the specific context
     echo "Next Actions for $context:"
     echo "======================="
-    
+
     # Extract the section for the context and then all list items until the next section
     awk '/^## '"$context"'$/{flag=1; next} /^## /{flag=0} flag' "$next_actions_file" | grep "^\-" | sed 's/^\- \[ \]/[ ] /'
   fi
@@ -401,7 +401,7 @@ tell application "Mail"
   set selected mailboxes of message viewer 1 to {inbox}
 end tell
 EOF
-  
+
   echo "Mail.app opened and focused on inbox."
   echo ""
   echo "Keyboard Shortcuts for Processing:"
@@ -420,13 +420,13 @@ mail-new() {
   local recipient=$1
   local subject=${2:-""}
   local body=${3:-""}
-  
+
   if [[ -z "$recipient" ]]; then
     echo "Usage: mail-new <recipient> [subject] [body]"
     echo "Example: mail-new user@example.com \"Meeting Tomorrow\" \"Hi, let's meet tomorrow.\""
     return 1
   fi
-  
+
   osascript <<EOF
 tell application "Mail"
   set newMessage to make new outgoing message with properties {subject:"$subject", content:"$body", visible:true}
@@ -436,7 +436,7 @@ tell application "Mail"
   activate
 end tell
 EOF
-  
+
   echo "New email created to $recipient"
 }
 
@@ -453,26 +453,26 @@ EOF
 # Flag important emails matching a search term
 mail-flag-search() {
   local search_term=$1
-  
+
   if [[ -z "$search_term" ]]; then
     echo "Usage: mail-flag-search <search-term>"
     echo "Searches for emails containing the search term and flags them"
     return 1
   fi
-  
+
   osascript <<EOF
 tell application "Mail"
   set matchingMessages to (messages of inbox whose subject contains "$search_term" or content contains "$search_term" and flagged is false)
   set messageCount to count of matchingMessages
-  
+
   if messageCount is 0 then
     return "No matching messages found."
   end if
-  
+
   repeat with aMessage in matchingMessages
     set flagged of aMessage to true
   end repeat
-  
+
   return "Flagged " & messageCount & " messages containing '$search_term'."
 end tell
 EOF
@@ -481,24 +481,24 @@ EOF
 # Create an email draft from notes
 mail-from-note() {
   local note_title=$1
-  
+
   if [[ ! "$USE_MACOS_NOTES" == "true" ]]; then
     echo "This command requires macOS Notes integration to be enabled."
     return 1
   fi
-  
+
   if [[ -z "$note_title" ]]; then
     echo "Usage: mail-from-note <note-title>"
     echo "Creates an email draft from a note in Apple Notes"
     return 1
   fi
-  
+
   osascript <<EOF
 tell application "Notes"
   set noteFound to false
   set noteContent to ""
   set noteTitle to ""
-  
+
   repeat with aNote in notes
     if name of aNote contains "$note_title" then
       set noteContent to body of aNote
@@ -507,16 +507,16 @@ tell application "Notes"
       exit repeat
     end if
   end repeat
-  
+
   if not noteFound then
     return "Note '$note_title' not found."
   end if
-  
+
   tell application "Mail"
     set newMessage to make new outgoing message with properties {subject:noteTitle, content:noteContent, visible:true}
     activate
   end tell
-  
+
   return "Created new email draft from note: " & noteTitle
 end tell
 EOF
@@ -534,38 +534,38 @@ slack-send() {
   local message=$2
   local channel=${3:-""}
   local username=${4:-"CLI Bot"}
-  
+
   if [[ -z "$webhook_url" || -z "$message" ]]; then
     echo "Usage: slack-send <webhook-url> <message> [channel] [username]"
     echo "Example: slack-send https://hooks.slack.com/services/XXX/YYY/ZZZ \"Hello from CLI\" \"#general\" \"CLI Bot\""
     return 1
   fi
-  
+
   # Build the JSON payload
   local payload="{\"text\":\"$message\", \"username\":\"$username\""
-  
+
   if [[ -n "$channel" ]]; then
     payload="$payload, \"channel\":\"$channel\""
   fi
-  
+
   payload="$payload}"
-  
+
   # Send the message
   curl -X POST -H 'Content-type: application/json' --data "$payload" "$webhook_url"
-  
+
   echo "Message sent to Slack"
 }
 
 # Open Slack and navigate to a channel
 slack-open() {
   local channel=$1
-  
+
   if [[ -z "$channel" ]]; then
     echo "Usage: slack-open <channel>"
     echo "Example: slack-open general"
     return 1
   fi
-  
+
   if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS - Use AppleScript
     osascript <<EOF
@@ -596,14 +596,14 @@ EOF
 slack-status() {
   local status_text=$1
   local status_emoji=${2:-":speech_balloon:"}
-  
+
   if [[ -z "$status_text" ]]; then
     echo "Usage: slack-status <status-text> [status-emoji]"
     echo "Example: slack-status \"In a meeting\" \":calendar:\""
     echo "Note: This function requires macOS and the Slack application."
     return 1
   fi
-  
+
   if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS - Use AppleScript
     osascript <<EOF
@@ -631,14 +631,14 @@ EOF
 slack-remind() {
   local reminder_text=$1
   local time=$2
-  
+
   if [[ -z "$reminder_text" || -z "$time" ]]; then
     echo "Usage: slack-remind <reminder-text> <time>"
     echo "Example: slack-remind \"Team meeting\" \"tomorrow at 10am\""
     echo "Note: This function requires macOS and the Slack application."
     return 1
   fi
-  
+
   if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS - Use AppleScript
     osascript <<EOF
@@ -678,13 +678,13 @@ EOF
 teams-open() {
   local team=$1
   local channel=${2:-"General"}
-  
+
   if [[ -z "$team" ]]; then
     echo "Usage: teams-open <team-name> [channel-name]"
     echo "Example: teams-open \"Marketing Team\" General"
     return 1
   fi
-  
+
   osascript <<EOF
 tell application "Microsoft Teams"
   activate
@@ -698,32 +698,32 @@ tell application "System Events"
     -- Use Command+F to open the search
     keystroke "f" using {command down}
     delay 1
-    
+
     -- Type the team name
     keystroke "$team"
     delay 2
-    
+
     -- Press Enter to select the team
     keystroke return
     delay 2
-    
+
     -- If a channel is specified, try to navigate to it
     if "$channel" is not "General" then
       -- Use Command+F again to search within the team
       keystroke "f" using {command down}
       delay 1
-      
+
       -- Type the channel name
       keystroke "$channel"
       delay 1
-      
+
       -- Press Enter to select the channel
       keystroke return
     end if
   end tell
 end tell
 EOF
-  
+
   echo "Microsoft Teams opened and navigated to $team > $channel"
 }
 
@@ -743,20 +743,20 @@ tell application "System Events"
   end tell
 end tell
 EOF
-  
+
   echo "Starting a new Microsoft Teams meeting"
 }
 
 # Set Teams status
 teams-status() {
   local status=$1
-  
+
   if [[ -z "$status" ]]; then
     echo "Usage: teams-status <status>"
     echo "Available statuses: available, busy, dnd, away, offline"
     return 1
   fi
-  
+
   case "$status" in
     available|busy|dnd|away|offline)
       # Valid status
@@ -767,7 +767,7 @@ teams-status() {
       return 1
       ;;
   esac
-  
+
   osascript <<EOF
 tell application "Microsoft Teams"
   activate
@@ -780,10 +780,10 @@ tell application "System Events"
     -- Click on profile picture (top right)
     keystroke "p" using {command down, shift down}
     delay 1
-    
+
     -- Navigate to correct status option
     set statusText to "$status"
-    
+
     if statusText is "available" then
       keystroke "1"
     else if statusText is "busy" then
@@ -798,7 +798,7 @@ tell application "System Events"
   end tell
 end tell
 EOF
-  
+
   echo "Teams status set to: $status"
 }
 {{- end }}
@@ -811,25 +811,25 @@ EOF
 # Open Gmail with search
 gmail-search() {
   local search_query=$1
-  
+
   if [[ -z "$search_query" ]]; then
     echo "Usage: gmail-search <search-query>"
     echo "Example: gmail-search \"from:example.com after:2023/01/01\""
     return 1
   fi
-  
+
   # URL encode the search query
   local encoded_query=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$search_query'''))")
-  
+
   # Open Gmail with the search query
   local gmail_url="https://mail.google.com/mail/u/0/#search/${encoded_query}"
-  
+
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$gmail_url"
   else
     xdg-open "$gmail_url" &> /dev/null
   fi
-  
+
   echo "Opening Gmail with search: $search_query"
 }
 
@@ -838,50 +838,50 @@ gmail-compose() {
   local to=$1
   local subject=$2
   local body=$3
-  
+
   if [[ -z "$to" ]]; then
     echo "Usage: gmail-compose <to> [subject] [body]"
     echo "Example: gmail-compose \"user@example.com\" \"Meeting tomorrow\" \"Hi, let's meet tomorrow.\""
     return 1
   fi
-  
+
   # URL encode the parameters
   local encoded_subject=""
   local encoded_body=""
-  
+
   if [[ -n "$subject" ]]; then
     encoded_subject=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$subject'''))")
   fi
-  
+
   if [[ -n "$body" ]]; then
     encoded_body=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$body'''))")
   fi
-  
+
   # Create the mailto URL
   local mailto_url="mailto:${to}?subject=${encoded_subject}&body=${encoded_body}"
-  
+
   # Open the mailto URL
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$mailto_url"
   else
     xdg-open "$mailto_url" &> /dev/null
   fi
-  
+
   echo "Creating email to $to"
 }
 
 # Open Gmail with predefined filters
 gmail-filter() {
   local filter=$1
-  
+
   if [[ -z "$filter" ]]; then
     echo "Usage: gmail-filter <filter>"
     echo "Available filters: unread, starred, important, sent, drafts, spam, trash"
     return 1
   fi
-  
+
   local gmail_url=""
-  
+
   case "$filter" in
     unread)
       gmail_url="https://mail.google.com/mail/u/0/#search/is%3Aunread"
@@ -910,14 +910,14 @@ gmail-filter() {
       return 1
       ;;
   esac
-  
+
   # Open Gmail with the filter
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$gmail_url"
   else
     xdg-open "$gmail_url" &> /dev/null
   fi
-  
+
   echo "Opening Gmail with filter: $filter"
 }
 {{- end }}
@@ -935,7 +935,7 @@ calendar-new() {
   local location=${4:-""}
   local calendar=${5:-""}
   local all_day=${6:-"false"}
-  
+
   if [[ -z "$title" || -z "$start_date" ]]; then
     echo "Usage: calendar-new <title> <start-date-time> [end-date-time] [location] [calendar] [all-day]"
     echo "Example: calendar-new \"Team Meeting\" \"2023-06-15 14:00\" \"2023-06-15 15:00\" \"Conference Room\" \"Work\" false"
@@ -943,7 +943,7 @@ calendar-new() {
     echo "      For all-day events, use YYYY-MM-DD and set all-day to true"
     return 1
   fi
-  
+
   # If end date is not provided, set it to 1 hour after start date
   if [[ -z "$end_date" ]]; then
     # Parse the start date to determine format
@@ -960,31 +960,31 @@ calendar-new() {
       fi
     fi
   fi
-  
+
   # Create the Calendar event
   osascript <<EOF
 tell application "Calendar"
   set allDay to $all_day
-  
+
   -- Convert date strings to date objects
   set startDate to (do shell script "date -j -f '%Y-%m-%d %H:%M' '$start_date' '+%Y-%m-%d %H:%M:%S'")
   set endDate to (do shell script "date -j -f '%Y-%m-%d %H:%M' '$end_date' '+%Y-%m-%d %H:%M:%S'")
-  
+
   set startDate to date startDate
   set endDate to date endDate
-  
+
   -- Determine which calendar to use
   if "$calendar" is not "" then
     set targetCalendar to calendar "$calendar"
   else
     set targetCalendar to default calendar
   end if
-  
+
   -- Create the event
   tell targetCalendar
     make new event with properties {summary:"$title", start date:startDate, end date:endDate, location:"$location", allday event:allDay}
   end tell
-  
+
   return "Created event: $title on " & name of targetCalendar
 end tell
 EOF
@@ -997,13 +997,13 @@ tell application "Calendar"
   set todayStart to current date
   set time of todayStart to 0
   set todayEnd to todayStart + (1 * days)
-  
+
   set todayEvents to {}
   repeat with c in calendars
     set calEvents to (events of c whose start date ≥ todayStart and start date < todayEnd)
     set todayEvents to todayEvents & calEvents
   end repeat
-  
+
   -- Sort events by start time
   set sortedEvents to {}
   repeat with e in todayEvents
@@ -1018,15 +1018,15 @@ tell application "Calendar"
     end if
     set end of sortedEvents to {eventStartDate, eventInfo}
   end repeat
-  
+
   set sortedEvents to sortedEvents as list
   set results to {}
-  
+
   -- Sort events by start time
   repeat while (count of sortedEvents) > 0
     set earliest to item 1 of sortedEvents
     set earliestIndex to 1
-    
+
     repeat with i from 1 to count of sortedEvents
       set this_event to item i of sortedEvents
       if item 1 of this_event < item 1 of earliest then
@@ -1034,11 +1034,11 @@ tell application "Calendar"
         set earliestIndex to i
       end if
     end repeat
-    
+
     set end of results to item 2 of earliest
     set sortedEvents to items 1 thru (earliestIndex - 1) of sortedEvents & items (earliestIndex + 1) thru (count of sortedEvents) of sortedEvents
   end repeat
-  
+
   if (count of results) > 0 then
     set output to "Today's Events:" & return & "----------------" & return
     repeat with r in results
@@ -1056,20 +1056,20 @@ EOF
 calendar-search() {
   local search_term=$1
   local days=${2:-30}
-  
+
   if [[ -z "$search_term" ]]; then
     echo "Usage: calendar-search <search-term> [days]"
     echo "Example: calendar-search \"meeting\" 7"
     echo "Searches for events containing the search term in the next N days (default: 30)"
     return 1
   fi
-  
+
   osascript <<EOF
 tell application "Calendar"
   set daysToSearch to $days
   set searchStart to current date
   set searchEnd to searchStart + (daysToSearch * days)
-  
+
   set matchingEvents to {}
   repeat with c in calendars
     set calEvents to (events of c whose start date ≥ searchStart and start date < searchEnd)
@@ -1079,10 +1079,10 @@ tell application "Calendar"
       end if
     end repeat
   end repeat
-  
+
   if (count of matchingEvents) > 0 then
     set output to "Events matching '$search_term' in the next $days days:" & return & "---------------------------------------------" & return
-    
+
     -- Sort and format matching events
     set sortedEvents to {}
     repeat with e in matchingEvents
@@ -1091,24 +1091,24 @@ tell application "Calendar"
       set eventTime to time string of eventDate
       set eventTitle to summary of e
       set loc to location of e
-      
+
       if loc is not "" then
         set eventInfo to eventDateString & " " & eventTime & " - " & eventTitle & " (" & loc & ")"
       else
         set eventInfo to eventDateString & " " & eventTime & " - " & eventTitle
       end if
-      
+
       set end of sortedEvents to {eventDate, eventInfo}
     end repeat
-    
+
     -- Sort events by date
     set sortedEvents to sortedEvents as list
     set results to {}
-    
+
     repeat while (count of sortedEvents) > 0
       set earliest to item 1 of sortedEvents
       set earliestIndex to 1
-      
+
       repeat with i from 1 to count of sortedEvents
         set this_event to item i of sortedEvents
         if item 1 of this_event < item 1 of earliest then
@@ -1116,15 +1116,15 @@ tell application "Calendar"
           set earliestIndex to i
         end if
       end repeat
-      
+
       set end of results to item 2 of earliest
       set sortedEvents to items 1 thru (earliestIndex - 1) of sortedEvents & items (earliestIndex + 1) thru (count of sortedEvents) of sortedEvents
     end repeat
-    
+
     repeat with r in results
       set output to output & r & return
     end repeat
-    
+
     return output
   else
     return "No events matching '$search_term' found in the next $days days."
@@ -1146,13 +1146,13 @@ gcal-new() {
   local end_date=$3
   local details=${4:-""}
   local location=${5:-""}
-  
+
   if [[ -z "$title" || -z "$start_date" ]]; then
     echo "Usage: gcal-new <title> <start-date-time> [end-date-time] [details] [location]"
     echo "Example: gcal-new \"Team Meeting\" \"2023-06-15T14:00\" \"2023-06-15T15:00\" \"Discuss project status\" \"Conference Room\""
     return 1
   fi
-  
+
   # If end date is not provided, set it to 1 hour after start date
   if [[ -z "$end_date" ]]; then
     # Parse the start date to determine format
@@ -1173,24 +1173,24 @@ gcal-new() {
       fi
     fi
   fi
-  
+
   # URL encode the parameters
   if command -v python3 >/dev/null 2>&1; then
     title=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$title'''))")
     details=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$details'''))")
     location=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$location'''))")
   fi
-  
+
   # Create the Google Calendar URL
   local gcal_url="https://calendar.google.com/calendar/r/eventedit?text=${title}&dates=${start_date}/${end_date}&details=${details}&location=${location}"
-  
+
   # Open the URL
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$gcal_url"
   else
     xdg-open "$gcal_url" &> /dev/null
   fi
-  
+
   echo "Opening Google Calendar to create event: $title"
 }
 
@@ -1198,7 +1198,7 @@ gcal-new() {
 gcal-open() {
   local view=${1:-"week"}
   local date=${2:-""}
-  
+
   # Validate the view parameter
   case "$view" in
     day|week|month|agenda|year)
@@ -1210,10 +1210,10 @@ gcal-open() {
       return 1
       ;;
   esac
-  
+
   # Build the URL
   local gcal_url="https://calendar.google.com/calendar/r/$view"
-  
+
   # Add date if provided
   if [[ -n "$date" ]]; then
     # Validate date format (YYYY/MM/DD)
@@ -1221,17 +1221,17 @@ gcal-open() {
       echo "Invalid date format. Use YYYY/MM/DD format."
       return 1
     fi
-    
+
     gcal_url="$gcal_url/$date"
   fi
-  
+
   # Open the URL
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$gcal_url"
   else
     xdg-open "$gcal_url" &> /dev/null
   fi
-  
+
   echo "Opening Google Calendar in $view view"
 }
 
@@ -1239,30 +1239,30 @@ gcal-open() {
 gcal-range() {
   local start_date=$1
   local end_date=$2
-  
+
   if [[ -z "$start_date" || -z "$end_date" ]]; then
     echo "Usage: gcal-range <start-date> <end-date>"
     echo "Example: gcal-range 2023/06/01 2023/06/30"
     echo "Note: Dates should be in format YYYY/MM/DD"
     return 1
   fi
-  
+
   # Validate date formats
   if [[ ! "$start_date" =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ || ! "$end_date" =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ ]]; then
     echo "Invalid date format. Use YYYY/MM/DD format."
     return 1
   fi
-  
+
   # Build the URL
   local gcal_url="https://calendar.google.com/calendar/r/customview?start=${start_date}&end=${end_date}"
-  
+
   # Open the URL
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$gcal_url"
   else
     xdg-open "$gcal_url" &> /dev/null
   fi
-  
+
   echo "Opening Google Calendar for date range: $start_date to $end_date"
 }
 {{- end }}
@@ -1275,15 +1275,15 @@ gcal-range() {
 # Open Office365 apps
 office365-open() {
   local app=$1
-  
+
   if [[ -z "$app" ]]; then
     echo "Usage: office365-open <app>"
     echo "Available apps: outlook, word, excel, powerpoint, onenote, teams, onedrive"
     return 1
   fi
-  
+
   local app_url=""
-  
+
   case "$app" in
     outlook)
       app_url="https://outlook.office.com/mail/"
@@ -1312,29 +1312,29 @@ office365-open() {
       return 1
       ;;
   esac
-  
+
   # Open the URL
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$app_url"
   else
     xdg-open "$app_url" &> /dev/null
   fi
-  
+
   echo "Opening Office365 $app"
 }
 
 # Create a new document in Office365
 office365-new() {
   local doc_type=$1
-  
+
   if [[ -z "$doc_type" ]]; then
     echo "Usage: office365-new <document-type>"
     echo "Available document types: word, excel, powerpoint, onenote"
     return 1
   fi
-  
+
   local doc_url=""
-  
+
   case "$doc_type" in
     word|document)
       doc_url="https://www.office.com/launch/word/new"
@@ -1354,14 +1354,14 @@ office365-new() {
       return 1
       ;;
   esac
-  
+
   # Open the URL
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$doc_url"
   else
     xdg-open "$doc_url" &> /dev/null
   fi
-  
+
   echo "Creating new Office365 $doc_type document"
 }
 
@@ -1370,37 +1370,37 @@ outlook-compose() {
   local to=$1
   local subject=$2
   local body=$3
-  
+
   if [[ -z "$to" ]]; then
     echo "Usage: outlook-compose <to> [subject] [body]"
     echo "Example: outlook-compose \"user@example.com\" \"Meeting Tomorrow\" \"Hi, let's meet tomorrow.\""
     return 1
   fi
-  
+
   # URL encode the parameters
   if command -v python3 >/dev/null 2>&1; then
     to=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$to'''))")
     subject=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$subject'''))")
     body=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$body'''))")
   fi
-  
+
   # Create the Outlook URL
   local outlook_url="https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}"
-  
+
   # Open the URL
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$outlook_url"
   else
     xdg-open "$outlook_url" &> /dev/null
   fi
-  
+
   echo "Creating email to $to in Outlook"
 }
 
 # Open OneDrive folder
 onedrive-open() {
   local folder_path=$1
-  
+
   if [[ -z "$folder_path" ]]; then
     # Open OneDrive root
     local onedrive_url="https://onedrive.live.com/"
@@ -1409,19 +1409,19 @@ onedrive-open() {
     if command -v python3 >/dev/null 2>&1; then
       folder_path=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$folder_path'''))")
     fi
-    
+
     # Create the OneDrive folder URL
     # Note: This is an approximation as the actual URL structure depends on folder IDs
     local onedrive_url="https://onedrive.live.com/?id=root&cid=root&qt=sharedby&path=${folder_path}"
   fi
-  
+
   # Open the URL
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$onedrive_url"
   else
     xdg-open "$onedrive_url" &> /dev/null
   fi
-  
+
   if [[ -z "$folder_path" ]]; then
     echo "Opening OneDrive root folder"
   else

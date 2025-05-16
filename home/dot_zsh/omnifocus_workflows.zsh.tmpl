@@ -11,48 +11,48 @@ of-add() {
   local task_name=$1
   local note=${2:-""}
   local due_date=${3:-""}
-  
+
   if [[ -z "$task_name" ]]; then
     echo "Usage: of-add <task-name> [note] [due-date]"
     echo "Example: of-add \"Buy groceries\" \"Milk, eggs, bread\" \"tomorrow 6pm\""
     return 1
   fi
-  
+
   # Check if running on macOS
   if [[ "$(uname)" != "Darwin" ]]; then
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Construct the AppleScript
   local script="tell application \"OmniFocus\"
   tell default document
     set theTask to make new inbox task with properties {name:\"$task_name\""
-  
+
   # Add note if provided
   if [[ -n "$note" ]]; then
     script+=", note:\"$note\""
   fi
-  
+
   # Add due date if provided
   if [[ -n "$due_date" ]]; then
     script+=", due date:date \"$due_date\""
   fi
-  
+
   # Close the script
   script+="}
   end tell
 end tell"
-  
+
   # Run the AppleScript
   osascript -e "$script"
-  
+
   echo "Task \"$task_name\" added to OmniFocus inbox"
 }
 
@@ -62,100 +62,100 @@ of-add-to-project() {
   local task_name=$2
   local note=${3:-""}
   local due_date=${4:-""}
-  
+
   if [[ -z "$project_name" || -z "$task_name" ]]; then
     echo "Usage: of-add-to-project <project-name> <task-name> [note] [due-date]"
     echo "Example: of-add-to-project \"Home\" \"Fix the sink\" \"Bathroom sink\" \"this weekend\""
     return 1
   fi
-  
+
   # Check if running on macOS
   if [[ "$(uname)" != "Darwin" ]]; then
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Construct the AppleScript
   local script="tell application \"OmniFocus\"
   tell default document
     set theProject to first flattened project where name = \"$project_name\"
     tell theProject
       set theTask to make new task with properties {name:\"$task_name\""
-  
+
   # Add note if provided
   if [[ -n "$note" ]]; then
     script+=", note:\"$note\""
   fi
-  
+
   # Add due date if provided
   if [[ -n "$due_date" ]]; then
     script+=", due date:date \"$due_date\""
   fi
-  
+
   # Close the script
   script+="}
     end tell
   end tell
 end tell"
-  
+
   # Run the AppleScript
   osascript -e "$script" 2>/dev/null
-  
+
   # Check if the command was successful
   if [[ $? -ne 0 ]]; then
     echo "Error: Project \"$project_name\" not found in OmniFocus."
     return 1
   fi
-  
+
   echo "Task \"$task_name\" added to OmniFocus project \"$project_name\""
 }
 
 # List all OmniFocus projects
 of-projects() {
   local filter=${1:-""}
-  
+
   # Check if running on macOS
   if [[ "$(uname)" != "Darwin" ]]; then
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Construct the AppleScript
   local script="tell application \"OmniFocus\"
   tell default document
     set theProjects to name of flattened projects"
-  
+
   # Add filter if provided
   if [[ -n "$filter" ]]; then
     script+=" where name contains \"$filter\""
   fi
-  
+
   # Close the script
   script+="
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if the command was successful
   if [[ $? -ne 0 ]]; then
     echo "Error: Failed to retrieve OmniFocus projects."
     return 1
   fi
-  
+
   # Format and display the projects
   echo "OmniFocus Projects:"
   echo "$result" | tr ',' '\n' | sed 's/^ */- /'
@@ -165,25 +165,25 @@ end tell"
 of-tasks() {
   local project_name=$1
   local include_completed=${2:-false}
-  
+
   if [[ -z "$project_name" ]]; then
     echo "Usage: of-tasks <project-name> [include-completed]"
     echo "Example: of-tasks \"Home\" true"
     return 1
   fi
-  
+
   # Check if running on macOS
   if [[ "$(uname)" != "Darwin" ]]; then
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Construct the AppleScript
   local script="tell application \"OmniFocus\"
   tell default document
@@ -191,12 +191,12 @@ of-tasks() {
     set theTasks to {}
     tell theProject
       set projectTasks to every task"
-  
+
   # Add filter for completed tasks if needed
   if [[ "$include_completed" != "true" ]]; then
     script+=" where completed is false"
   fi
-  
+
   # Continue the script
   script+="
       repeat with t in projectTasks
@@ -215,16 +215,16 @@ of-tasks() {
     return taskList
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if the command was successful
   if [[ $? -ne 0 ]]; then
     echo "Error: Project \"$project_name\" not found in OmniFocus."
     return 1
   fi
-  
+
   # Format and display the tasks
   echo "Tasks in project \"$project_name\":"
   echo "$result" | tr ',' '\n' | sed 's/^ *//'
@@ -233,25 +233,25 @@ end tell"
 # Mark an OmniFocus task as completed
 of-complete() {
   local task_name=$1
-  
+
   if [[ -z "$task_name" ]]; then
     echo "Usage: of-complete <task-name>"
     echo "Example: of-complete \"Buy groceries\""
     return 1
   fi
-  
+
   # Check if running on macOS
   if [[ "$(uname)" != "Darwin" ]]; then
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Construct the AppleScript
   local script="tell application \"OmniFocus\"
   tell default document
@@ -266,10 +266,10 @@ of-complete() {
     end if
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if any tasks were marked as completed
   if [[ "$result" == "true" ]]; then
     echo "Task \"$task_name\" marked as completed in OmniFocus"
@@ -283,30 +283,30 @@ end tell"
 of-search() {
   local search_term=$1
   local context=${2:-"all"}
-  
+
   if [[ -z "$search_term" ]]; then
     echo "Usage: of-search <search-term> [context]"
     echo "Example: of-search \"groceries\" \"active\""
     echo "Available contexts: all, active, inbox, projects, flagged, due"
     return 1
   fi
-  
+
   # Check if running on macOS
   if [[ "$(uname)" != "Darwin" ]]; then
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Construct the AppleScript based on the search context
   local script="tell application \"OmniFocus\"
   tell default document"
-  
+
   case "$context" in
     inbox)
       script+="
@@ -333,7 +333,7 @@ of-search() {
     set searchTasks to flattened tasks where name contains \"$search_term\""
       ;;
   esac
-  
+
   # Continue the script to format results
   script+="
     set taskList to {}
@@ -345,26 +345,26 @@ of-search() {
         else
           set taskStatus to \"[ ] \"
         end if
-        
+
         if flagged of t then
           set taskFlag to \"🚩 \"
         else
           set taskFlag to \"\"
         end if
-        
+
         if due date of t is not missing value then
           set dueInfo to \" (due: \" & (due date of t as string) & \")\"
         else
           set dueInfo to \"\"
         end if
-        
+
         try
           set projectName to name of containing project of t
           set projectInfo to \" [\" & projectName & \"]\"
         on error
           set projectInfo to \" [Inbox]\"
         end try
-        
+
         set end of taskList to taskStatus & taskFlag & taskName & dueInfo & projectInfo
       else
         set end of taskList to \"📂 \" & taskName
@@ -373,16 +373,16 @@ of-search() {
     return taskList
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if the search was successful
   if [[ $? -ne 0 ]]; then
     echo "Error: Failed to search OmniFocus."
     return 1
   fi
-  
+
   # Display the search results
   if [[ -z "$result" ]]; then
     echo "No matching tasks found for \"$search_term\" in $context."
@@ -396,29 +396,29 @@ end tell"
 of-new-project() {
   local project_name=$1
   local folder_name=${2:-""}
-  
+
   if [[ -z "$project_name" ]]; then
     echo "Usage: of-new-project <project-name> [folder-name]"
     echo "Example: of-new-project \"Kitchen Remodel\" \"Home\""
     return 1
   fi
-  
+
   # Check if running on macOS
   if [[ "$(uname)" != "Darwin" ]]; then
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Construct the AppleScript
   local script="tell application \"OmniFocus\"
   tell default document"
-  
+
   # If a folder is specified, create the project in that folder
   if [[ -n "$folder_name" ]]; then
     script+="
@@ -436,16 +436,16 @@ of-new-project() {
     script+="
     make new project with properties {name:\"$project_name\"}"
   fi
-  
+
   # Close the script
   script+="
     return true
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if the project was created successfully
   if [[ "$result" == "true" ]]; then
     if [[ -n "$folder_name" ]]; then
@@ -466,29 +466,29 @@ of-folders() {
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Construct the AppleScript
   local script="tell application \"OmniFocus\"
   tell default document
     set theFolders to name of flattened folders
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if the command was successful
   if [[ $? -ne 0 ]]; then
     echo "Error: Failed to retrieve OmniFocus folders."
     return 1
   fi
-  
+
   # Format and display the folders
   echo "OmniFocus Folders:"
   echo "$result" | tr ',' '\n' | sed 's/^ */- /'
@@ -501,13 +501,13 @@ of-today() {
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Construct the AppleScript
   local script="tell application \"OmniFocus\"
   tell default document
@@ -515,38 +515,38 @@ of-today() {
     set taskList to {}
     repeat with t in todayTasks
       set taskName to name of t
-      
+
       if flagged of t then
         set taskFlag to \"🚩 \"
       else
         set taskFlag to \"\"
       end if
-      
+
       set dueDate to due date of t
       set dueInfo to \" (due: \" & (dueDate as string) & \")\"
-      
+
       try
         set projectName to name of containing project of t
         set projectInfo to \" [\" & projectName & \"]\"
       on error
         set projectInfo to \" [Inbox]\"
       end try
-      
+
       set end of taskList to taskFlag & taskName & dueInfo & projectInfo
     end repeat
     return taskList
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if the command was successful
   if [[ $? -ne 0 ]]; then
     echo "Error: Failed to retrieve OmniFocus tasks due today."
     return 1
   fi
-  
+
   # Display the tasks
   if [[ -z "$result" ]]; then
     echo "No tasks due today."
@@ -563,13 +563,13 @@ of-process-inbox() {
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Get count of inbox items
   local script="tell application \"OmniFocus\"
   tell default document
@@ -577,14 +577,14 @@ of-process-inbox() {
     return inboxCount
   end tell
 end tell"
-  
+
   local inbox_count=$(osascript -e "$script" 2>/dev/null)
-  
+
   echo "You have $inbox_count items in your OmniFocus inbox."
-  
+
   # Open OmniFocus and show the inbox
   osascript -e 'tell application "OmniFocus" to activate' -e 'tell application "OmniFocus" to tell default document to tell front document window to set perspective name to "Inbox"' &>/dev/null
-  
+
   echo "Opening OmniFocus to process your inbox..."
   echo "Tips for inbox processing:"
   echo "1. Decide if each item is actionable"
@@ -596,25 +596,25 @@ end tell"
 # Create a new project template in OmniFocus
 of-template() {
   local template_name=$1
-  
+
   if [[ -z "$template_name" ]]; then
     echo "Usage: of-template <template-name>"
     echo "Example: of-template \"Trip Planning\""
     return 1
   fi
-  
+
   # Check if running on macOS
   if [[ "$(uname)" != "Darwin" ]]; then
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Ask for template folder if needed
   local template_folder
   local script="tell application \"OmniFocus\"
@@ -626,9 +626,9 @@ of-template() {
     return folderExists
   end tell
 end tell"
-  
+
   local folder_exists=$(osascript -e "$script" 2>/dev/null)
-  
+
   if [[ "$folder_exists" != "true" ]]; then
     # Create Templates folder
     script="tell application \"OmniFocus\"
@@ -639,14 +639,14 @@ end tell"
     osascript -e "$script" &>/dev/null
     echo "Created 'Templates' folder in OmniFocus."
   fi
-  
+
   template_folder="Templates"
-  
+
   # Ask for template details
   echo "Creating template project \"$template_name\" in OmniFocus..."
   echo "Please enter the tasks for your template, one per line."
   echo "When finished, enter a blank line or type 'done'."
-  
+
   local tasks=()
   while true; do
     read -p "Task: " task
@@ -655,7 +655,7 @@ end tell"
     fi
     tasks+=("$task")
   done
-  
+
   # Create the template project
   script="tell application \"OmniFocus\"
   tell default document
@@ -663,13 +663,13 @@ end tell"
     tell templateFolder
       set newTemplate to make new project with properties {name:\"$template_name\"}
       tell newTemplate"
-  
+
   # Add tasks to the template
   for task in "${tasks[@]}"; do
     script+="
         make new task with properties {name:\"$task\"}"
   done
-  
+
   # Close the script
   script+="
       end tell
@@ -677,10 +677,10 @@ end tell"
     return true
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if the template was created successfully
   if [[ "$result" == "true" ]]; then
     echo "Template \"$template_name\" created in OmniFocus with ${#tasks[@]} tasks."
@@ -695,25 +695,25 @@ of-apply-template() {
   local template_name=$1
   local project_name=$2
   local folder_name=${3:-""}
-  
+
   if [[ -z "$template_name" || -z "$project_name" ]]; then
     echo "Usage: of-apply-template <template-name> <project-name> [folder-name]"
     echo "Example: of-apply-template \"Trip Planning\" \"Summer Vacation 2023\" \"Personal\""
     return 1
   fi
-  
+
   # Check if running on macOS
   if [[ "$(uname)" != "Darwin" ]]; then
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Check if the template exists
   local script="tell application \"OmniFocus\"
   tell default document
@@ -724,20 +724,20 @@ of-apply-template() {
     return templateExists
   end tell
 end tell"
-  
+
   local template_exists=$(osascript -e "$script" 2>/dev/null)
-  
+
   if [[ "$template_exists" != "true" ]]; then
     echo "Error: Template \"$template_name\" not found in the Templates folder."
     return 1
   fi
-  
+
   # Create the new project and copy tasks from the template
   script="tell application \"OmniFocus\"
   tell default document
     set templateProject to first flattened project where name = \"$template_name\" and containing folder's name = \"Templates\"
     set templateTasks to tasks of templateProject"
-  
+
   # Determine where to create the new project
   if [[ -n "$folder_name" ]]; then
     script+="
@@ -754,21 +754,21 @@ end tell"
     script+="
     set newProject to make new project with properties {name:\"$project_name\"}"
   fi
-  
+
   # Copy tasks from the template to the new project
   script+="
     tell newProject
       repeat with t in templateTasks
         set taskName to name of t
         set newTask to make new task with properties {name:taskName}
-        
+
         # Copy additional properties if needed
         try
           if note of t is not \"\" then
             set note of newTask to note of t
           end if
         end try
-        
+
         # Copy subtasks if needed
         try
           set subtasks to tasks of t
@@ -785,10 +785,10 @@ end tell"
     return true
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if the project was created successfully
   if [[ "$result" == "true" ]]; then
     if [[ -n "$folder_name" ]]; then
@@ -809,13 +809,13 @@ of-templates() {
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Check if Templates folder exists
   local script="tell application \"OmniFocus\"
   tell default document
@@ -826,14 +826,14 @@ of-templates() {
     return folderExists
   end tell
 end tell"
-  
+
   local folder_exists=$(osascript -e "$script" 2>/dev/null)
-  
+
   if [[ "$folder_exists" != "true" ]]; then
     echo "No Templates folder found in OmniFocus."
     return 1
   fi
-  
+
   # Get templates
   script="tell application \"OmniFocus\"
   tell default document
@@ -847,16 +847,16 @@ end tell"
     return templateNames
   end tell
 end tell"
-  
+
   # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
-  
+
   # Check if the command was successful
   if [[ $? -ne 0 ]]; then
     echo "Error: Failed to retrieve OmniFocus templates."
     return 1
   fi
-  
+
   # Format and display the templates
   if [[ -z "$result" ]]; then
     echo "No templates found in the Templates folder."
@@ -873,16 +873,16 @@ of-quick-entry() {
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Open OmniFocus Quick Entry panel
   osascript -e 'tell application "OmniFocus" to activate' -e 'tell application "System Events" to keystroke "q" using {command down, option down}' &>/dev/null
-  
+
   echo "OmniFocus Quick Entry panel opened."
   echo "Enter your task details and press Enter to save."
 }
@@ -894,13 +894,13 @@ of-weekly-review() {
     echo "Error: OmniFocus integration is only available on macOS."
     return 1
   fi
-  
+
   # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
-  
+
   # Check if the Weekly Review template already exists
   local script="tell application \"OmniFocus\"
   tell default document
@@ -911,14 +911,14 @@ of-weekly-review() {
     return templateExists
   end tell
 end tell"
-  
+
   local template_exists=$(osascript -e "$script" 2>/dev/null)
-  
+
   # If the template doesn't exist, create it
   if [[ "$template_exists" != "true" ]]; then
     # Create the template
     of-template "Weekly Review"
-    
+
     # Add standard GTD weekly review steps to the template
     script="tell application \"OmniFocus\"
     tell default document
@@ -939,19 +939,19 @@ end tell"
       end tell
     end tell
   end tell"
-    
+
     osascript -e "$script" &>/dev/null
-    
+
     echo "Created Weekly Review template in OmniFocus."
   fi
-  
+
   # Generate a date-specific name for this week's review
   local this_friday=$(date -v+fri +"%Y-%m-%d")
   local project_name="Weekly Review - $this_friday"
-  
+
   # Create a new weekly review project from the template
   of-apply-template "Weekly Review" "$project_name"
-  
+
   # Open the new project in OmniFocus
   script="tell application \"OmniFocus\"
   tell default document
@@ -962,9 +962,9 @@ end tell"
   end tell
   activate
 end tell"
-  
+
   osascript -e "$script" &>/dev/null
-  
+
   echo "Weekly Review project created and opened in OmniFocus."
   echo "Follow the checklist to complete your GTD weekly review."
 }

@@ -11,14 +11,14 @@ jenkins-status() {
   local job_name=$2
   local api_token=${3:-$JENKINS_API_TOKEN}
   local username=${4:-$JENKINS_USERNAME}
-  
+
   if [[ -z "$server" || -z "$job_name" ]]; then
     echo "Usage: jenkins-status <jenkins-url> <job-name> [api-token] [username]"
     echo "Example: jenkins-status https://jenkins.example.com my-project-pipeline"
     echo "Note: You can set JENKINS_API_TOKEN and JENKINS_USERNAME environment variables instead of passing them as arguments"
     return 1
   fi
-  
+
   # If no authentication provided, try without auth
   if [[ -z "$api_token" || -z "$username" ]]; then
     curl -s "$server/job/$job_name/lastBuild/api/json" | jq '{"result": .result, "building": .building, "duration": .duration, "timestamp": .timestamp}'
@@ -33,24 +33,24 @@ jenkins-build() {
   local job_name=$2
   local api_token=${3:-$JENKINS_API_TOKEN}
   local username=${4:-$JENKINS_USERNAME}
-  
+
   if [[ -z "$server" || -z "$job_name" ]]; then
     echo "Usage: jenkins-build <jenkins-url> <job-name> [api-token] [username]"
     echo "Example: jenkins-build https://jenkins.example.com my-project-pipeline"
     echo "Note: You can set JENKINS_API_TOKEN and JENKINS_USERNAME environment variables instead of passing them as arguments"
     return 1
   fi
-  
+
   if [[ -z "$api_token" || -z "$username" ]]; then
     echo "Authentication required to trigger a build."
     echo "Please provide API token and username or set JENKINS_API_TOKEN and JENKINS_USERNAME environment variables."
     return 1
   fi
-  
+
   local build_response
   build_response=$(curl -s -XPOST --user "$username:$api_token" "$server/job/$job_name/build")
   local http_code=$?
-  
+
   if [[ $http_code -eq 0 ]]; then
     echo "Build triggered successfully for job: $job_name"
     echo "Check status with: jenkins-status $server $job_name"
@@ -64,45 +64,45 @@ jenkins-build() {
 jenkins-new-file() {
   local pipeline_type=${1:-"simple"}
   local output_file=${2:-"Jenkinsfile"}
-  
+
   # Check if file already exists
   if [[ -f "$output_file" ]]; then
     echo "Error: $output_file already exists. Choose a different filename or remove the existing file."
     return 1
   fi
-  
+
   case "$pipeline_type" in
     simple)
       cat > "$output_file" << 'EOF'
 pipeline {
     agent any
-    
+
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
+
         stage('Build') {
             steps {
                 echo 'Building...'
                 // Add build commands here
             }
         }
-        
+
         stage('Test') {
             steps {
                 echo 'Testing...'
                 // Add test commands here
             }
         }
-        
+
         stage('Deploy') {
             steps {
                 echo 'Deploying...'
@@ -110,7 +110,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         success {
             echo 'Pipeline completed successfully!'
@@ -130,43 +130,43 @@ pipeline {
             image 'node:lts'
         }
     }
-    
+
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
+
         stage('Install Dependencies') {
             steps {
                 sh 'npm ci'
             }
         }
-        
+
         stage('Lint') {
             steps {
                 sh 'npm run lint'
             }
         }
-        
+
         stage('Test') {
             steps {
                 sh 'npm test'
             }
         }
-        
+
         stage('Build') {
             steps {
                 sh 'npm run build'
             }
         }
-        
+
         stage('Deploy') {
             when {
                 branch 'main'
@@ -177,7 +177,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             junit 'test-results/*.xml'
@@ -194,44 +194,44 @@ pipeline {
             image 'python:3.10'
         }
     }
-    
+
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
+
         stage('Install Dependencies') {
             steps {
                 sh 'pip install -r requirements.txt'
                 sh 'pip install pytest pytest-cov pylint'
             }
         }
-        
+
         stage('Lint') {
             steps {
                 sh 'pylint --disable=C0111 src'
             }
         }
-        
+
         stage('Test') {
             steps {
                 sh 'pytest --cov=src tests/'
             }
         }
-        
+
         stage('Build') {
             steps {
                 sh 'python setup.py sdist bdist_wheel'
             }
         }
-        
+
         stage('Deploy') {
             when {
                 branch 'main'
@@ -242,7 +242,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             junit 'test-results/*.xml'
@@ -259,37 +259,37 @@ pipeline {
             image 'maven:3.8-openjdk-17'
         }
     }
-    
+
     options {
         timeout(time: 40, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
+
         stage('Build') {
             steps {
                 sh 'mvn clean compile'
             }
         }
-        
+
         stage('Test') {
             steps {
                 sh 'mvn test'
             }
         }
-        
+
         stage('Package') {
             steps {
                 sh 'mvn package -DskipTests'
             }
         }
-        
+
         stage('Deploy') {
             when {
                 branch 'main'
@@ -300,7 +300,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             junit 'target/surefire-reports/*.xml'
@@ -314,33 +314,33 @@ EOF
       cat > "$output_file" << 'EOF'
 pipeline {
     agent any
-    
+
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
+
         stage('Build') {
             steps {
                 echo 'Building...'
                 // Add build commands here
             }
         }
-        
+
         stage('Test') {
             steps {
                 echo 'Testing...'
                 // Add test commands here
             }
         }
-        
+
         stage('Deploy to Dev') {
             when {
                 branch 'develop'
@@ -350,7 +350,7 @@ pipeline {
                 // Add deployment commands here
             }
         }
-        
+
         stage('Deploy to Staging') {
             when {
                 branch 'staging'
@@ -360,7 +360,7 @@ pipeline {
                 // Add deployment commands here
             }
         }
-        
+
         stage('Deploy to Production') {
             when {
                 branch 'main'
@@ -371,7 +371,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         success {
             echo 'Pipeline completed successfully!'
@@ -389,7 +389,7 @@ EOF
       return 1
       ;;
   esac
-  
+
   echo "Created $pipeline_type Jenkinsfile at $output_file"
 }
 
@@ -402,7 +402,7 @@ github-actions-new() {
   local workflow_type=${1:-"simple"}
   local output_dir=${2:-".github/workflows"}
   local filename
-  
+
   # Set filename based on workflow type
   case "$workflow_type" in
     simple) filename="ci.yml" ;;
@@ -413,18 +413,18 @@ github-actions-new() {
     pages) filename="pages.yml" ;;
     *) filename="$workflow_type.yml" ;;
   esac
-  
+
   # Create the directory if it doesn't exist
   mkdir -p "$output_dir"
-  
+
   local output_file="$output_dir/$filename"
-  
+
   # Check if file already exists
   if [[ -f "$output_file" ]]; then
     echo "Error: $output_file already exists. Choose a different filename or remove the existing file."
     return 1
   fi
-  
+
   case "$workflow_type" in
     simple)
       cat > "$output_file" << 'EOF'
@@ -439,13 +439,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Build
       run: echo "Building the project"
-      
+
     - name: Test
       run: echo "Running tests"
 EOF
@@ -467,25 +467,25 @@ jobs:
     strategy:
       matrix:
         node-version: [14.x, 16.x, 18.x]
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    
+
     - name: Install dependencies
       run: npm ci
-    
+
     - name: Lint
       run: npm run lint --if-present
-    
+
     - name: Build
       run: npm run build --if-present
-    
+
     - name: Test
       run: npm test
 EOF
@@ -509,27 +509,27 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install pytest pytest-cov flake8
-    
+
     - name: Lint with flake8
       run: |
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-    
+
     - name: Test with pytest
       run: |
         pytest --cov=./ --cov-report=xml
-    
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
@@ -550,21 +550,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
-    
+
     - name: Login to DockerHub
       if: github.event_name != 'pull_request'
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-    
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v4
@@ -574,7 +574,7 @@ jobs:
           type=ref,event=branch
           type=ref,event=pr
           type=semver,pattern={{version}}
-    
+
     - name: Build and push
       uses: docker/build-push-action@v4
       with:
@@ -596,16 +596,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    
+
     - name: Build
       run: echo "Building release version..."
-    
+
     - name: Create Release
       id: create_release
       uses: softprops/action-gh-release@v1
@@ -645,16 +645,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      
+
       - name: Setup Pages
         uses: actions/configure-pages@v3
-      
+
       - name: Build
         run: |
           echo "Building site..."
           # Replace with your build command
           # e.g., npm ci && npm run build
-      
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
@@ -678,7 +678,7 @@ EOF
       return 1
       ;;
   esac
-  
+
   echo "Created $workflow_type GitHub Actions workflow at $output_file"
 }
 
@@ -686,13 +686,13 @@ EOF
 github-actions-status() {
   local repo=$1
   local workflow=${2:-""}
-  
+
   if [[ -z "$repo" ]]; then
     echo "Usage: github-actions-status <owner/repo> [workflow-name]"
     echo "Example: github-actions-status octocat/hello-world ci.yml"
     return 1
   fi
-  
+
   if command -v gh >/dev/null 2>&1; then
     if [[ -z "$workflow" ]]; then
       gh workflow list --repo "$repo"
@@ -712,13 +712,13 @@ github-actions-run() {
   local workflow=$1
   local repo=${2:-""}
   local branch=${3:-"main"}
-  
+
   if [[ -z "$workflow" ]]; then
     echo "Usage: github-actions-run <workflow> [repo] [branch]"
     echo "Example: github-actions-run ci.yml octocat/hello-world main"
     return 1
   fi
-  
+
   if command -v gh >/dev/null 2>&1; then
     if [[ -z "$repo" ]]; then
       gh workflow run "$workflow" --ref "$branch"

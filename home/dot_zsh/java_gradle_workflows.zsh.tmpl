@@ -11,27 +11,27 @@ java-init-gradle() {
   local project_name=$1
   local package_name=${2:-"com.example.$project_name"}
   local directory=${3:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
-  
+
   if [[ -z "$project_name" ]]; then
     echo "Usage: java-init-gradle <project-name> [package-name] [directory]"
     echo "Example: java-init-gradle my-app com.example.myapp ~/Projects/my-app"
     return 1
   fi
-  
+
   # Check if Gradle is installed
   if ! command -v gradle >/dev/null 2>&1; then
     echo "Error: Gradle is not installed."
     echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
     return 1
   fi
-  
+
   # Create project directory if it doesn't exist
   mkdir -p "$directory"
   cd "$directory" || return 1
-  
+
   # Create gradle project with init task
   gradle init --type java-application --dsl groovy --test-framework junit-jupiter --package "$package_name" --project-name "$project_name"
-  
+
   # Enhance the build.gradle file with common plugins and dependencies
   cat > build.gradle << EOF
 plugins {
@@ -55,11 +55,11 @@ dependencies {
     // Logging
     implementation 'org.slf4j:slf4j-api:2.0.5'
     implementation 'ch.qos.logback:logback-classic:1.4.6'
-    
+
     // Utils
     implementation 'com.google.guava:guava:31.1-jre'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
-    
+
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
@@ -299,7 +299,7 @@ EOF
   git init
   git add .
   git commit -m "Initial Java/Gradle project setup"
-  
+
   echo "Java/Gradle project '$project_name' initialized successfully at $directory"
   echo "Next steps:"
   echo "1. Open the project in your IDE (IntelliJ IDEA, Eclipse, VS Code)"
@@ -312,19 +312,19 @@ java-init-spring() {
   local project_name=$1
   local package_name=${2:-"com.example.$project_name"}
   local directory=${3:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
-  
+
   if [[ -z "$project_name" ]]; then
     echo "Usage: java-init-spring <project-name> [package-name] [directory]"
     echo "Example: java-init-spring my-service com.example.myservice ~/Projects/my-service"
     return 1
   fi
-  
+
   # Check if Spring Boot CLI is installed
   if command -v spring >/dev/null 2>&1; then
     # Use spring cli to initialize the project
     mkdir -p "$directory"
     cd "$directory" || return 1
-    
+
     spring init \
       --build=gradle \
       --java-version=17 \
@@ -337,15 +337,15 @@ java-init-spring() {
       --description="Spring Boot application" \
       --package-name="$package_name" \
       .
-      
+
   else
     # Use curl to download from start.spring.io
     echo "Spring Boot CLI not found, using start.spring.io API..."
-    
+
     # Create temp directory
     local temp_dir=$(mktemp -d)
     local zip_file="$temp_dir/project.zip"
-    
+
     # Download from Spring Initializr
     curl -s https://start.spring.io/starter.zip \
       -d type=gradle-project \
@@ -361,22 +361,22 @@ java-init-spring() {
       -d javaVersion=17 \
       -d dependencies=web,actuator,data-jpa,h2,lombok,validation \
       -o "$zip_file"
-    
+
     # Extract and move to destination
     mkdir -p "$directory"
     unzip -q "$zip_file" -d "$(dirname "$directory")"
-    
+
     # Clean up temp directory
     rm -rf "$temp_dir"
-    
+
     # Move to the project directory
     cd "$directory" || return 1
   fi
-  
+
   # Create additional directories for a typical Spring Boot project
   mkdir -p src/main/java/${package_name//./\/}/{config,controller,dto,exception,model,repository,service,util}
   mkdir -p src/main/resources/{static,templates,db/migration}
-  
+
   # Create sample controller
   cat > src/main/java/${package_name//./\/}/controller/HomeController.java << EOF
 package $package_name.controller;
@@ -559,7 +559,7 @@ EOF
   git init
   git add .
   git commit -m "Initial Spring Boot project setup"
-  
+
   echo "Spring Boot project '$project_name' initialized successfully at $directory"
   echo "Next steps:"
   echo "1. Run './gradlew bootRun' to start the application"
@@ -573,7 +573,7 @@ java-versions() {
   if [[ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
     echo "SDKMAN is not installed. Do you want to install it now? (y/n)"
     read -r install_sdkman
-    
+
     if [[ "$install_sdkman" =~ ^[Yy]$ ]]; then
       curl -s "https://get.sdkman.io" | bash
       source "$HOME/.sdkman/bin/sdkman-init.sh"
@@ -582,10 +582,10 @@ java-versions() {
       return 1
     fi
   fi
-  
+
   # Source SDKMAN
   source "$HOME/.sdkman/bin/sdkman-init.sh"
-  
+
   # List available Java versions
   sdk list java
 }
@@ -593,19 +593,19 @@ java-versions() {
 # Install and set a specific version of Java via SDKMAN
 java-install() {
   local version=$1
-  
+
   if [[ -z "$version" ]]; then
     echo "Usage: java-install <version>"
     echo "Example: java-install 17.0.6-tem"
     echo "To see available versions, run: java-versions"
     return 1
   fi
-  
+
   # Check if SDKMAN is installed
   if [[ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
     echo "SDKMAN is not installed. Do you want to install it now? (y/n)"
     read -r install_sdkman
-    
+
     if [[ "$install_sdkman" =~ ^[Yy]$ ]]; then
       curl -s "https://get.sdkman.io" | bash
       source "$HOME/.sdkman/bin/sdkman-init.sh"
@@ -614,10 +614,10 @@ java-install() {
       return 1
     fi
   fi
-  
+
   # Source SDKMAN
   source "$HOME/.sdkman/bin/sdkman-init.sh"
-  
+
   # Install the specified Java version
   sdk install java "$version"
 }
@@ -626,20 +626,20 @@ java-install() {
 java-gen-class() {
   local class_name=$1
   local package_name=${2:-"com.example"}
-  
+
   if [[ -z "$class_name" ]]; then
     echo "Usage: java-gen-class <class-name> [package-name]"
     echo "Example: java-gen-class User com.example.model"
     return 1
   fi
-  
+
   # Create the package directory structure
   local package_dir="src/main/java/${package_name//./\/}"
   mkdir -p "$package_dir"
-  
+
   # Define the class file path
   local class_file="$package_dir/$class_name.java"
-  
+
   # Create the class file
   cat > "$class_file" << EOF
 package $package_name;
@@ -648,18 +648,18 @@ package $package_name;
  * $class_name class.
  */
 public class $class_name {
-    
+
     // Fields
-    
+
     /**
      * Default constructor.
      */
     public $class_name() {
         // Initialize
     }
-    
+
     // Methods
-    
+
     /**
      * String representation of this object.
      */
@@ -669,13 +669,13 @@ public class $class_name {
     }
 }
 EOF
-  
+
   # Create a corresponding test class
   local test_dir="src/test/java/${package_name//./\/}"
   mkdir -p "$test_dir"
-  
+
   local test_file="$test_dir/${class_name}Test.java"
-  
+
   cat > "$test_file" << EOF
 package $package_name;
 
@@ -688,21 +688,21 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for the $class_name class.
  */
 class ${class_name}Test {
-    
+
     private $class_name ${class_name,}; // lowercase first letter
-    
+
     @BeforeEach
     void setUp() {
         ${class_name,} = new $class_name();
     }
-    
+
     @Test
     void testToString() {
         assertNotNull(${class_name,}.toString());
     }
 }
 EOF
-  
+
   echo "Generated class $class_name in package $package_name"
   echo "Class file created at: $class_file"
   echo "Test file created at: $test_file"
@@ -713,23 +713,23 @@ java-gen-pojo() {
   local class_name=$1
   local package_name=${2:-"com.example.model"}
   local fields=$3
-  
+
   if [[ -z "$class_name" || -z "$fields" ]]; then
     echo "Usage: java-gen-pojo <class-name> [package-name] <fields>"
     echo "Example: java-gen-pojo User com.example.model \"String name, Integer age, Boolean active\""
     return 1
   fi
-  
+
   # Create the package directory structure
   local package_dir="src/main/java/${package_name//./\/}"
   mkdir -p "$package_dir"
-  
+
   # Define the class file path
   local class_file="$package_dir/$class_name.java"
-  
+
   # Parse fields and create class content
   IFS=',' read -ra FIELD_ARRAY <<< "$fields"
-  
+
   # Create field declarations
   local field_declarations=""
   local getters_setters=""
@@ -738,21 +738,21 @@ java-gen-pojo() {
   local constructor_assignments=""
   local to_string_fields=""
   local equals_hash_fields=""
-  
+
   for field in "${FIELD_ARRAY[@]}"; do
     # Trim whitespace
     field=$(echo "$field" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-    
+
     # Extract type and name
     local field_type=$(echo "$field" | cut -d' ' -f1)
     local field_name=$(echo "$field" | cut -d' ' -f2)
-    
+
     # Add field declaration
     field_declarations+="    private $field_type $field_name;\n"
-    
+
     # Capitalize first letter for getter/setter
     local field_name_cap="${field_name^}"
-    
+
     # Add getter and setter
     getters_setters+="    /**\n"
     getters_setters+="     * Get $field_name.\n"
@@ -770,7 +770,7 @@ java-gen-pojo() {
     getters_setters+="        this.$field_name = $field_name;\n"
     getters_setters+="        return this;\n"
     getters_setters+="    }\n\n"
-    
+
     # Add builder method
     builder_methods+="        /**\n"
     builder_methods+="         * Set $field_name.\n"
@@ -781,7 +781,7 @@ java-gen-pojo() {
     builder_methods+="            this.$field_name = $field_name;\n"
     builder_methods+="            return this;\n"
     builder_methods+="        }\n\n"
-    
+
     # Add to constructor params and assignments
     if [[ -n "$constructor_params" ]]; then
       constructor_params+=", "
@@ -789,20 +789,20 @@ java-gen-pojo() {
     fi
     constructor_params+="$field_type $field_name"
     constructor_assignments+="        this.$field_name = $field_name;"
-    
+
     # Add to toString
     if [[ -n "$to_string_fields" ]]; then
       to_string_fields+=", "
     fi
     to_string_fields+="$field_name=" + "$field_name"
-    
+
     # Add to equals and hashCode
     if [[ -n "$equals_hash_fields" ]]; then
       equals_hash_fields+=", "
     fi
     equals_hash_fields+="$field_name"
   done
-  
+
   # Create the class file
   cat > "$class_file" << EOF
 package $package_name;
@@ -813,7 +813,7 @@ import java.util.Objects;
  * $class_name POJO.
  */
 public class $class_name {
-    
+
     // Fields
 $(echo -e "$field_declarations")
     /**
@@ -822,14 +822,14 @@ $(echo -e "$field_declarations")
     public $class_name() {
         // Default constructor
     }
-    
+
     /**
      * All args constructor.
      */
     public $class_name($constructor_params) {
 $constructor_assignments
     }
-    
+
 $(echo -e "$getters_setters")
     /**
      * Create a new Builder for $class_name.
@@ -838,7 +838,7 @@ $(echo -e "$getters_setters")
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for $class_name.
      */
@@ -855,7 +855,7 @@ $(echo -e "$constructor_assignments" | sed 's/this\./instance\./g')
             return instance;
         }
     }
-    
+
     /**
      * String representation of this object.
      */
@@ -863,7 +863,7 @@ $(echo -e "$constructor_assignments" | sed 's/this\./instance\./g')
     public String toString() {
         return "$class_name[" + "$to_string_fields" + "]";
     }
-    
+
     /**
      * Equals implementation.
      */
@@ -874,7 +874,7 @@ $(echo -e "$constructor_assignments" | sed 's/this\./instance\./g')
         $class_name that = ($class_name) o;
         return Objects.equals($equals_hash_fields);
     }
-    
+
     /**
      * HashCode implementation.
      */
@@ -884,7 +884,7 @@ $(echo -e "$constructor_assignments" | sed 's/this\./instance\./g')
     }
 }
 EOF
-  
+
   echo "Generated POJO $class_name in package $package_name"
   echo "Class file created at: $class_file"
 }
@@ -896,17 +896,17 @@ java-gradle-wrapper() {
     echo "Not a Gradle project. No build.gradle or build.gradle.kts found."
     return 1
   fi
-  
+
   # Check if Gradle is installed
   if ! command -v gradle >/dev/null 2>&1; then
     echo "Error: Gradle is not installed."
     echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
     return 1
   }
-  
+
   # Create Gradle wrapper
   gradle wrapper
-  
+
   echo "Gradle wrapper created successfully."
   echo "You can now use './gradlew' instead of 'gradle' to run Gradle commands."
 }
@@ -915,19 +915,19 @@ java-gradle-wrapper() {
 java-gradle() {
   local task=$1
   local options=${@:2}
-  
+
   # Check if this is a Gradle project
   if [[ ! -f "build.gradle" && ! -f "build.gradle.kts" && ! -f "gradlew" ]]; then
     echo "Not a Gradle project. No build.gradle, build.gradle.kts, or gradlew found."
     return 1
   }
-  
+
   # Check if a wrapper exists
   local gradle_cmd="gradle"
   if [[ -f "gradlew" ]]; then
     gradle_cmd="./gradlew"
   fi
-  
+
   # Common tasks
   case "$task" in
     build)
@@ -1011,17 +1011,17 @@ java-gradle() {
 java-gen-test() {
   local class_name=$1
   local package_name=${2:-"com.example"}
-  
+
   if [[ -z "$class_name" ]]; then
     echo "Usage: java-gen-test <class-name> [package-name]"
     echo "Example: java-gen-test UserService com.example.service"
     return 1
   fi
-  
+
   # Create the test directory structure
   local test_dir="src/test/java/${package_name//./\/}"
   mkdir -p "$test_dir"
-  
+
   # Add Test suffix if not already there
   if [[ ! "$class_name" =~ Test$ ]]; then
     test_class_name="${class_name}Test"
@@ -1030,10 +1030,10 @@ java-gen-test() {
     # Remove Test suffix from the class being tested
     class_name="${class_name%Test}"
   fi
-  
+
   # Define the test file path
   local test_file="$test_dir/$test_class_name.java"
-  
+
   # Create the test file
   cat > "$test_file" << EOF
 package $package_name;
@@ -1053,41 +1053,41 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 class $test_class_name {
-    
+
     @InjectMocks
     private $class_name ${class_name,}; // lowercase first letter
-    
+
     // Define mocks with @Mock annotation
     // @Mock
     // private DependencyClass dependency;
-    
+
     @BeforeEach
     void setUp() {
         // Initialize if needed
     }
-    
+
     @Test
     void testSomeMethod() {
         // Given
-        
+
         // When
-        
+
         // Then
         assertTrue(true); // Replace with actual assertions
     }
-    
+
     @Test
     void testAnotherMethod() {
         // Given
-        
+
         // When
-        
+
         // Then
         assertTrue(true); // Replace with actual assertions
     }
 }
 EOF
-  
+
   echo "Generated test class $test_class_name in package $package_name"
   echo "Test file created at: $test_file"
 }

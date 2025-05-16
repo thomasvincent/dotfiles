@@ -42,7 +42,7 @@ fi
 # Check for make
 if ! command_exists make; then
     echo -e "${RED}Error: 'make' is not installed.${RESET}"
-    
+
     if [[ "$OS" == "macos" ]]; then
         echo -e "${YELLOW}Installing command line tools...${RESET}"
         xcode-select --install || true
@@ -91,7 +91,7 @@ if [[ "$OS" == "macos" ]]; then
     if ! command_exists brew; then
         echo -e "${YELLOW}Installing Homebrew...${RESET}"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        
+
         # Add Homebrew to PATH
         if [[ "$(uname -m)" == "arm64" ]]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
