@@ -1,16 +1,22 @@
-#!/usr/bin/env zsh
-# test_mode.zsh - Special configuration for test environments
-# This file is loaded by the test framework directly
+#\!/usr/bin/env zsh
+# test_mode.zsh - Configuration for running ZSH in test mode
 
-# Basic, minimal zsh configuration for test environments
-unsetopt zle
-unsetopt monitor
+# Skip certain tasks/plugins in test mode
+export ZSH_TEST_MODE=1
 
-# Basic prompt
-PS1="%# "
+# Prevent any interactive prompts
+export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_INSTALL_CLEANUP=1
+export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
 
-# Report back with minimal success message
-echo "ZSH Test Mode Active - Using simplified configuration"
+# Keep test output cleaner
+setopt NO_BEEP
 
-# Return immediately
-return 0
+# Skip loading plugins that might cause errors in test environment
+export ZSH_TEST_SKIP_PLUGINS=1
+
+# Disable terminal title updates
+export ZSH_DISABLE_TITLE_UPDATE=1
+
+# Override certain functions for testing
+function brew() { echo "Brew command stubbed in test mode"; }
