@@ -45,7 +45,7 @@ _claude() {
           _arguments \
             '1: :->config_cmd' \
             '*:: :->config_args'
-          
+
           case $state in
             (config_cmd)
               _describe -t config_cmds 'config commands' config_cmds

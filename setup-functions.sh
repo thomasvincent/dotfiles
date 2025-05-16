@@ -20,15 +20,15 @@ create_function_file() {
     local file_name="$1"
     local file_desc="$2"
     local file_path="$FUNC_DIR/$file_name"
-    
+
     # Skip if file already exists
     if [[ -f "$file_path" ]]; then
         echo -e "${YELLOW}File $file_name already exists, skipping...${RESET}"
         return 0
     fi
-    
+
     echo -e "${BLUE}Creating $file_name...${RESET}"
-    
+
     # Create the file with a basic structure
     cat > "$file_path" << EOF
 #!/usr/bin/env zsh
@@ -43,7 +43,7 @@ create_function_file() {
 # Add your custom functions below
 
 EOF
-    
+
     # Make executable
     chmod +x "$file_path"
     echo -e "${GREEN}Created $file_name successfully${RESET}"

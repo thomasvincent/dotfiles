@@ -13,7 +13,7 @@ if command -v rustc >/dev/null; then
 
   # Add Cargo bin to path
   [[ -d "$HOME/.cargo/bin" ]] && path=("$HOME/.cargo/bin" $path)
-  
+
   # Cargo aliases
   alias cn="cargo new"
   alias ci="cargo init"
@@ -32,30 +32,30 @@ if command -v rustc >/dev/null; then
   rust-init() {
     emulate -L zsh
     setopt local_options err_return pipefail
-    
+
     local project_name="${1:?Project name required}"
     local project_type="${2:-bin}"  # bin or lib
-    
+
     # Create project with Cargo
     print -P "%F{blue}Creating Rust %F{green}$project_type%f project: %F{green}$project_name%f"
     cargo new "$project_name" --"$project_type"
-    
+
     cd "$project_name" || return
-    
+
     # Add useful development dependencies
     print -P "%F{blue}Adding development dependencies...%f"
-    
+
     # Linting and formatting
     cargo add --dev clippy
     cargo add --dev rustfmt
-    
+
     # Testing
     cargo add --dev pretty_assertions
-    
+
     # Error handling
     cargo add anyhow
     cargo add thiserror
-    
+
     # Create enhanced .gitignore for macOS
     print -P "%F{blue}Creating enhanced .gitignore...%f"
     cat > .gitignore << 'EOL'
@@ -107,44 +107,44 @@ EOL
     git init -q
     git add .
     git commit -m "Initial commit"
-    
+
     print -P "%F{green}✓ Rust project initialized: %F{blue}$project_name%f"
     print -P "%F{blue}Run with: %F{green}cargo run%f"
   }
-  
+
   # Run Rust tools with sensible defaults
   rust-check() {
     emulate -L zsh
-    
+
     print -P "%F{blue}Running comprehensive Rust checks...%f"
-    
+
     print -P "%F{blue}Running cargo check...%f"
     cargo check --all-features
-    
+
     print -P "%F{blue}Running cargo clippy...%f"
     cargo clippy --all-targets --all-features -- -D warnings
-    
+
     print -P "%F{blue}Running cargo test...%f"
     cargo test --all-features
-    
+
     print -P "%F{blue}Running cargo fmt...%f"
     cargo fmt --all -- --check
-    
+
     print -P "%F{green}✓ All checks passed%f"
   }
-  
+
   # Update Rust toolchain with progress reporting
   rust-update() {
     emulate -L zsh
-    
+
     print -P "%F{blue}Updating Rust toolchain and dependencies...%f"
-    
+
     print -P "%F{blue}Updating rustup...%f"
     rustup update
-    
+
     print -P "%F{blue}Updating cargo packages...%f"
     cargo install-update -a
-    
+
     print -P "%F{green}✓ Rust toolchain updated%f"
   }
 fi

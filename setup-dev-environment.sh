@@ -58,14 +58,14 @@ print_header "Checking for Homebrew"
 if ! command_exists brew; then
   echo "Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  
+
   # Add Homebrew to PATH based on architecture
   if [[ "$(uname -m)" == "arm64" ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   else
     eval "$(/usr/local/bin/brew shellenv)"
   fi
-  
+
   print_success "Homebrew installed"
 else
   print_success "Homebrew already installed"
@@ -105,28 +105,28 @@ print_success "ZSH configuration linked"
 print_header "Setting up ASDF version manager"
 if command_exists asdf; then
   echo "Installing ASDF plugins..."
-  
+
   # Add plugins if they don't exist
   asdf plugin add nodejs || true
   asdf plugin add python || true
   asdf plugin add ruby || true
   asdf plugin add java || true
   asdf plugin add golang || true
-  
+
   # Install latest versions
   asdf install nodejs latest
   asdf install python latest
   asdf install ruby latest
   asdf install java temurin-17.0.9+9
   asdf install golang latest
-  
+
   # Set global versions
   asdf global nodejs latest
   asdf global python latest
   asdf global ruby latest
   asdf global java temurin-17.0.9+9
   asdf global golang latest
-  
+
   print_success "ASDF plugins installed and configured"
 else
   print_error "ASDF not found. Please install ASDF first."
@@ -138,11 +138,11 @@ if ! command_exists rustc; then
   echo "Installing Rust with rustup..."
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
   source "$HOME/.cargo/env"
-  
+
   # Install some useful Rust tools
   cargo install cargo-update
   cargo install cargo-edit
-  
+
   print_success "Rust installed"
 else
   print_success "Rust already installed"
@@ -176,13 +176,13 @@ if command_exists gh; then
   echo "Generating GitHub CLI completions..."
   mkdir -p "${HOME}/.zsh/completions"
   gh completion -s zsh > "${HOME}/.zsh/completions/_gh"
-  
+
   # Configure GitHub CLI if not configured
   if ! gh auth status 2>/dev/null; then
     echo "Please authenticate with GitHub:"
     gh auth login
   fi
-  
+
   print_success "GitHub CLI configured"
 fi
 

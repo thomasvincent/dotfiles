@@ -75,12 +75,12 @@ for file in aliases.zsh env.zsh path.zsh platform.zsh plugins.zsh completions.zs
   echo -e "${BLUE}Converting $file to template...${RESET}"
   cp "$DOTFILES_DIR/.zsh/$file" "$CHEZMOI_CONFIG_DIR/dot_zsh/$file.tmpl"
   sed -i '' 's|/Users/thomasvincent|{{ .chezmoi.homeDir }}|g' "$CHEZMOI_CONFIG_DIR/dot_zsh/$file.tmpl"
-  
+
   # Add platform-specific templating
   if [ "$file" = "platform.zsh" ]; then
     sed -i '' 's|PLATFORM="mac"|PLATFORM="{{ if .platform.is_macos }}mac{{ else if .platform.is_linux }}linux{{ else }}unknown{{ end }}"|g' "$CHEZMOI_CONFIG_DIR/dot_zsh/$file.tmpl"
   fi
-  
+
   # Add homebrew-specific templating
   if [ "$file" = "homebrew.zsh" ]; then
     sed -i '' '/# Detect Homebrew path/,/fi/ c\
@@ -99,7 +99,7 @@ elif [[ -d "$HOME/.linuxbrew" ]]; then
 fi
 {{- end }}' "$CHEZMOI_CONFIG_DIR/dot_zsh/$file.tmpl"
   fi
-  
+
   echo -e "${GREEN}✓ Added $file as template${RESET}"
 done
 
@@ -133,11 +133,11 @@ echo -e "${GREEN}✓ Added bin directory${RESET}"
 echo -e "${BLUE}Converting Brewfile to template...${RESET}"
 if [ -f "$DOTFILES_DIR/Brewfile" ]; then
   cp "$DOTFILES_DIR/Brewfile" "$CHEZMOI_CONFIG_DIR/Brewfile.tmpl"
-  
+
   # Add conditional sections based on platform
   sed -i '' '1i\
 {{ if .platform.is_macos -}}' "$CHEZMOI_CONFIG_DIR/Brewfile.tmpl"
-  
+
   # Add Linux-specific section at the end
   echo '
 {{- else if .platform.is_linux }}
@@ -146,7 +146,7 @@ brew "gcc"
 brew "make"
 brew "curl"
 {{- end }}' >> "$CHEZMOI_CONFIG_DIR/Brewfile.tmpl"
-  
+
   echo -e "${GREEN}✓ Added Brewfile as template${RESET}"
 fi
 

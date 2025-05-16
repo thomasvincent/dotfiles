@@ -70,12 +70,12 @@ backup_file() {
 create_symlink() {
   local source_path="$1"
   local target_path="$2"
-  
+
   if [ ! -e "$source_path" ]; then
     error "Source path does not exist: $source_path"
     return 1
   fi
-  
+
   # Backup existing file
   if [ -e "$target_path" ]; then
     if [ -L "$target_path" ]; then
@@ -86,15 +86,15 @@ create_symlink() {
         return 0
       fi
     fi
-    
+
     # Backup the existing file/symlink
     backup_file "$target_path"
     rm -rf "$target_path"
   fi
-  
+
   # Create parent directory if needed
   ensure_dir "$(dirname "$target_path")"
-  
+
   # Create the symlink
   ln -sf "$source_path" "$target_path"
   if [ $? -eq 0 ]; then
@@ -119,7 +119,7 @@ create_standard_dirs() {
     "$DOTFILES_DIR/.config"
     "$DOTFILES_DIR/.local/bin"
   )
-  
+
   for dir in "${dirs[@]}"; do
     ensure_dir "$dir"
   done
@@ -143,7 +143,7 @@ get_os() {
 # Get platform identifier (more specific than OS)
 get_platform() {
   local os="$(get_os)"
-  
+
   case "$os" in
     darwin)
       echo "mac"

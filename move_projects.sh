@@ -28,7 +28,7 @@ if [ -d "$HOME/dotfiles" ]; then
   echo -e "${BLUE}Moving dotfiles project to new location...${RESET}"
   rsync -av --progress "$HOME/dotfiles/" "$TARGET_DIR/dotfiles/"
   echo -e "${GREEN}✅ dotfiles copied to ${BOLD}$TARGET_DIR/dotfiles${RESET}"
-  
+
   # Create a symlink to maintain compatibility
   echo -e "\n${BLUE}Creating symlink for backward compatibility...${RESET}"
   if [ -L "$HOME/dotfiles" ]; then
@@ -48,7 +48,7 @@ echo -e "\n${BOLD}${UNDERLINE}${BLUE}OTHER PROJECTS${RESET}"
 echo -e "${BLUE}Searching for other project directories in ${GREEN}$HOME${BLUE}...${RESET}"
 
 # Standard directories to skip
-declare -a SKIP_DIRS=("Library" "Documents" "Downloads" "Movies" "Music" "Pictures" 
+declare -a SKIP_DIRS=("Library" "Documents" "Downloads" "Movies" "Music" "Pictures"
                       "Public" "Desktop" "Applications" ".config" ".local" ".cache")
 
 # Count of found projects
@@ -56,7 +56,7 @@ found_projects=0
 
 for dir in "$HOME"/*/; do
   dir_name=$(basename "$dir")
-  
+
   # Skip standard directories
   skip=false
   for skip_dir in "${SKIP_DIRS[@]}"; do
@@ -66,34 +66,34 @@ for dir in "$HOME"/*/; do
     fi
   done
   [[ $skip == true ]] && continue
-  
+
   # Check if it's a git repo or has src/main directories (likely a project)
   if [ -d "$dir/.git" ] || [ -d "$dir/src" ] || [ -d "$dir/main" ]; then
     found_projects=$((found_projects+1))
     echo -e "\n${YELLOW}Found potential project:${RESET} ${BOLD}$dir_name${RESET}"
-    
+
     # Check if project has a git repo
     if [ -d "$dir/.git" ]; then
       echo -e "  • ${GREEN}Git repository detected${RESET}"
     fi
-    
+
     # Check for common project directories
     [ -d "$dir/src" ] && echo -e "  • ${GREEN}src directory found${RESET}"
     [ -d "$dir/main" ] && echo -e "  • ${GREEN}main directory found${RESET}"
     [ -d "$dir/test" ] && echo -e "  • ${GREEN}test directory found${RESET}"
     [ -d "$dir/docs" ] && echo -e "  • ${GREEN}documentation directory found${RESET}"
-    
+
     echo -ne "\n${BOLD}Do you want to move this to $TARGET_DIR?${RESET} (y/n): "
     read -r answer
-    
+
     if [[ "$answer" =~ ^[Yy]$ ]]; then
       echo -e "\n${BLUE}Moving ${BOLD}$dir_name${BLUE} to ${GREEN}$TARGET_DIR${BLUE}...${RESET}"
       rsync -av --progress "$dir" "$TARGET_DIR/$dir_name/"
       echo -e "${GREEN}✅ Project copied to ${BOLD}$TARGET_DIR/$dir_name${RESET}"
-      
+
       echo -ne "\n${BOLD}Create a symlink for backward compatibility?${RESET} (y/n): "
       read -r symlink_answer
-      
+
       if [[ "$symlink_answer" =~ ^[Yy]$ ]]; then
         if [ -L "$HOME/$dir_name" ]; then
           echo -e "${YELLOW}Removing existing symlink...${RESET}"
