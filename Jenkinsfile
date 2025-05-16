@@ -1,6 +1,6 @@
 pipeline {
     agent any
-    
+
     options {
         timeout(time: 10, unit: 'MINUTES')
         disableConcurrentBuilds()
@@ -16,7 +16,7 @@ pipeline {
                 checkout scm
             }
         }
-        
+
         stage('Setup') {
             steps {
                 sh 'pip install pre-commit'
@@ -24,7 +24,7 @@ pipeline {
                 sh 'pip install yamllint'
             }
         }
-        
+
         stage('Linting') {
             parallel {
                 stage('Pre-commit') {
@@ -32,7 +32,7 @@ pipeline {
                         sh 'pre-commit run --all-files'
                     }
                 }
-                
+
                 stage('Shellcheck') {
                     steps {
                         sh '''
@@ -40,7 +40,7 @@ pipeline {
                         '''
                     }
                 }
-                
+
                 stage('YAML Lint') {
                     steps {
                         sh '''
@@ -50,13 +50,13 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Test') {
             steps {
                 sh 'make test || true' // Don't fail if test fails
             }
         }
-        
+
         stage('Verify Templates') {
             steps {
                 sh '''
@@ -66,7 +66,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             cleanWs()
