@@ -11,11 +11,13 @@ My personal dotfiles optimized for macOS and Linux development, managed with che
 - **Package Management** - Homebrew with Brewfile for easy dependency management
 - **Version Management** - ASDF integration for managing multiple language versions
 - **Error Handling** - Robust error handling with compatibility layer
-- **Error-Free Testing** - Test framework for validating configuration
-- **Plugin Management** - Zinit for efficient plugin management
-- **Chezmoi Integration** - Dotfile management with chezmoi for cross-machine synchronization
-- **Pre-commit Hooks** - Code quality checks before commits
-- **Templating** - Configuration files adapt to different environments
+- **Templating System** - Configuration files adapt to different environments
+- **Cloud Support** - AWS, Azure, GCP, DigitalOcean, Oracle Cloud, and Linode
+- **Kubernetes Tools** - Full Kubernetes workflow with kubectl, helm, and more
+- **Security Features** - GPG, SSH agent, YubiKey, and 1Password integration
+- **Makefile Automation** - Simple commands for common operations
+- **CI/CD Integration** - GitHub Actions and Jenkins pipelines
+- **Quality Assurance** - Pre-commit hooks and linting for all files
 
 ## Quick Start
 
@@ -35,6 +37,30 @@ git clone https://github.com/thomasvincent/dotfiles.git ~/dotfiles
 cd ~/dotfiles && ./install.sh
 ```
 
+## Using Makefile Commands
+
+After installation, you can use make commands to manage your dotfiles:
+
+```bash
+# Show available commands
+make help
+
+# Update dotfiles
+make update
+
+# Set up development environment
+make dev-setup
+
+# Set up cloud tools
+make cloud-setup
+
+# Run tests
+make test
+
+# Run linters
+make lint
+```
+
 ## Components
 
 - **Templates** - Chezmoi templates for different environments
@@ -44,26 +70,38 @@ cd ~/dotfiles && ./install.sh
 - **lib/** - Shared functions and utilities
 - **.github/** - GitHub configuration (workflows, CODEOWNERS)
 
-## Using Chezmoi
+## Cloud Provider Support
 
-After installation, manage your dotfiles with chezmoi:
+This dotfiles configuration supports multiple cloud providers:
 
-```bash
-# Edit a dotfile
-chezmoi edit ~/.zshrc
+- **AWS** - AWS CLI, aws-vault, aws-iam-authenticator
+- **Azure** - Azure CLI, Azure Terraform tools
+- **Google Cloud** - GCP SDK, Terraform validator
+- **DigitalOcean** - doctl CLI
+- **Oracle Cloud** - OCI CLI
+- **Linode** - Linode CLI
 
-# See changes before applying
-chezmoi diff
+Each cloud provider has its own set of functions and aliases configured in `~/.zsh/cloud.zsh`.
 
-# Apply changes
-chezmoi apply
+## Security Features
 
-# Update from repository and apply
-chezmoi update
+Enhanced security features can be enabled in the chezmoi.toml configuration:
 
-# Add a new file to chezmoi
-chezmoi add ~/.config/new-config-file
+```toml
+[data.security]
+    gpg_signing = true
+    use_ssh_agent = true
+    use_keychain = true  # macOS only
+    use_1password = false
+    use_yubikey = false
 ```
+
+These settings enable/disable various security features such as:
+
+- GPG commit signing
+- SSH agent management
+- 1Password integration
+- YubiKey integration
 
 ## Customization
 
@@ -72,17 +110,21 @@ Chezmoi uses a config file to customize dotfiles for different environments:
 ```toml
 # ~/.config/chezmoi/chezmoi.toml
 [data]
-    name = "Your Name"
+    name = "Your Name" 
     email = "your.email@example.com"
     github_username = "yourusername"
-
-    # Feature flags
-    minimal = false  # Set to true for minimal installation
-
-    # Work-specific settings
-    work = true
-    work_username = "username"
-    work_email = "work.email@company.com"
+    
+    # Feature toggles
+    enable_cloud = true
+    enable_containers = true
+    enable_kubernetes = true
+    
+    # Cloud providers to configure
+    [data.cloud]
+        aws = true
+        azure = true
+        gcp = true
+        digitalocean = true
 ```
 
 ## Development Workflow
@@ -100,21 +142,22 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-## Key Tools
+## CI/CD Integration
 
-- **Shell**: ZSH with Powerlevel10k
-- **Package Manager**: Homebrew
-- **Version Manager**: ASDF
-- **Prompt**: Powerlevel10k
-- **Terminal**: iTerm2
-- **Tools**: Git, fzf, ripgrep, bat, and more
-- **Dotfile Manager**: Chezmoi
+This repository includes:
+
+- **GitHub Actions** - Automated testing and linting
+- **Jenkinsfile** - Jenkins pipeline configuration
+- **Pre-commit hooks** - Local code quality checks
 
 ## Testing
 
 ```bash
 # Test shell startup for errors
-./test_shell_startup.sh
+make test
+
+# Run linters
+make lint
 ```
 
 ## Contributing

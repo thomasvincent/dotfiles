@@ -1,0 +1,65 @@
+# Cloud Provider Tools Brewfile
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Taps
+tap "homebrew/bundle"
+tap "homebrew/core"
+
+{{ if .cloud.aws -}}
+# AWS Tools
+brew "awscli"              # AWS Command Line Interface
+brew "aws-iam-authenticator" # Authenticate to AWS EKS
+brew "aws-vault"           # Securely store and access AWS credentials
+brew "chamber"             # AWS Parameter Store manager
+{{ end -}}
+
+{{ if .cloud.azure -}}
+# Azure Tools
+brew "azure-cli"           # Microsoft Azure CLI
+brew "aztfexport"          # Azure Terraform exporter
+{{ end -}}
+
+{{ if .cloud.gcp -}}
+# Google Cloud Tools
+brew "google-cloud-sdk"    # Google Cloud CLI
+brew "terraform-validator" # Validator for GCP Terraform
+{{ end -}}
+
+{{ if .cloud.digitalocean -}}
+# DigitalOcean Tools
+brew "doctl"               # DigitalOcean CLI
+{{ end -}}
+
+{{ if .cloud.oracle -}}
+# Oracle Cloud Tools
+brew "oci-cli"             # Oracle Cloud Infrastructure CLI
+{{ end -}}
+
+{{ if .cloud.linode -}}
+# Linode Tools
+brew "linode-cli"          # Linode CLI
+{{ end -}}
+
+# Infrastructure as Code
+brew "terraform"           # Infrastructure as code
+brew "terragrunt"          # Terraform wrapper
+brew "terraform-docs"      # Terraform documentation generator
+brew "infracost"           # Cloud cost estimates for Terraform
+brew "tfsec"               # Terraform security scanner
+
+# Kubernetes Tools
+{{ if .enable_kubernetes -}}
+brew "kubectl"             # Kubernetes CLI
+brew "helm"                # Kubernetes package manager
+brew "kubectx"             # Switch Kubernetes contexts
+brew "kustomize"           # Kubernetes customization
+brew "k9s"                 # Kubernetes CLI UI
+brew "stern"               # Multi-pod log tailing
+brew "kubernetes-cli"      # Kubernetes CLI
+brew "kube-ps1"            # Kubernetes prompt
+{{ end -}}
+
+# Cloud Utilities
+brew "jq"                  # JSON processor
+brew "yq"                  # YAML processor
+brew "chamber"             # Manage secrets

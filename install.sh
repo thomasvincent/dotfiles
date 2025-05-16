@@ -1,138 +1,131 @@
 #!/bin/bash
+# Installer script for dotfiles
+# This script is a wrapper around the Makefile
+
 set -euo pipefail
 
-# Dotfiles installation script
-# This script installs chezmoi and uses it to apply dotfiles
+# Colors
+RESET="\033[0m"
+BLUE="\033[0;34m"
+GREEN="\033[0;32m"
+RED="\033[0;31m"
+YELLOW="\033[0;33m"
 
-echo "==> Starting dotfiles installation"
-
-# Installation directory
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Check if running on a supported OS
+# Detect OS
 if [[ "$OSTYPE" == "darwin"* ]]; then
     OS="macos"
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     OS="linux"
 else
-    echo "Warning: Unsupported OS. Some features may not work correctly."
     OS="unknown"
 fi
 
-# Install dependencies based on OS
-install_dependencies() {
-    echo "==> Installing dependencies for $OS"
+# Print header
+echo -e "${BLUE}=====================================${RESET}"
+echo -e "${BLUE} Dotfiles Installation Script       ${RESET}"
+echo -e "${BLUE}=====================================${RESET}"
+echo
 
-    if [[ "$OS" == "macos" ]]; then
-        # Check if Homebrew is installed
-        if ! command -v brew &> /dev/null; then
-            echo "Installing Homebrew..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        fi
-
-        # Install chezmoi using Homebrew
-        if ! command -v chezmoi &> /dev/null; then
-            brew install chezmoi
-        fi
-    elif [[ "$OS" == "linux" ]]; then
-        # Install chezmoi directly
-        if ! command -v chezmoi &> /dev/null; then
-            echo "Installing chezmoi..."
-            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
-            export PATH="$HOME/.local/bin:$PATH"
-        fi
-    fi
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
-# Ask for user data for templating
-configure_user_data() {
-    echo "==> Configuring user data"
+# Test mode
+TEST_MODE=0
+if [[ "$#" -gt 0 && "$1" == "--test" ]]; then
+    TEST_MODE=1
+    echo -e "${YELLOW}Running in test mode. No changes will be made.${RESET}"
+    exit 0
+fi
 
-    # Create chezmoi config directory
-    mkdir -p "$HOME/.config/chezmoi"
-
-    # Start with template configuration
-    cp "$DOTFILES_DIR/chezmoi.toml" "$HOME/.config/chezmoi/chezmoi.toml"
-
-    # Get user input for personalization
-    read -p "Enter your full name: " USER_NAME
-    read -p "Enter your email: " USER_EMAIL
-    read -p "Enter your GitHub username: " GITHUB_USERNAME
-
-    # Update configuration file
+# Check for make
+if ! command_exists make; then
+    echo -e "${RED}Error: 'make' is not installed.${RESET}"
+    
     if [[ "$OS" == "macos" ]]; then
-        sed -i '' "s/name = \".*\"/name = \"$USER_NAME\"/" "$HOME/.config/chezmoi/chezmoi.toml"
-        sed -i '' "s/email = \".*\"/email = \"$USER_EMAIL\"/" "$HOME/.config/chezmoi/chezmoi.toml"
-        sed -i '' "s/github_username = \".*\"/github_username = \"$GITHUB_USERNAME\"/" "$HOME/.config/chezmoi/chezmoi.toml"
+        echo -e "${YELLOW}Installing command line tools...${RESET}"
+        xcode-select --install || true
+    elif [[ "$OS" == "linux" ]]; then
+        echo -e "${YELLOW}Installing make...${RESET}"
+        if command_exists apt-get; then
+            sudo apt-get update && sudo apt-get install -y make
+        elif command_exists yum; then
+            sudo yum install -y make
+        elif command_exists dnf; then
+            sudo dnf install -y make
+        else
+            echo -e "${RED}Unable to install 'make'. Please install it manually.${RESET}"
+            exit 1
+        fi
     else
-        sed -i "s/name = \".*\"/name = \"$USER_NAME\"/" "$HOME/.config/chezmoi/chezmoi.toml"
-        sed -i "s/email = \".*\"/email = \"$USER_EMAIL\"/" "$HOME/.config/chezmoi/chezmoi.toml"
-        sed -i "s/github_username = \".*\"/github_username = \"$GITHUB_USERNAME\"/" "$HOME/.config/chezmoi/chezmoi.toml"
+        echo -e "${RED}Please install 'make' and try again.${RESET}"
+        exit 1
     fi
+fi
 
-    echo "User data configured"
-}
+# Welcome message
+echo -e "Welcome to the dotfiles installer!"
+echo -e "This script will set up your environment with:"
+echo -e "  • ZSH configuration optimized for ${OS}"
+echo -e "  • Development tools and utilities"
+echo -e "  • Cloud provider integrations"
+echo -e "  • Git configuration and aliases"
+echo -e "  • Chezmoi for dotfiles management"
+echo
 
-# Apply dotfiles using chezmoi
-apply_dotfiles() {
-    echo "==> Applying dotfiles with chezmoi"
+# Ask for confirmation
+if [[ $TEST_MODE -eq 0 ]]; then
+    read -rp "Do you want to continue? [y/N] " response
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW}Installation cancelled.${RESET}"
+        exit 0
+    fi
+fi
 
-    # Initialize chezmoi with the dotfiles repository
-    chezmoi init "$DOTFILES_DIR"
+# Run installer
+echo -e "${BLUE}Starting installation...${RESET}"
 
-    # Apply the dotfiles
-    chezmoi apply -v
-
-    echo "Dotfiles applied successfully"
-}
-
-# Install additional tools and applications
-install_additional_tools() {
-    echo "==> Installing additional tools"
-
-    if [[ "$OS" == "macos" ]]; then
-        # Install packages from Brewfile
-        if [ -f "$HOME/Brewfile" ]; then
-            echo "Installing packages from Brewfile..."
-            brew bundle --file="$HOME/Brewfile"
+# Install dependencies for make
+if [[ "$OS" == "macos" ]]; then
+    if ! command_exists brew; then
+        echo -e "${YELLOW}Installing Homebrew...${RESET}"
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        
+        # Add Homebrew to PATH
+        if [[ "$(uname -m)" == "arm64" ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        else
+            eval "$(/usr/local/bin/brew shellenv)"
         fi
-    elif [[ "$OS" == "linux" ]]; then
-        # Install common packages
-        echo "Installing common packages on Linux..."
-        if command -v apt-get &> /dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y git zsh curl wget ripgrep fd-find bat tmux neovim
-        elif command -v yum &> /dev/null; then
-            sudo yum install -y git zsh curl wget ripgrep fd tmux neovim
-        fi
     fi
+fi
 
-    # Install Oh-My-Zsh if needed
-    if [ ! -d "$HOME/.oh-my-zsh" ]; then
-        echo "Installing Oh-My-Zsh..."
-        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-    fi
+# Run targets
+if [[ $TEST_MODE -eq 0 ]]; then
+    make backup
+    make brew-install
+    make install
+    make dev-setup
+    make cloud-setup
+    make functions
+else
+    echo -e "${YELLOW}Test mode: would run make targets${RESET}"
+    echo -e "  - make backup"
+    echo -e "  - make brew-install"
+    echo -e "  - make install"
+    echo -e "  - make dev-setup"
+    echo -e "  - make cloud-setup"
+    echo -e "  - make functions"
+fi
 
-    # Change default shell to zsh
-    if [ "$SHELL" != "$(which zsh)" ]; then
-        echo "Changing default shell to zsh..."
-        chsh -s "$(which zsh)"
-    fi
-}
+# Success message
+if [[ $TEST_MODE -eq 0 ]]; then
+    echo -e "\n${GREEN}✅ Installation complete!${RESET}"
+    echo -e "Please restart your terminal or run 'exec zsh' to apply all changes."
+    echo -e "You can run 'make help' to see available commands for managing your dotfiles."
+else
+    echo -e "\n${GREEN}✅ Test completed successfully!${RESET}"
+fi
 
-# Main installation process
-main() {
-    echo "Starting dotfiles installation..."
-
-    install_dependencies
-    configure_user_data
-    apply_dotfiles
-    install_additional_tools
-
-    echo "==> Installation complete!"
-    echo "Please restart your terminal for all changes to take effect."
-    echo "To update your dotfiles in the future, run: chezmoi update"
-}
-
-# Run the main function
-main
+exit 0

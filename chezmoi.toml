@@ -19,15 +19,47 @@
     name = "Thomas Vincent"
     email = "thomas@email.com"
     github_username = "thomasvincent"
-
+    
     # Configuration options
     minimal = false  # Set to true for minimal installation
-
+    
+    # Feature toggles
+    enable_cloud = true      # Enable cloud provider tools
+    enable_containers = true # Enable container tools
+    enable_kubernetes = true # Enable Kubernetes tools
+    enable_dev_tools = true  # Enable development tools
+    enable_editors = true    # Enable code editors
+    enable_extras = false    # Enable extra applications
+    
     # Work-specific settings (uncomment and set as needed)
     # work = true
     # work_username = "tvincent"
     # work_email = "thomas@work.com"
-
+    
     # Platform-specific configurations
     macos = true
     linux = false
+
+    # Cloud providers to configure
+    [data.cloud]
+        aws = true
+        azure = true
+        gcp = true
+        digitalocean = true
+        oracle = false
+        linode = false
+    
+    # Additional customizations
+    [data.preferences]
+        editor = "vscode"  # Options: vscode, vim, neovim, emacs
+        terminal = "iterm2"  # Options: iterm2, alacritty, kitty, terminal
+        shell_prompt = "powerlevel10k"  # Options: powerlevel10k, starship, pure
+        color_scheme = "dark"  # Options: dark, light, auto
+    
+    # Security settings
+    [data.security]
+        gpg_signing = true
+        use_ssh_agent = true
+        use_keychain = true  # macOS only
+        use_1password = false
+        use_yubikey = false
