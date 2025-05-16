@@ -1,0 +1,141 @@
+# Security configuration for dotfiles
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# SSH Agent Configuration
+{{ if .security.use_ssh_agent -}}
+# Start SSH agent if not running
+if [[ -z "$SSH_AUTH_SOCK" && -z "$SSH_CONNECTION" ]]; then
+  local ssh_agent_env="$HOME/.ssh/agent.env"
+  
+  if [[ -f "$ssh_agent_env" ]]; then
+    source "$ssh_agent_env" > /dev/null
+    
+    # Check if the agent is still running
+    if ! ps -p $SSH_AGENT_PID > /dev/null; then
+      # Agent not running, start a new one
+      ssh-agent | grep -v "echo" > "$ssh_agent_env"
+      chmod 600 "$ssh_agent_env"
+      source "$ssh_agent_env" > /dev/null
+    fi
+  else
+    # No agent env file, start a new agent
+    ssh-agent | grep -v "echo" > "$ssh_agent_env"
+    chmod 600 "$ssh_agent_env"
+    source "$ssh_agent_env" > /dev/null
+  fi
+fi
+{{ end -}}
+
+# GPG Configuration
+{{ if .security.gpg_signing -}}
+# Set up GPG for signing commits
+export GPG_TTY="$(tty)"
+
+{{ if eq .chezmoi.os "darwin" -}}
+# macOS specific GPG configuration
+export GNUPGHOME="${XDG_DATA_HOME:-$HOME/.local/share}/gnupg"
+
+{{ if .security.use_keychain -}}
+# Use macOS keychain for GPG
+if command -v gpgconf >/dev/null; then
+  export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+  gpgconf --launch gpg-agent
+fi
+{{ end -}}
+{{ end -}}
+
+# Add GPG key to agent
+gpg-add-key() {
+  echo "Adding GPG key to agent..."
+  gpg --list-secret-keys --keyid-format LONG
+  echo "Enter the key ID to add:"
+  read -r keyid
+  gpg --armor --export "$keyid"
+  echo "Add this key to your GitHub/GitLab account."
+}
+{{ end -}}
+
+{{ if .security.use_1password -}}
+# 1Password integration
+if command -v op >/dev/null; then
+  # 1Password SSH agent
+  export SSH_AUTH_SOCK=~/.1password/agent.sock
+  
+  # 1Password functions
+  op-signin() {
+    eval $(op signin)
+  }
+  
+  op-get-password() {
+    op get item "$1" | jq -r '.details.fields[] | select(.designation=="password").value'
+  }
+  
+  op-get-note() {
+    op get item "$1" | jq -r '.details.notesPlain'
+  }
+fi
+{{ end -}}
+
+{{ if .security.use_yubikey -}}
+# YubiKey configuration
+if command -v ykman >/dev/null; then
+  # YubiKey functions
+  yubikey-status() {
+    ykman info
+  }
+  
+  yubikey-otp() {
+    ykman otp
+  }
+  
+  yubikey-fido() {
+    ykman fido
+  }
+  
+  yubikey-piv() {
+    ykman piv info
+  }
+fi
+{{ end -}}
+
+# Security functions
+secure-delete() {
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    rm -P "$@"
+  else
+    shred -u "$@"
+  fi
+}
+
+generate-password() {
+  LENGTH=${1:-32}
+  LC_ALL=C tr -dc 'A-Za-z0-9!#$%&()*+,-./:;<=>?@[\]^_{|}~' </dev/urandom | head -c "$LENGTH"
+  echo
+}
+
+encrypt-file() {
+  gpg --symmetric --cipher-algo AES256 "$1"
+}
+
+decrypt-file() {
+  gpg --decrypt "$1" > "${1%.gpg}"
+}
+
+# Check for security tools
+security-check() {
+  echo "Checking for security tools..."
+  
+  command -v gpg >/dev/null && echo "✅ GPG is installed" || echo "❌ GPG is not installed"
+  command -v ssh-agent >/dev/null && echo "✅ SSH agent is installed" || echo "❌ SSH agent is not installed"
+  
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    command -v security >/dev/null && echo "✅ macOS keychain CLI tools are installed" || echo "❌ macOS keychain CLI tools are not installed"
+  fi
+  
+  command -v openssl >/dev/null && echo "✅ OpenSSL is installed" || echo "❌ OpenSSL is not installed"
+}
+
+# Security aliases
+alias ssh-agent-list='ssh-add -l'
+alias ssh-agent-remove='ssh-add -D'
+alias security-check='security-check'

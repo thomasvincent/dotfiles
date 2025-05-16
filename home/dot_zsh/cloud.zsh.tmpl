@@ -1,0 +1,208 @@
+# Cloud provider configurations
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if .cloud.aws -}}
+# AWS Configuration
+export AWS_REGION="${AWS_REGION:-us-west-2}"
+export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-$AWS_REGION}"
+export AWS_SDK_LOAD_CONFIG=1
+
+# AWS CLI completions
+if command -v aws_completer &>/dev/null; then
+  complete -C aws_completer aws
+fi
+
+# AWS Functions
+aws-profile() {
+  export AWS_PROFILE="$1"
+  echo "AWS Profile set to: $AWS_PROFILE"
+}
+
+aws-list-profiles() {
+  grep '\[profile' ~/.aws/config | sed -e 's/\[profile \(.*\)\]/\1/'
+}
+
+aws-who() {
+  aws sts get-caller-identity
+}
+{{ end -}}
+
+{{ if .cloud.azure -}}
+# Azure Configuration
+export AZURE_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/azure"
+
+# Azure Functions
+az-login() {
+  az login
+}
+
+az-account() {
+  az account show
+}
+
+az-subscriptions() {
+  az account list --output table
+}
+
+az-set-subscription() {
+  az account set --subscription "$1"
+  echo "Azure subscription set to: $1"
+}
+{{ end -}}
+
+{{ if .cloud.gcp -}}
+# Google Cloud Configuration
+export CLOUDSDK_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/gcloud"
+
+# Source Google Cloud SDK completions
+if [ -f "{{ if eq .chezmoi.os "darwin" -}}
+/opt/homebrew/Caskroom/google-cloud-sdk/latest/google-cloud-sdk
+{{- else -}}
+/usr/share/google-cloud-sdk
+{{- end -}}/completion.zsh.inc" ]; then
+  source "{{ if eq .chezmoi.os "darwin" -}}
+/opt/homebrew/Caskroom/google-cloud-sdk/latest/google-cloud-sdk
+{{- else -}}
+/usr/share/google-cloud-sdk
+{{- end -}}/completion.zsh.inc"
+fi
+
+# GCP Functions
+gcp-project() {
+  gcloud config set project "$1"
+  echo "GCP Project set to: $1"
+}
+
+gcp-list-projects() {
+  gcloud projects list
+}
+
+gcp-who() {
+  gcloud auth list
+}
+{{ end -}}
+
+{{ if .cloud.digitalocean -}}
+# DigitalOcean Configuration
+export DIGITALOCEAN_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/doctl"
+
+# DigitalOcean Functions
+do-list-droplets() {
+  doctl compute droplet list
+}
+
+do-list-regions() {
+  doctl compute region list
+}
+{{ end -}}
+
+{{ if .cloud.oracle -}}
+# Oracle Cloud Configuration
+export OCI_CLI_CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/oci/config"
+export OCI_CLI_RC_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/oci/ocirc"
+
+# Oracle Cloud Functions
+oci-who() {
+  oci session authenticate
+}
+
+oci-list-compartments() {
+  oci iam compartment list
+}
+{{ end -}}
+
+{{ if .cloud.linode -}}
+# Linode Configuration
+export LINODE_CLI_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/linode-cli"
+
+# Linode Functions
+linode-list() {
+  linode-cli linodes list
+}
+{{ end -}}
+
+# Common cloud functions
+cloud-ip() {
+  curl -s https://ifconfig.me
+}
+
+cloud-ports() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: cloud-ports <host>"
+    return 1
+  fi
+  nmap -Pn -p 1-1000 "$1"
+}
+
+# Terraform aliases and functions
+alias tf='terraform'
+alias tfi='terraform init'
+alias tfp='terraform plan'
+alias tfa='terraform apply'
+alias tfd='terraform destroy'
+alias tfo='terraform output'
+
+# Function to initialize Terraform with proper backend
+tf-init() {
+  local env="${1:-dev}"
+  terraform init -backend-config="env/$env.tfbackend"
+}
+
+# Function to run Terraform with proper variables file
+tf-plan() {
+  local env="${1:-dev}"
+  terraform plan -var-file="env/$env.tfvars"
+}
+
+tf-apply() {
+  local env="${1:-dev}"
+  terraform apply -var-file="env/$env.tfvars"
+}
+
+# Kubernetes aliases and functions
+{{ if .enable_kubernetes -}}
+alias k='kubectl'
+alias kgp='kubectl get pods'
+alias kgs='kubectl get services'
+alias kgd='kubectl get deployments'
+alias kns='kubens'
+alias kctx='kubectx'
+
+# Switch Kubernetes context
+kuse() {
+  if [[ -z "$1" ]]; then
+    kubectx
+  else
+    kubectx "$1"
+  fi
+}
+
+# Switch Kubernetes namespace
+kns-use() {
+  if [[ -z "$1" ]]; then
+    kubens
+  else
+    kubens "$1"
+  fi
+}
+
+# Get pod logs
+klogs() {
+  kubectl logs -f "$1"
+}
+
+# Port forward to a pod
+kforward() {
+  kubectl port-forward "$1" "$2:$3"
+}
+
+# Execute command in pod
+kexec() {
+  kubectl exec -it "$1" -- "${@:2}"
+}
+
+# Get all resources
+kgetall() {
+  kubectl get all --all-namespaces
+}
+{{ end -}}

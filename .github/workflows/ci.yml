@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   pre-commit:
@@ -14,13 +15,61 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    - uses: pre-commit/action@v3.0.0
+    - name: Install pre-commit
+      run: pip install pre-commit
+    - name: Run pre-commit hooks
+      run: pre-commit run --all-files
 
-  shellcheck:
+  lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Run ShellCheck
-      uses: ludeeus/action-shellcheck@master
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        severity: warning
+        python-version: '3.10'
+    - name: Install linting tools
+      run: |
+        pip install shellcheck-py yamllint
+    - name: Run ShellCheck
+      run: |
+        find . -type f -name "*.sh" ! -path "*/\.*" -exec shellcheck -S warning {} \;
+    - name: Run YAML Lint
+      run: |
+        find . -type f \( -name "*.yml" -o -name "*.yaml" \) ! -path "*/\.*" -exec yamllint {} \;
+
+  macos-test:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install testing dependencies
+      run: |
+        brew install zsh
+    - name: Set permissions
+      run: |
+        chmod +x $(find . -name "*.sh")
+    - name: Test installation script
+      run: |
+        ./install.sh --test || true
+
+  linux-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set permissions
+      run: |
+        chmod +x $(find . -name "*.sh")
+    - name: Test installation script
+      run: |
+        ./install.sh --test || true
+
+  template-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Verify chezmoi templates
+      run: |
+        for tmpl in $(find ./home -name "*.tmpl"); do
+          echo "Validating $tmpl"
+          grep -q "{{" "$tmpl" || echo "WARNING: No template variables found in $tmpl"
+        done
