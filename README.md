@@ -1,136 +1,99 @@
-# Modern macOS Dotfiles Setup
+# Dotfiles
 
-This repository contains a modern, modular dotfiles configuration optimized for macOS development.
+My personal dotfiles optimized for macOS development.
 
 ## Features
 
-- **Modular ZSH configuration** - Organized, easy to maintain configuration files
-- **XDG Base Directory support** - Cleaner home directory with proper organization
-- **Optimized PATH management** - Well-structured path configuration for all tools
-- **Enhanced Git configuration** - Modern Git settings optimized for macOS
-- **Powerful shell aliases** - Productivity-enhancing shortcuts and functions
-- **macOS-specific tooling** - Functions tailored for macOS development
-- **Improved performance** - Optimized shell startup and completion system
-- **Clean and consistent syntax** - Well-documented configuration files
-- **Easy to customize** - Simple structure for modifications
+- **DRY and SOLID** - Organized with clean separation of concerns
+- **Performance-Optimized** - Fast startup with performance monitoring
+- **Modular Architecture** - Each component is isolated and easily maintainable
+- **ZSH Configuration** - Powerlevel10k with instant prompt for fast startup
+- **Package Management** - Homebrew with Brewfile for easy dependency management
+- **Version Management** - ASDF integration for managing multiple language versions
+- **Error Handling** - Robust error handling with compatibility layer
+- **Error-Free Testing** - Test framework for validating configuration
+- **Plugin Management** - Zinit for efficient plugin management
+- **Chezmoi Integration** - Dotfile management with chezmoi for cross-machine synchronization
+- **Pre-commit Hooks** - Code quality checks before commits
 
-## Installation
+## Components
 
-1. Clone this repository to your machine:
+- `.zsh/` - ZSH configuration modules
+  - `lib/` - Shared library functions and utilities
+  - `functions.d/` - Individual function files 
+  - `dev/` - Development environment configurations
+- `.config/` - XDG configuration files
+- `bin/` - Executable scripts
+- `lib/` - Shared functions and utilities
+- `Brewfile` - Homebrew dependencies
+- `.github/` - GitHub configuration (workflows, CODEOWNERS)
+
+## Quick Start
 
 ```bash
-git clone https://github.com/yourusername/dotfiles.git ~/dotfiles
-cd ~/dotfiles
+# Clone the repository
+git clone https://github.com/thomasvincent/dotfiles.git ~/dotfiles
+
+# Run the setup script
+cd ~/dotfiles && ./setup-dotfiles.sh
 ```
 
-2. Run the setup script:
+## Using with Chezmoi
+
+Chezmoi provides a more robust way to manage dotfiles across multiple machines:
 
 ```bash
-chmod +x setup-dotfiles.sh
-./setup-dotfiles.sh
+# Migrate existing dotfiles to chezmoi
+./migrate-to-chezmoi.sh
+
+# After migration, use chezmoi commands
+chezmoi edit ~/.zshrc    # Edit zshrc
+chezmoi apply            # Apply changes
+chezmoi update           # Pull and apply latest changes
 ```
 
-3. Start a new terminal session to apply the changes.
+## Development Workflow
 
-## Directory Structure
+This repository uses pre-commit hooks to ensure code quality:
 
+```bash
+# Install pre-commit
+brew install pre-commit
+
+# Set up the hooks
+pre-commit install
+
+# Run hooks manually
+pre-commit run --all-files
 ```
-$HOME/
-├── .zshenv                  # Global environment variables
-├── .zshrc                   # Main ZSH configuration
-├── .zprofile                # Login shell configuration
-├── .zsh/                    # ZSH configuration directory
-│   ├── path.zsh             # PATH management
-│   ├── env.zsh              # Environment variables
-│   ├── aliases.zsh          # Aliases
-│   ├── completions.zsh      # Completion configuration
-│   ├── functions.d/         # ZSH functions
-│   ├── local.zsh            # Machine-specific settings
-│   └── secrets.zsh          # Private tokens/keys
-├── .config/                 # XDG config directory
-│   ├── git/                 # Git configuration
-│   ├── vim/                 # Vim configuration
-│   └── ...                  # Other tool configs
-└── .local/bin/              # User executables
+
+## Key Tools
+
+- **Shell**: ZSH with Powerlevel10k
+- **Package Manager**: Homebrew
+- **Version Manager**: ASDF
+- **Prompt**: Powerlevel10k
+- **Terminal**: iTerm2
+- **Tools**: Git, fzf, ripgrep, bat, and more
+- **Dotfile Manager**: Chezmoi
+
+## Testing
+
+```bash
+# Test shell startup for errors
+./test_shell_startup.sh
 ```
 
 ## Customization
 
-### Add your own aliases
+Local configurations that shouldn't be in version control:
+- `.zsh/local.zsh` - Local aliases and functions
+- `.zsh/secrets.zsh` - API keys and other secrets
 
-Edit `~/.zsh/aliases.zsh` to add your personal aliases.
+## Contributing
 
-### Add custom functions
-
-Create new function files in `~/.zsh/functions.d/` directory. Files are loaded in order, so use numerical prefixes (e.g., `100_myfunctions.zsh`) to control load order.
-
-### Machine-specific configuration
-
-Add machine-specific settings to `~/.zsh/local.zsh`. This file is not tracked in version control.
-
-### Private tokens and API keys
-
-Store API keys and tokens in `~/.zsh/secrets.zsh`. This file is not tracked in version control.
-
-## Key Features
-
-### Enhanced Git Workflow
-
-The Git configuration includes numerous aliases and settings to improve your Git workflow:
-
-```bash
-# See status in compact form
-g s
-
-# Create and push a new branch
-g new feature/awesome-feature
-g publish
-
-# Interactive rebase last 5 commits
-g reb 5
-```
-
-### macOS-Specific Tools
-
-Several macOS-specific functions are included:
-
-```bash
-# Lock your screen
-lock
-
-# Clean up .DS_Store files
-cleanup_ds_store
-
-# Show/hide hidden files
-showhidden
-hidehidden
-
-# See system information
-sysinfo
-
-# Convert image formats
-convertimg input.png output.jpg
-```
-
-### Development Helpers
-
-Shortcuts for common development tasks:
-
-```bash
-# Start a simple HTTP server
-serve 8080
-
-# Create and activate Python virtual environment
-venv && act
-
-# Homebrew updates
-brewup
-```
-
-## Credit
-
-These dotfiles were crafted by [Thomas Vincent](https://github.com/thomasvincent) with assistance from Claude AI.
+Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details on how to contribute to this project.
 
 ## License
 
-MIT License
+MIT

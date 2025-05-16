@@ -1,0 +1,20 @@
+[git]
+    autoCommit = true
+    autoPush = false
+
+[edit]
+    command = "code"
+    args = ["--wait"]
+
+[diff]
+    command = "code"
+    args = ["--wait", "--diff"]
+
+[merge]
+    command = "code"
+    args = ["--wait"]
+
+[data]
+    email = "thomas@email.com"
+    name = "Thomas Vincent"
+    github_username = "thomasvincent"
