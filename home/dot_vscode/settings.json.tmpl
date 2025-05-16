@@ -1,0 +1,116 @@
+{
+  "workbench.colorTheme": "{{ if eq .preferences.color_scheme \"dark\" }}GitHub Dark Default{{ else }}GitHub Light Default{{ end }}",
+  "workbench.iconTheme": "material-icon-theme",
+  "editor.fontFamily": "JetBrains Mono, Menlo, Monaco, 'Courier New', monospace",
+  "editor.fontSize": 14,
+  "editor.lineHeight": 22,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.formatOnSave": true,
+  "editor.rulers": [80, 120],
+  "editor.minimap.enabled": true,
+  "editor.wordWrap": "on",
+  "editor.linkedEditing": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.eol": "\n",
+
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.fontFamily": "JetBrains Mono, Menlo, Monaco, 'Courier New', monospace",
+  "terminal.integrated.lineHeight": 1.2,
+
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+
+  "workbench.startupEditor": "none",
+
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+
+  "window.zoomLevel": 0,
+  "telemetry.telemetryLevel": "off",
+
+  // Language specific settings
+  {{ if .preferences.enable_rust -}}
+  // Rust settings
+  "rust-analyzer.checkOnSave.command": "clippy",
+  "rust-analyzer.inlayHints.enable": true,
+  "rust-analyzer.inlayHints.chainingHints": true,
+  "rust-analyzer.inlayHints.parameterHints": true,
+  "rust-analyzer.inlayHints.typeHints": true,
+  "rust-analyzer.cargo.allFeatures": true,
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+  {{ end -}}
+
+  {{ if .preferences.enable_ruby -}}
+  // Ruby settings
+  "ruby.format": "rubocop",
+  "ruby.useBundler": true,
+  "ruby.useLanguageServer": true,
+  "ruby.lint": {
+    "rubocop": {
+      "useBundler": true
+    }
+  },
+  "[ruby]": {
+    "editor.tabSize": 2
+  },
+  {{ end -}}
+
+  {{ if .cloud.aws -}}
+  // AWS settings
+  "aws.telemetry": false,
+  "aws.profile": "default",
+  {{ end -}}
+
+  {{ if .preferences.enable_hashicorp -}}
+  // HashiCorp settings
+  "terraform.languageServer": {
+    "enabled": true,
+    "args": []
+  },
+  "terraform.telemetry.enabled": false,
+  "terraform.indexing": {
+    "enabled": true,
+    "liveIndexing": true
+  },
+  "terraform.codelens.referenceCount": true,
+  {{ end -}}
+
+  // Editor extensions
+  "extensions.ignoreRecommendations": false,
+
+  // Recommended extensions for installation
+  "extensions.recommendations": [
+    "esbenp.prettier-vscode",
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens",
+    "PKief.material-icon-theme",
+    "editorconfig.editorconfig"{{ if .preferences.enable_rust }},
+    "rust-lang.rust-analyzer",
+    "serayuzgur.crates",
+    "tamasfe.even-better-toml",
+    "vadimcn.vscode-lldb"
+    {{ end }}{{ if .preferences.enable_ruby }},
+    "rebornix.ruby",
+    "castwide.solargraph",
+    "kaiwood.endwise",
+    "wingrunr21.vscode-ruby"
+    {{ end }}{{ if .preferences.enable_hashicorp }},
+    "hashicorp.terraform",
+    "hashicorp.hcl",
+    "ms-azuretools.vscode-docker"
+    {{ end }}{{ if .cloud.aws }},
+    "amazonwebservices.aws-toolkit-vscode"
+    {{ end }}{{ if .cloud.gcp }},
+    "GoogleCloudTools.cloudcode"
+    {{ end }}
+  ]
+}

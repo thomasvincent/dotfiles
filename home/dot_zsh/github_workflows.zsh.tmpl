@@ -1,0 +1,1557 @@
+# GitHub Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if or (eq .preferences.enable_github true) (eq .enable_dev_tools true) -}}
+# GitHub environment variables
+export GH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gh"
+
+# GitHub CLI aliases
+alias ghr='gh repo'
+alias ghrc='gh repo create'
+alias ghrf='gh repo fork'
+alias ghrl='gh repo list'
+alias ghrv='gh repo view'
+alias ghrs='gh repo sync'
+alias ghi='gh issue'
+alias ghic='gh issue create'
+alias ghil='gh issue list'
+alias ghiv='gh issue view'
+alias ghp='gh pr'
+alias ghpc='gh pr create'
+alias ghpl='gh pr list'
+alias ghpv='gh pr view'
+alias ghpc='gh pr checkout'
+alias ghg='gh gist'
+alias ghgc='gh gist create'
+alias ghgl='gh gist list'
+alias ghs='gh search'
+alias ghsr='gh search repos'
+alias ghsi='gh search issues'
+alias ghsp='gh search prs'
+alias ghw='gh workflow'
+alias ghwl='gh workflow list'
+alias ghwr='gh workflow run'
+alias ghwv='gh workflow view'
+
+# Initialize a new GitHub repository
+gh-init() {
+  local repo_name=$1
+  local visibility=${2:-private}
+  local description=${3:-""}
+
+  if [[ -z "$repo_name" ]]; then
+    echo "Usage: gh-init <repo-name> [visibility] [description]"
+    echo "Example: gh-init my-awesome-project public \"This is my awesome project\""
+    echo "Visibility options: private (default), public, internal"
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # Check if user is authenticated with gh
+  if ! gh auth status &>/dev/null; then
+    echo "You are not authenticated with GitHub CLI."
+    echo "Please run 'gh auth login' first."
+    return 1
+  }
+
+  # Create the repository
+  echo "Creating GitHub repository: $repo_name ($visibility)"
+
+  if [[ -n "$description" ]]; then
+    gh repo create "$repo_name" --"$visibility" --description "$description"
+  else
+    gh repo create "$repo_name" --"$visibility"
+  fi
+
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to create repository."
+    return 1
+  fi
+
+  # Ask if user wants to clone the repository
+  echo "Repository created successfully."
+  read -p "Do you want to clone the repository now? (y/N) " clone_repo
+
+  if [[ "$clone_repo" == "y" || "$clone_repo" == "Y" ]]; then
+    local clone_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$repo_name"
+    echo "Cloning repository to $clone_dir..."
+    mkdir -p "$(dirname "$clone_dir")"
+    gh repo clone "$repo_name" "$clone_dir"
+    cd "$clone_dir" || return 1
+    echo "Repository cloned successfully to $clone_dir"
+  fi
+}
+
+# Create a GitHub repository from the current directory
+gh-init-current() {
+  local visibility=${1:-private}
+  local description=${2:-""}
+
+  # Get the current directory name as the repo name
+  local repo_name=$(basename "$PWD")
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # Check if user is authenticated with gh
+  if ! gh auth status &>/dev/null; then
+    echo "You are not authenticated with GitHub CLI."
+    echo "Please run 'gh auth login' first."
+    return 1
+  }
+
+  # Check if directory is a git repository
+  if [[ ! -d ".git" ]]; then
+    echo "The current directory is not a git repository."
+    read -p "Do you want to initialize a git repository? (y/N) " init_git
+
+    if [[ "$init_git" == "y" || "$init_git" == "Y" ]]; then
+      git init
+    else
+      echo "Aborting."
+      return 1
+    fi
+  fi
+
+  # Create the repository
+  echo "Creating GitHub repository from current directory: $repo_name ($visibility)"
+
+  if [[ -n "$description" ]]; then
+    gh repo create "$repo_name" --"$visibility" --description "$description" --source=. --push
+  else
+    gh repo create "$repo_name" --"$visibility" --source=. --push
+  fi
+
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to create repository."
+    return 1
+  fi
+
+  echo "Repository created and code pushed successfully."
+}
+
+# Fork a GitHub repository
+gh-fork() {
+  local repo=$1
+  local clone_dir=$2
+
+  if [[ -z "$repo" ]]; then
+    echo "Usage: gh-fork <owner/repo> [clone-directory]"
+    echo "Example: gh-fork octocat/Hello-World my-hello-world"
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # Fork the repository
+  echo "Forking repository: $repo"
+  if [[ -z "$clone_dir" ]]; then
+    gh repo fork "$repo" --clone
+  else
+    local full_clone_dir
+    # Check if clone_dir is absolute or relative
+    if [[ "$clone_dir" == /* ]]; then
+      full_clone_dir="$clone_dir"
+    else
+      full_clone_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$clone_dir"
+    fi
+
+    mkdir -p "$(dirname "$full_clone_dir")"
+    gh repo fork "$repo" --clone --clone-directory="$full_clone_dir"
+    cd "$full_clone_dir" || return 1
+  fi
+
+  echo "Repository forked successfully."
+
+  # Add upstream remote if it doesn't exist
+  if ! git remote | grep -q "upstream"; then
+    echo "Adding upstream remote..."
+    git remote add upstream "https://github.com/$repo.git"
+  fi
+
+  echo "Upstream remote added. You can now sync with upstream using:"
+  echo "git fetch upstream"
+  echo "git merge upstream/main"
+}
+
+# Create a GitHub issue
+gh-new-issue() {
+  local title=$1
+  local body=${2:-""}
+  local repo=${3:-""}
+  local labels=${4:-""}
+  local assignee=${5:-""}
+
+  if [[ -z "$title" ]]; then
+    echo "Usage: gh-new-issue <title> [body] [repo] [labels] [assignee]"
+    echo "Example: gh-new-issue \"Fix login bug\" \"Login fails when using special characters\" owner/repo \"bug,priority:high\" \"username\""
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # Create issue command
+  local cmd="gh issue create --title \"$title\""
+
+  if [[ -n "$body" ]]; then
+    cmd+=" --body \"$body\""
+  fi
+
+  if [[ -n "$repo" ]]; then
+    cmd+=" --repo \"$repo\""
+  fi
+
+  if [[ -n "$labels" ]]; then
+    cmd+=" --label \"$labels\""
+  fi
+
+  if [[ -n "$assignee" ]]; then
+    cmd+=" --assignee \"$assignee\""
+  fi
+
+  # Create the issue
+  echo "Creating GitHub issue: \"$title\""
+  eval "$cmd"
+
+  echo "Issue created successfully."
+}
+
+# Create a pull request
+gh-new-pr() {
+  local title=$1
+  local body=${2:-""}
+  local base=${3:-"main"}
+  local repo=${4:-""}
+  local labels=${5:-""}
+  local reviewers=${6:-""}
+
+  if [[ -z "$title" ]]; then
+    echo "Usage: gh-new-pr <title> [body] [base-branch] [repo] [labels] [reviewers]"
+    echo "Example: gh-new-pr \"Add login feature\" \"This PR adds the login feature\" main owner/repo \"feature\" \"reviewer1,reviewer2\""
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # Create PR command
+  local cmd="gh pr create --title \"$title\""
+
+  if [[ -n "$body" ]]; then
+    cmd+=" --body \"$body\""
+  fi
+
+  if [[ -n "$base" ]]; then
+    cmd+=" --base \"$base\""
+  fi
+
+  if [[ -n "$repo" ]]; then
+    cmd+=" --repo \"$repo\""
+  fi
+
+  if [[ -n "$labels" ]]; then
+    cmd+=" --label \"$labels\""
+  fi
+
+  if [[ -n "$reviewers" ]]; then
+    cmd+=" --reviewer \"$reviewers\""
+  fi
+
+  # Create the pull request
+  echo "Creating GitHub pull request: \"$title\""
+  eval "$cmd"
+
+  echo "Pull request created successfully."
+}
+
+# Search GitHub repositories
+gh-search-repos() {
+  local query=$1
+  local limit=${2:-10}
+
+  if [[ -z "$query" ]]; then
+    echo "Usage: gh-search-repos <query> [limit]"
+    echo "Example: gh-search-repos \"machine learning python\" 20"
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  echo "Searching GitHub repositories for: \"$query\""
+  gh search repos "$query" --limit "$limit"
+}
+
+# Search GitHub issues
+gh-search-issues() {
+  local query=$1
+  local limit=${2:-10}
+
+  if [[ -z "$query" ]]; then
+    echo "Usage: gh-search-issues <query> [limit]"
+    echo "Example: gh-search-issues \"auth bug label:bug\" 20"
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  echo "Searching GitHub issues for: \"$query\""
+  gh search issues "$query" --limit "$limit"
+}
+
+# Clone a GitHub repository
+gh-clone() {
+  local repo=$1
+  local dest_dir=$2
+
+  if [[ -z "$repo" ]]; then
+    echo "Usage: gh-clone <repo> [destination]"
+    echo "Example: gh-clone octocat/Hello-World my-hello-world"
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # Determine the destination directory
+  local clone_dir
+  if [[ -z "$dest_dir" ]]; then
+    # Extract repo name from full repo path
+    local repo_name=$(echo "$repo" | awk -F/ '{print $NF}')
+    clone_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$repo_name"
+  else
+    # Check if dest_dir is absolute or relative
+    if [[ "$dest_dir" == /* ]]; then
+      clone_dir="$dest_dir"
+    else
+      clone_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$dest_dir"
+    fi
+  fi
+
+  # Create parent directory if it doesn't exist
+  mkdir -p "$(dirname "$clone_dir")"
+
+  # Clone the repository
+  echo "Cloning repository $repo to $clone_dir..."
+  gh repo clone "$repo" "$clone_dir"
+
+  if [[ $? -eq 0 ]]; then
+    echo "Repository cloned successfully to $clone_dir"
+    echo "Do you want to cd to the cloned repository? (y/N)"
+    read -r response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+      cd "$clone_dir"
+    fi
+  else
+    echo "Failed to clone repository."
+  fi
+}
+
+# Create a GitHub Gist
+gh-new-gist() {
+  local description=$1
+  local file_path=$2
+  local is_public=${3:-false}
+
+  if [[ -z "$description" || -z "$file_path" ]]; then
+    echo "Usage: gh-new-gist <description> <file-path> [is-public]"
+    echo "Example: gh-new-gist \"My awesome script\" ~/scripts/awesome.sh true"
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # Check if file exists
+  if [[ ! -f "$file_path" ]]; then
+    echo "Error: File not found: $file_path"
+    return 1
+  fi
+
+  # Create gist command
+  local cmd="gh gist create \"$file_path\" --desc \"$description\""
+
+  if [[ "$is_public" == "true" ]]; then
+    cmd+=" --public"
+  else
+    cmd+=" --secret"
+  fi
+
+  # Create the gist
+  echo "Creating GitHub Gist from $file_path..."
+  eval "$cmd"
+
+  echo "Gist created successfully."
+}
+
+# Create a GitHub release
+gh-release() {
+  local tag_name=$1
+  local title=${2:-"$tag_name"}
+  local notes_file=${3:-""}
+  local prerelease=${4:-false}
+  local draft=${5:-false}
+  local target=${6:-""}
+
+  if [[ -z "$tag_name" ]]; then
+    echo "Usage: gh-release <tag-name> [title] [notes-file] [prerelease] [draft] [target]"
+    echo "Example: gh-release v1.0.0 \"Version 1.0.0\" release-notes.md false false main"
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # Create release command
+  local cmd="gh release create \"$tag_name\" --title \"$title\""
+
+  if [[ -n "$notes_file" && -f "$notes_file" ]]; then
+    cmd+=" --notes-file \"$notes_file\""
+  fi
+
+  if [[ "$prerelease" == "true" ]]; then
+    cmd+=" --prerelease"
+  fi
+
+  if [[ "$draft" == "true" ]]; then
+    cmd+=" --draft"
+  fi
+
+  if [[ -n "$target" ]]; then
+    cmd+=" --target \"$target\""
+  fi
+
+  # Create the release
+  echo "Creating GitHub release: $tag_name"
+  eval "$cmd"
+
+  echo "Release created successfully."
+}
+
+# Generate a GitHub release notes file
+gh-release-notes() {
+  local previous_tag=$1
+  local new_tag=$2
+  local output_file=${3:-"release-notes.md"}
+
+  if [[ -z "$previous_tag" || -z "$new_tag" ]]; then
+    echo "Usage: gh-release-notes <previous-tag> <new-tag> [output-file]"
+    echo "Example: gh-release-notes v1.0.0 v1.1.0 release-notes.md"
+    return 1
+  fi
+
+  # Check if git is installed
+  if ! command -v git &>/dev/null; then
+    echo "Error: git not found."
+    return 1
+  fi
+
+  echo "Generating release notes from $previous_tag to $new_tag..."
+
+  # Generate commit log
+  local commit_log=$(git log --pretty=format:"* %s" "$previous_tag..$new_tag")
+
+  if [[ -z "$commit_log" ]]; then
+    echo "No commits found between $previous_tag and $new_tag."
+    return 1
+  fi
+
+  # Create release notes file
+  cat > "$output_file" << EOF
+# Release Notes: $new_tag
+
+## What's Changed
+
+$commit_log
+
+## Full Changelog
+
+https://github.com/$(git remote get-url origin | sed -e 's/.*github.com[:\/]\(.*\)\.git/\1/')/compare/$previous_tag...$new_tag
+EOF
+
+  echo "Release notes generated successfully in $output_file"
+
+  # Ask if user wants to view the file
+  read -p "Do you want to view the release notes? (y/N) " view_notes
+
+  if [[ "$view_notes" == "y" || "$view_notes" == "Y" ]]; then
+    if command -v bat &>/dev/null; then
+      bat "$output_file"
+    else
+      cat "$output_file"
+    fi
+  fi
+}
+
+# List GitHub workflows
+gh-workflows() {
+  local repo=${1:-""}
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # List workflows command
+  local cmd="gh workflow list"
+
+  if [[ -n "$repo" ]]; then
+    cmd+=" --repo \"$repo\""
+  fi
+
+  # List workflows
+  echo "Listing GitHub workflows..."
+  eval "$cmd"
+}
+
+# Run a GitHub workflow
+gh-run-workflow() {
+  local workflow=$1
+  local ref=${2:-"main"}
+  local repo=${3:-""}
+  local inputs=${4:-""}
+
+  if [[ -z "$workflow" ]]; then
+    echo "Usage: gh-run-workflow <workflow> [ref] [repo] [inputs]"
+    echo "Example: gh-run-workflow ci.yml main owner/repo \"key1=value1,key2=value2\""
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  # Run workflow command
+  local cmd="gh workflow run \"$workflow\" --ref \"$ref\""
+
+  if [[ -n "$repo" ]]; then
+    cmd+=" --repo \"$repo\""
+  fi
+
+  if [[ -n "$inputs" ]]; then
+    cmd+=" --raw-field \"$inputs\""
+  fi
+
+  # Run the workflow
+  echo "Running GitHub workflow: $workflow on $ref"
+  eval "$cmd"
+
+  echo "Workflow run initiated."
+}
+
+# Create a GitHub Actions workflow file
+gh-new-workflow() {
+  local workflow_name=$1
+  local template=${2:-simple}
+
+  if [[ -z "$workflow_name" ]]; then
+    echo "Usage: gh-new-workflow <workflow-name> [template]"
+    echo "Example: gh-new-workflow ci nodejs"
+    echo "Available templates: simple, nodejs, python, docker, release, pages"
+    return 1
+  fi
+
+  # Check if .github/workflows directory exists
+  if [[ ! -d ".github/workflows" ]]; then
+    echo "Creating .github/workflows directory..."
+    mkdir -p .github/workflows
+  fi
+
+  # Create workflow file path
+  local workflow_file=".github/workflows/${workflow_name}.yml"
+
+  # Check if workflow file already exists
+  if [[ -f "$workflow_file" ]]; then
+    echo "Workflow file already exists: $workflow_file"
+    read -p "Do you want to overwrite it? (y/N) " overwrite
+
+    if [[ "$overwrite" != "y" && "$overwrite" != "Y" ]]; then
+      echo "Operation cancelled."
+      return 1
+    fi
+  fi
+
+  # Create the workflow file based on template
+  case $template in
+    simple)
+      cat > "$workflow_file" << EOF
+name: $workflow_name
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Run a one-line script
+      run: echo Hello, world!
+
+    - name: Run a multi-line script
+      run: |
+        echo Add other actions to build,
+        echo test, and deploy your project.
+EOF
+      ;;
+
+    nodejs)
+      cat > "$workflow_file" << EOF
+name: Node.js CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js \${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: \${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Lint
+      run: npm run lint --if-present
+
+    - name: Build
+      run: npm run build --if-present
+
+    - name: Test
+      run: npm test
+EOF
+      ;;
+
+    python)
+      cat > "$workflow_file" << EOF
+name: Python CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python \${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: \${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Test with pytest
+      run: |
+        pytest
+EOF
+      ;;
+
+    docker)
+      cat > "$workflow_file" << EOF
+name: Docker CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to DockerHub
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v2
+      with:
+        username: \${{ secrets.DOCKERHUB_USERNAME }}
+        password: \${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: \${{ github.event_name != 'pull_request' }}
+        tags: user/app:latest
+EOF
+      ;;
+
+    release)
+      cat > "$workflow_file" << EOF
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Build
+      run: |
+        # Add your build commands here
+        echo "Building project..."
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: \${{ github.ref }}
+        release_name: Release \${{ github.ref }}
+        draft: false
+        prerelease: false
+        body_path: CHANGELOG.md
+EOF
+      ;;
+
+    pages)
+      cat > "$workflow_file" << EOF
+name: GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+
+    - name: Build
+      run: |
+        # Add your build commands here
+        echo "Building pages..."
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: './dist'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
+EOF
+      ;;
+
+    *)
+      echo "Unknown template: $template"
+      echo "Using simple template instead."
+      template="simple"
+      gh-new-workflow "$workflow_name" "simple"
+      return 0
+      ;;
+  esac
+
+  echo "GitHub Actions workflow created: $workflow_file with $template template"
+
+  # Ask if user wants to view the file
+  read -p "Do you want to view the workflow file? (y/N) " view_file
+
+  if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
+    if command -v bat &>/dev/null; then
+      bat "$workflow_file"
+    else
+      cat "$workflow_file"
+    fi
+  fi
+}
+
+# Setup GitHub project with common files
+gh-project-setup() {
+  local repo_name=${1:-$(basename "$PWD")}
+  local template=${2:-default}
+
+  # Check if we're in a git repository
+  if [[ ! -d ".git" ]]; then
+    echo "The current directory is not a git repository."
+    read -p "Do you want to initialize a git repository? (y/N) " init_git
+
+    if [[ "$init_git" == "y" || "$init_git" == "Y" ]]; then
+      git init
+    else
+      echo "Aborting."
+      return 1
+    fi
+  fi
+
+  echo "Setting up GitHub project: $repo_name"
+
+  # Create README.md if it doesn't exist
+  if [[ ! -f "README.md" ]]; then
+    echo "Creating README.md..."
+    cat > "README.md" << EOF
+# $repo_name
+
+## Description
+
+A description of your project goes here.
+
+## Installation
+
+\`\`\`bash
+# Installation instructions here
+\`\`\`
+
+## Usage
+
+\`\`\`bash
+# Usage examples here
+\`\`\`
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+EOF
+  fi
+
+  # Create LICENSE file if it doesn't exist
+  if [[ ! -f "LICENSE" ]]; then
+    echo "Creating LICENSE file..."
+
+    # Get current year
+    local year=$(date +%Y)
+    local user_name="{{ .name | default "$(git config user.name)" }}"
+
+    cat > "LICENSE" << EOF
+MIT License
+
+Copyright (c) $year $user_name
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+EOF
+  fi
+
+  # Create .gitignore if it doesn't exist
+  if [[ ! -f ".gitignore" ]]; then
+    echo "Creating .gitignore file..."
+
+    # Base .gitignore contents
+    cat > ".gitignore" << EOF
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependency directories
+node_modules/
+jspm_packages/
+EOF
+
+    # Add template-specific .gitignore entries
+    case $template in
+      python)
+        cat >> ".gitignore" << EOF
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+venv/
+.venv/
+ENV/
+env/
+EOF
+        ;;
+
+      node)
+        cat >> ".gitignore" << EOF
+
+# Node specific
+.npm
+.node_repl_history
+.yarn-integrity
+coverage/
+dist/
+build/
+.next/
+.nuxt/
+.cache/
+.serverless/
+EOF
+        ;;
+
+      rust)
+        cat >> ".gitignore" << EOF
+
+# Rust specific
+/target/
+**/*.rs.bk
+Cargo.lock
+EOF
+        ;;
+
+      go)
+        cat >> ".gitignore" << EOF
+
+# Go specific
+/vendor/
+/go.sum
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+EOF
+        ;;
+    esac
+  fi
+
+  # Create GitHub directory structure
+  mkdir -p .github/workflows
+
+  # Create issue templates
+  mkdir -p .github/ISSUE_TEMPLATE
+
+  # Create bug report template
+  cat > .github/ISSUE_TEMPLATE/bug_report.md << EOF
+---
+name: Bug report
+about: Create a report to help us improve
+title: '[BUG] '
+labels: bug
+assignees: ''
+---
+
+**Describe the bug**
+A clear and concise description of what the bug is.
+
+**To Reproduce**
+Steps to reproduce the behavior:
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
+
+**Expected behavior**
+A clear and concise description of what you expected to happen.
+
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
+
+**Environment:**
+ - OS: [e.g. macOS, Windows, Linux]
+ - Version: [e.g. 1.0.0]
+
+**Additional context**
+Add any other context about the problem here.
+EOF
+
+  # Create feature request template
+  cat > .github/ISSUE_TEMPLATE/feature_request.md << EOF
+---
+name: Feature request
+about: Suggest an idea for this project
+title: '[FEATURE] '
+labels: enhancement
+assignees: ''
+---
+
+**Is your feature request related to a problem? Please describe.**
+A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+
+**Describe the solution you'd like**
+A clear and concise description of what you want to happen.
+
+**Describe alternatives you've considered**
+A clear and concise description of any alternative solutions or features you've considered.
+
+**Additional context**
+Add any other context or screenshots about the feature request here.
+EOF
+
+  # Create CONTRIBUTING.md
+  cat > CONTRIBUTING.md << EOF
+# Contributing to $repo_name
+
+Thank you for considering contributing to $repo_name! Here are some guidelines to help you get started.
+
+## Code of Conduct
+
+Please be respectful and considerate of others when contributing to this project.
+
+## How Can I Contribute?
+
+### Reporting Bugs
+
+- Check if the bug has already been reported in the Issues.
+- Use the bug report template when creating a new issue.
+- Include as much detail as possible.
+
+### Suggesting Features
+
+- Use the feature request template when creating a new issue.
+- Explain why this feature would be useful to most users.
+
+### Pull Requests
+
+1. Fork the repository.
+2. Create a new branch: \`git checkout -b feature/your-feature-name\`.
+3. Make your changes.
+4. Run tests if applicable.
+5. Commit your changes with a clear commit message.
+6. Push to your branch.
+7. Submit a pull request.
+
+## Development Setup
+
+\`\`\`bash
+# Setup instructions here
+\`\`\`
+
+## Pull Request Process
+
+1. Ensure your code follows the project's style guidelines.
+2. Update documentation if necessary.
+3. The PR should work on all supported platforms.
+4. The PR will be merged once it receives approval from maintainers.
+
+Thank you for your contributions!
+EOF
+
+  # Create a simple CI workflow
+  if [[ ! -f ".github/workflows/ci.yml" ]]; then
+    echo "Creating CI workflow..."
+    gh-new-workflow "ci" "$template"
+  fi
+
+  echo "GitHub project setup completed successfully."
+
+  # Ask if user wants to push to GitHub
+  read -p "Do you want to push this project to GitHub? (y/N) " push_to_github
+
+  if [[ "$push_to_github" == "y" || "$push_to_github" == "Y" ]]; then
+    gh-init-current
+  fi
+}
+
+# Display GitHub repository stats
+gh-stats() {
+  local repo=${1:-$(git remote get-url origin 2>/dev/null | sed -e 's/.*github.com[:\/]\(.*\)\.git/\1/')}
+
+  if [[ -z "$repo" ]]; then
+    echo "Usage: gh-stats [owner/repo]"
+    echo "Example: gh-stats octocat/Hello-World"
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  echo "Fetching stats for $repo..."
+
+  # Get repo info
+  gh repo view "$repo" --json name,description,stargazers,forks,watchers,issues,updatedAt,createdAt
+
+  # Get collaborators
+  echo "Collaborators:"
+  gh api "repos/$repo/collaborators" --jq '.[].login'
+
+  # Get recent commits
+  echo "Recent commits:"
+  gh api "repos/$repo/commits" --jq '.[0:5] | .[] | {sha: .sha[0:7], message: .commit.message | split("\n")[0], author: .commit.author.name, date: .commit.author.date}'
+
+  # Get recent releases
+  echo "Recent releases:"
+  gh api "repos/$repo/releases" --jq '.[0:3] | .[] | {tag: .tag_name, name: .name, created: .created_at, url: .html_url}'
+
+  # Get traffic stats (requires push access)
+  echo "Attempting to fetch traffic stats (requires push access)..."
+  gh api "repos/$repo/traffic/views" --silent || echo "Could not fetch traffic stats. Push access required."
+}
+
+# Create a GitHub CODEOWNERS file
+gh-codeowners() {
+  local codeowners_content=$1
+
+  if [[ -z "$codeowners_content" ]]; then
+    # Create directory if it doesn't exist
+    mkdir -p .github
+
+    # Create CODEOWNERS file template
+    cat > .github/CODEOWNERS << EOF
+# CODEOWNERS file
+#
+# This file defines who is responsible for reviewing and approving changes to different parts of the codebase.
+# Each line is a file pattern followed by one or more owners.
+# For more details, see: https://help.github.com/articles/about-code-owners/
+
+# These owners will be the default owners for everything in the repo.
+# Unless a later match takes precedence, these users will be requested for
+# review when someone opens a pull request.
+*       @{{ .github_username | default "username" }}
+
+# Examples:
+# /docs/  @docs-team
+# *.js    @js-owner
+# /src/   @core-team
+EOF
+
+    echo "CODEOWNERS file created at .github/CODEOWNERS"
+    echo "Please edit it to add appropriate ownership rules."
+
+    # Ask if user wants to view the file
+    read -p "Do you want to view the CODEOWNERS file? (y/N) " view_file
+
+    if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
+      if command -v bat &>/dev/null; then
+        bat .github/CODEOWNERS
+      else
+        cat .github/CODEOWNERS
+      fi
+    fi
+  else
+    # Create directory if it doesn't exist
+    mkdir -p .github
+
+    # Create CODEOWNERS file with provided content
+    echo "$codeowners_content" > .github/CODEOWNERS
+
+    echo "CODEOWNERS file created with provided content."
+  fi
+}
+
+# Generate GitHub Actions status badge for README
+gh-badge() {
+  local workflow=$1
+  local branch=${2:-main}
+
+  if [[ -z "$workflow" ]]; then
+    echo "Usage: gh-badge <workflow-name> [branch]"
+    echo "Example: gh-badge ci.yml main"
+    return 1
+  fi
+
+  # Extract repository information
+  local repo
+  if [[ -d .git ]]; then
+    repo=$(git remote get-url origin 2>/dev/null | sed -e 's/.*github.com[:\/]\(.*\)\.git/\1/')
+  fi
+
+  if [[ -z "$repo" ]]; then
+    echo "Could not determine repository. Please run this in a git repository connected to GitHub."
+    return 1
+  fi
+
+  # Generate badge markdown
+  local badge_markdown="![${workflow%.*}](https://github.com/$repo/actions/workflows/$workflow/badge.svg?branch=$branch)"
+
+  echo "GitHub Actions status badge for $workflow on $branch:"
+  echo "$badge_markdown"
+
+  # Ask if user wants to add it to README.md
+  read -p "Do you want to add this badge to README.md? (y/N) " add_to_readme
+
+  if [[ "$add_to_readme" == "y" || "$add_to_readme" == "Y" ]]; then
+    if [[ -f README.md ]]; then
+      # Check if there are already badges under a badge section
+      if grep -q "## Badges" README.md; then
+        # Add badge under existing badge section
+        sed -i.bak "/## Badges/a\\
+$badge_markdown" README.md
+      else
+        # Add a new badge section at the beginning, after the first heading
+        sed -i.bak "0,/^# /s/^# .*/&\\
+\\
+## Badges\\
+$badge_markdown/" README.md
+      fi
+
+      # Remove backup file
+      rm README.md.bak 2>/dev/null || true
+
+      echo "Badge added to README.md"
+    else
+      echo "README.md not found."
+    fi
+  fi
+
+  # Copy badge markdown to clipboard if possible
+  if command -v pbcopy &>/dev/null; then
+    echo "$badge_markdown" | pbcopy
+    echo "Badge markdown copied to clipboard."
+  elif command -v xclip &>/dev/null; then
+    echo "$badge_markdown" | xclip -selection clipboard
+    echo "Badge markdown copied to clipboard."
+  fi
+}
+
+# Create a GitHub dependabot configuration
+gh-dependabot() {
+  # Create directory if it doesn't exist
+  mkdir -p .github
+
+  # Create dependabot.yml file
+  cat > .github/dependabot.yml << EOF
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    # Look for packages in the root directory
+    directory: "/"
+    # Check for updates once a week
+    schedule:
+      interval: "weekly"
+    # Set a limit for pull requests
+    open-pull-requests-limit: 10
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+EOF
+
+  echo "Dependabot configuration created at .github/dependabot.yml"
+
+  # Ask if user wants to customize the configuration
+  read -p "Do you want to customize the dependabot configuration? (y/N) " customize
+
+  if [[ "$customize" == "y" || "$customize" == "Y" ]]; then
+    if command -v code &>/dev/null; then
+      code .github/dependabot.yml
+    elif command -v vim &>/dev/null; then
+      vim .github/dependabot.yml
+    elif command -v nano &>/dev/null; then
+      nano .github/dependabot.yml
+    else
+      echo "No editor found. Please edit .github/dependabot.yml manually."
+    fi
+  fi
+}
+
+# Create a GitHub pull request template
+gh-pr-template() {
+  # Create directory if it doesn't exist
+  mkdir -p .github
+
+  # Create pull request template
+  cat > .github/pull_request_template.md << EOF
+## Description
+Please include a summary of the change and which issue is fixed. Include relevant motivation and context.
+
+Fixes # (issue)
+
+## Type of change
+Please delete options that are not relevant.
+
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] This change requires a documentation update
+
+## How Has This Been Tested?
+Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce.
+
+## Checklist:
+- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+EOF
+
+  echo "Pull request template created at .github/pull_request_template.md"
+
+  # Ask if user wants to view the file
+  read -p "Do you want to view the PR template? (y/N) " view_file
+
+  if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
+    if command -v bat &>/dev/null; then
+      bat .github/pull_request_template.md
+    else
+      cat .github/pull_request_template.md
+    fi
+  fi
+}
+
+# Create a GitHub security policy
+gh-security-policy() {
+  # Create security policy file
+  cat > SECURITY.md << EOF
+# Security Policy
+
+## Supported Versions
+
+Use this section to tell people about which versions of your project are currently being supported with security updates.
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 1.0.x   | :white_check_mark: |
+| < 1.0   | :x:                |
+
+## Reporting a Vulnerability
+
+Use this section to tell people how to report a vulnerability.
+
+Tell them where to go, how often they can expect to get an update on a reported vulnerability, what to expect if the vulnerability is accepted or declined, etc.
+
+To report a security issue, please email [security@example.com](mailto:security@example.com) with a description of the issue, the steps you took to create the issue, affected versions, and if known, mitigations for the issue.
+
+We will respond within 3 working days of your email. If the issue is confirmed as a vulnerability, we will open a Security Advisory and acknowledge your contributions. This project follows a 90 day disclosure timeline.
+EOF
+
+  echo "Security policy created at SECURITY.md"
+
+  # Ask if user wants to view the file
+  read -p "Do you want to view the security policy? (y/N) " view_file
+
+  if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
+    if command -v bat &>/dev/null; then
+      bat SECURITY.md
+    else
+      cat SECURITY.md
+    fi
+  fi
+}
+
+# Set up GitHub branch protection rules
+gh-branch-protection() {
+  local branch=${1:-main}
+  local repo=${2:-$(git remote get-url origin 2>/dev/null | sed -e 's/.*github.com[:\/]\(.*\)\.git/\1/')}
+
+  if [[ -z "$repo" ]]; then
+    echo "Usage: gh-branch-protection [branch] [owner/repo]"
+    echo "Example: gh-branch-protection main octocat/Hello-World"
+    return 1
+  fi
+
+  # Check if gh is installed
+  if ! command -v gh &>/dev/null; then
+    echo "Error: GitHub CLI not found."
+    echo "Install it with: brew install gh"
+    return 1
+  fi
+
+  echo "Setting up branch protection for $branch in $repo..."
+
+  # Create branch protection rule
+  gh api "repos/$repo/branches/$branch/protection" \
+    --method PUT \
+    --input - << EOF
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["ci"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": {
+    "dismissal_restrictions": {},
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": true,
+    "required_approving_review_count": 1
+  },
+  "restrictions": null
+}
+EOF
+
+  if [[ $? -eq 0 ]]; then
+    echo "Branch protection rule for $branch created successfully."
+  else
+    echo "Failed to create branch protection rule. Make sure you have admin access to the repository."
+  fi
+}
+{{- end }}

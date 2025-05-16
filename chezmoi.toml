@@ -19,10 +19,10 @@
     name = "Thomas Vincent"
     email = "thomas@email.com"
     github_username = "thomasvincent"
-    
+
     # Configuration options
     minimal = false  # Set to true for minimal installation
-    
+
     # Feature toggles
     enable_cloud = true        # Enable cloud provider tools
     enable_containers = true   # Enable container tools
@@ -32,18 +32,18 @@
     enable_extras = false      # Enable extra applications
     enable_workflows = true    # Enable workflow automation
     enable_productivity = true # Enable productivity tools
-    
+
     # Specific workflow toggles
     enable_wordpress = true    # Enable WordPress development workflows
     enable_chef = true         # Enable Chef development workflows
     enable_puppet = true       # Enable Puppet development workflows
     enable_gtd = true          # Enable GTD workflows
-    
+
     # Work-specific settings (uncomment and set as needed)
     # work = true
     # work_username = "tvincent"
     # work_email = "thomas@work.com"
-    
+
     # Platform-specific configurations
     macos = true
     linux = false
@@ -54,30 +54,30 @@
         azure = true
         gcp = true
         digitalocean = true
-        oracle = false
+        oracle = true
         linode = false
-    
+
     # Additional customizations
     [data.preferences]
         editor = "vscode"  # Options: vscode, vim, neovim, emacs
         terminal = "iterm2"  # Options: iterm2, alacritty, kitty, terminal
         shell_prompt = "powerlevel10k"  # Options: powerlevel10k, starship, pure
         color_scheme = "dark"  # Options: dark, light, auto
-        
+
         # Workflow preferences
         projects_dir = "$HOME/Projects"  # Base directory for all projects
-        
+
         # Productivity preferences
         task_dir = "$HOME/.tasks"  # Directory for task management
         notes_dir = "$HOME/.notes"  # Directory for notes
         meeting_dir = "$HOME/.notes/meetings"  # Directory for meeting notes
         time_track_dir = "$HOME/.timetrack"  # Directory for time tracking
-        
+
         # macOS integration preferences
         notes_folder = "CLI Notes"     # Default folder name in macOS Notes app
         meeting_folder = "Meetings"    # Default folder name for meetings in macOS Notes app
         reminders_list = "CLI Tools"   # Default list name in macOS Reminders app
-        
+
         # GTD workflow preferences
         gtd_inbox_folder = "GTD/Inbox"   # Folder for GTD inbox in Notes app
         gtd_inbox_file = "$HOME/.gtd/inbox.md" # File for GTD inbox items
@@ -85,7 +85,7 @@
         gtd_projects_folder = "GTD/Projects" # Folder for GTD projects in Notes app
         gtd_projects_dir = "$HOME/.gtd/projects" # Directory for GTD project files
         gtd_next_actions_file = "$HOME/.gtd/next-actions.md" # File for next actions
-        
+
         # Development workflow preferences
         enable_wordpress = true    # Enable WordPress development workflows
         enable_chef = true         # Enable Chef development workflows
@@ -95,13 +95,18 @@
         enable_groovy = true       # Enable Groovy development workflows
         enable_rails = true        # Enable Rails development workflows
         enable_omnifocus = true    # Enable OmniFocus integration
-        
+        enable_rust = true         # Enable Rust development workflows
+        enable_ruby = true         # Enable Ruby development workflows
+        enable_hashicorp = true    # Enable HashiCorp toolchain support
+        enable_vscode = true       # Enable VS Code integration
+        enable_github = true       # Enable GitHub integration
+
         # Pomodoro timer settings
         pomodoro_work = 25  # Work period in minutes
         pomodoro_break = 5  # Short break period in minutes
         pomodoro_longbreak = 15  # Long break period in minutes
         pomodoro_cycles = 4  # Number of work periods before a long break
-    
+
     # Security settings
     [data.security]
         gpg_signing = true

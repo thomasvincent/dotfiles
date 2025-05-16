@@ -1,0 +1,35 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens",
+    "PKief.material-icon-theme",
+    "editorconfig.editorconfig",
+    "github.github-vscode-theme",
+    {{ if .preferences.enable_rust -}}
+    "rust-lang.rust-analyzer",
+    "serayuzgur.crates",
+    "tamasfe.even-better-toml",
+    "vadimcn.vscode-lldb",
+    {{ end -}}
+    {{ if .preferences.enable_ruby -}}
+    "rebornix.ruby",
+    "castwide.solargraph",
+    "kaiwood.endwise",
+    "wingrunr21.vscode-ruby",
+    {{ end -}}
+    {{ if .preferences.enable_hashicorp -}}
+    "hashicorp.terraform",
+    "hashicorp.hcl",
+    "ms-azuretools.vscode-docker",
+    {{ end -}}
+    {{ if .cloud.aws -}}
+    "amazonwebservices.aws-toolkit-vscode",
+    {{ end -}}
+    {{ if .cloud.gcp -}}
+    "googlecloudtools.cloudcode",
+    {{ end -}}
+    "ms-vscode.vscode-typescript-next",
+    "dbaeumer.vscode-eslint"
+  ]
+}

@@ -6,6 +6,7 @@ tap "homebrew/bundle"
 tap "homebrew/cask"
 tap "homebrew/core"
 tap "homebrew/services"
+tap "hashicorp/tap"
 
 # CLI Tools
 brew "git"
@@ -33,7 +34,33 @@ brew "pre-commit"
 brew "asdf"
 brew "gh"
 brew "httpie"
+brew "rbenv"
+brew "ruby-build"
+brew "hub"
+
+# Cloud & DevOps Tools
 brew "awscli"
+brew "aws-iam-authenticator"
+brew "gcloud"
+brew "oci-cli"
+{{ if .cloud.oracle -}}
+brew "oci-cli"
+{{ end -}}
+
+# HashiCorp Tools
+{{ if .preferences.enable_hashicorp -}}
+brew "hashicorp/tap/terraform"
+brew "hashicorp/tap/vault"
+brew "hashicorp/tap/consul"
+brew "hashicorp/tap/nomad"
+brew "hashicorp/tap/packer"
+brew "hashicorp/tap/boundary"
+brew "hashicorp/tap/waypoint"
+brew "terraform-docs"
+brew "tflint"
+brew "tfsec"
+brew "infracost"
+{{ end -}}
 {{ end -}}
 
 {{ if eq .chezmoi.os "darwin" -}}
@@ -48,5 +75,27 @@ cask "docker"
 cask "postman"
 cask "slack"
 cask "zoom"
+
+# Cloud Provider GUIs
+{{ if .cloud.aws -}}
+cask "aws-vault"
+{{ end -}}
+{{ if .cloud.gcp -}}
+cask "google-cloud-sdk"
+{{ end -}}
+{{ if .cloud.oracle -}}
+cask "oracle-cloud-cli"
+{{ end -}}
+
+# Development Tools
+cask "intellij-idea-ce"
+cask "jetbrains-toolbox"
+{{ if .preferences.enable_ruby -}}
+cask "rubymine"
+{{ end -}}
+{{ if .preferences.enable_rust -}}
+cask "clion"
+{{ end -}}
+cask "fork" # Git client
 {{ end -}}
 {{ end -}}
