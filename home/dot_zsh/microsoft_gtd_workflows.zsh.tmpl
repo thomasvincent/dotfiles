@@ -1,0 +1,681 @@
+# Microsoft 365 and Cloud GTD Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Enable these functions when Microsoft workflow is enabled
+{{ if eq .enable_microsoft_gtd true -}}
+
+# ==================================
+# Microsoft Integration Setup
+# ==================================
+
+# Microsoft 365 URL endpoints
+MS_OUTLOOK_URL="https://outlook.office.com/mail"
+MS_CALENDAR_URL="https://outlook.office.com/calendar"
+MS_TODO_URL="https://to-do.office.com/tasks"
+MS_ONENOTE_URL="https://www.onenote.com/notebooks"
+MS_TEAMS_URL="https://teams.microsoft.com"
+MS_PLANNER_URL="https://tasks.office.com"
+MS_ONEDRIVE_URL="https://onedrive.live.com"
+MS_SHAREPOINT_URL="{{ .preferences.sharepoint_url | default \"https://your-tenant.sharepoint.com\" }}"
+
+# Microsoft Cloud Azure Portal
+MS_AZURE_PORTAL="https://portal.azure.com"
+
+# Microsoft GTD folder structure for OneDrive/SharePoint
+GTD_MS_ROOT="{{ .preferences.ms_gtd_folder | default \"GTD System\" }}"
+GTD_MS_INBOX="${GTD_MS_ROOT}/Inbox"
+GTD_MS_PROJECTS="${GTD_MS_ROOT}/Projects"
+GTD_MS_REFERENCE="${GTD_MS_ROOT}/Reference"
+GTD_MS_SOMEDAY="${GTD_MS_ROOT}/Someday-Maybe"
+
+# ==================================
+# Microsoft Outlook Integration
+# ==================================
+
+# Open Microsoft Outlook
+msoutlook-open() {
+  local folder=${1:-"inbox"}
+
+  # Build the URL based on the folder
+  local outlook_url="${MS_OUTLOOK_URL}"
+
+  # Add folder path if specified
+  if [[ -n "$folder" && "$folder" != "inbox" ]]; then
+    outlook_url="${outlook_url}/inbox/${folder}"
+  fi
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$outlook_url"
+  else
+    xdg-open "$outlook_url" &> /dev/null
+  fi
+
+  echo "Opening Microsoft Outlook"
+}
+
+# Search Outlook emails
+msoutlook-search() {
+  local search_query=$1
+
+  if [[ -z "$search_query" ]]; then
+    echo "Usage: msoutlook-search <search-query>"
+    echo "Example: msoutlook-search \"project proposal\""
+    return 1
+  fi
+
+  # URL encode the search query
+  local encoded_query=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$search_query'''))" 2>/dev/null || echo "$search_query")
+
+  # Build the search URL
+  local outlook_search_url="${MS_OUTLOOK_URL}/?search=${encoded_query}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$outlook_search_url"
+  else
+    xdg-open "$outlook_search_url" &> /dev/null
+  fi
+
+  echo "Searching Outlook for: $search_query"
+}
+
+# Compose a new email in Outlook
+msoutlook-compose() {
+  local to=$1
+  local subject=$2
+  local body=$3
+
+  if [[ -z "$to" ]]; then
+    echo "Usage: msoutlook-compose <to> [subject] [body]"
+    echo "Example: msoutlook-compose \"user@example.com\" \"Meeting Tomorrow\" \"Hi, let's meet tomorrow.\""
+    return 1
+  fi
+
+  # URL encode the parameters
+  local encoded_to=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$to'''))" 2>/dev/null || echo "$to")
+  local encoded_subject=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$subject'''))" 2>/dev/null || echo "$subject")
+  local encoded_body=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$body'''))" 2>/dev/null || echo "$body")
+
+  # Build the compose URL
+  local outlook_compose_url="${MS_OUTLOOK_URL}/deeplink/compose?to=${encoded_to}&subject=${encoded_subject}&body=${encoded_body}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$outlook_compose_url"
+  else
+    xdg-open "$outlook_compose_url" &> /dev/null
+  fi
+
+  echo "Creating email to $to in Outlook"
+}
+
+# ==================================
+# Microsoft Calendar Integration
+# ==================================
+
+# Open Microsoft Calendar
+mscalendar-open() {
+  local view=${1:-"workweek"}
+
+  # Map the view parameter to Microsoft Calendar view
+  local calendar_view=""
+  case "$view" in
+    day)
+      calendar_view="day"
+      ;;
+    week|workweek)
+      calendar_view="workweek"
+      ;;
+    month)
+      calendar_view="month"
+      ;;
+    agenda)
+      calendar_view="agenda"
+      ;;
+    *)
+      calendar_view="workweek"
+      ;;
+  esac
+
+  # Build the URL
+  local calendar_url="${MS_CALENDAR_URL}/view/${calendar_view}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$calendar_url"
+  else
+    xdg-open "$calendar_url" &> /dev/null
+  fi
+
+  echo "Opening Microsoft Calendar in $view view"
+}
+
+# Create a new calendar event
+mscalendar-new() {
+  local title=$1
+  local start_date=$2
+  local end_date=$3
+  local location=${4:-""}
+
+  if [[ -z "$title" || -z "$start_date" ]]; then
+    echo "Usage: mscalendar-new <title> <start-date-time> [end-date-time] [location]"
+    echo "Example: mscalendar-new \"Team Meeting\" \"2023-12-15T14:00\" \"2023-12-15T15:00\" \"Conference Room\""
+    return 1
+  fi
+
+  # Format dates for URL
+  local formatted_start=$(echo "$start_date" | sed 's/[-:]//g')
+  local formatted_end=""
+
+  # If end date is not provided, set it to 1 hour after start date
+  if [[ -z "$end_date" ]]; then
+    # Simple approximation to add 1 hour
+    if [[ "$start_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+      # Full day event
+      formatted_end=$formatted_start
+    else
+      # Time-based event - add 1 hour
+      local hour=$(echo "$start_date" | grep -o "T[0-9]\{2\}" | sed 's/T//')
+      local next_hour=$((hour + 1))
+      formatted_end=$(echo "$formatted_start" | sed "s/T$hour/T$next_hour/")
+    fi
+  else
+    formatted_end=$(echo "$end_date" | sed 's/[-:]//g')
+  fi
+
+  # URL encode parameters
+  local encoded_title=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$title'''))" 2>/dev/null || echo "$title")
+  local encoded_location=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$location'''))" 2>/dev/null || echo "$location")
+
+  # Build the URL
+  local calendar_new_url="${MS_CALENDAR_URL}/deeplink/compose?subject=${encoded_title}&startdt=${formatted_start}&enddt=${formatted_end}&location=${encoded_location}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$calendar_new_url"
+  else
+    xdg-open "$calendar_new_url" &> /dev/null
+  fi
+
+  echo "Creating new calendar event: $title"
+}
+
+# Show today's events
+mscalendar-today() {
+  # Build URL for today's calendar view
+  local calendar_url="${MS_CALENDAR_URL}/view/day"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$calendar_url"
+  else
+    xdg-open "$calendar_url" &> /dev/null
+  fi
+
+  echo "Opening Microsoft Calendar for today"
+}
+
+# ==================================
+# Microsoft To Do Integration
+# ==================================
+
+# Open Microsoft To Do
+mstodo-open() {
+  local list=${1:-""}
+
+  # Base URL for Microsoft To Do
+  local todo_url="${MS_TODO_URL}"
+
+  # If list is specified, add it to the URL
+  if [[ -n "$list" ]]; then
+    # URL encode the list name
+    local encoded_list=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$list'''))" 2>/dev/null || echo "$list")
+    todo_url="${todo_url}/lists/${encoded_list}"
+  fi
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$todo_url"
+  else
+    xdg-open "$todo_url" &> /dev/null
+  fi
+
+  echo "Opening Microsoft To Do"
+}
+
+# Open the My Day view in Microsoft To Do
+mstodo-myday() {
+  # URL for My Day view
+  local todo_myday_url="${MS_TODO_URL}/myday"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$todo_myday_url"
+  else
+    xdg-open "$todo_myday_url" &> /dev/null
+  fi
+
+  echo "Opening Microsoft To Do - My Day view"
+}
+
+# Open the Important list in Microsoft To Do
+mstodo-important() {
+  # URL for Important tasks
+  local todo_important_url="${MS_TODO_URL}/important"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$todo_important_url"
+  else
+    xdg-open "$todo_important_url" &> /dev/null
+  fi
+
+  echo "Opening Microsoft To Do - Important tasks"
+}
+
+# Open the Planned list in Microsoft To Do
+mstodo-planned() {
+  # URL for Planned tasks
+  local todo_planned_url="${MS_TODO_URL}/planned"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$todo_planned_url"
+  else
+    xdg-open "$todo_planned_url" &> /dev/null
+  fi
+
+  echo "Opening Microsoft To Do - Planned tasks"
+}
+
+# ==================================
+# Microsoft OneNote Integration
+# ==================================
+
+# Open Microsoft OneNote
+msonenote-open() {
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "${MS_ONENOTE_URL}"
+  else
+    xdg-open "${MS_ONENOTE_URL}" &> /dev/null
+  fi
+
+  echo "Opening Microsoft OneNote"
+}
+
+# Create a new notebook in OneNote (opens OneNote to the new notebook page)
+msonenote-new-notebook() {
+  local notebook_name=$1
+
+  if [[ -z "$notebook_name" ]]; then
+    echo "Usage: msonenote-new-notebook <notebook-name>"
+    echo "Example: msonenote-new-notebook \"Work Projects\""
+    return 1
+  fi
+
+  # URL encode the notebook name
+  local encoded_name=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$notebook_name'''))" 2>/dev/null || echo "$notebook_name")
+
+  # Build the URL (this will open OneNote, but won't automatically create the notebook)
+  local onenote_url="${MS_ONENOTE_URL}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$onenote_url"
+  else
+    xdg-open "$onenote_url" &> /dev/null
+  fi
+
+  echo "Opening Microsoft OneNote"
+  echo "Note: OneNote web doesn't support direct notebook creation via URL."
+  echo "Please create a notebook named '$notebook_name' manually in the OneNote interface."
+}
+
+# ==================================
+# Microsoft OneDrive Integration
+# ==================================
+
+# Open Microsoft OneDrive
+msonedrive-open() {
+  local folder_path=${1:-""}
+
+  # Base URL for OneDrive
+  local onedrive_url="${MS_ONEDRIVE_URL}"
+
+  # If folder path is specified, we need to work with it
+  # This is a simplification - direct folder URLs require folder IDs
+  if [[ -n "$folder_path" ]]; then
+    # Will just open OneDrive root since we can't easily map path to ID
+    echo "Opening OneDrive (you'll need to navigate to '$folder_path' manually)"
+  else
+    echo "Opening OneDrive"
+  fi
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$onedrive_url"
+  else
+    xdg-open "$onedrive_url" &> /dev/null
+  fi
+}
+
+# Open Microsoft OneDrive documents
+msonedrive-docs() {
+  # URL for OneDrive documents
+  local onedrive_docs_url="${MS_ONEDRIVE_URL}/?id=documents"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$onedrive_docs_url"
+  else
+    xdg-open "$onedrive_docs_url" &> /dev/null
+  fi
+
+  echo "Opening OneDrive Documents folder"
+}
+
+# ==================================
+# Microsoft Teams Integration
+# ==================================
+
+# Open Microsoft Teams
+msteams-open() {
+  # Open Teams in the browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "${MS_TEAMS_URL}"
+  else
+    xdg-open "${MS_TEAMS_URL}" &> /dev/null
+  fi
+
+  echo "Opening Microsoft Teams in browser"
+}
+
+# Open Teams chat with a specific person
+msteams-chat() {
+  local person=$1
+
+  if [[ -z "$person" ]]; then
+    echo "Usage: msteams-chat <person-email>"
+    echo "Example: msteams-chat \"colleague@company.com\""
+    return 1
+  fi
+
+  # URL encode the email
+  local encoded_email=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$person'''))" 2>/dev/null || echo "$person")
+
+  # Build the URL for Teams chat
+  local teams_chat_url="${MS_TEAMS_URL}/l/chat/0/0?users=${encoded_email}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$teams_chat_url"
+  else
+    xdg-open "$teams_chat_url" &> /dev/null
+  fi
+
+  echo "Opening Teams chat with $person"
+}
+
+# ==================================
+# Microsoft Planner Integration
+# ==================================
+
+# Open Microsoft Planner
+msplanner-open() {
+  # Open Planner in the browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "${MS_PLANNER_URL}"
+  else
+    xdg-open "${MS_PLANNER_URL}" &> /dev/null
+  fi
+
+  echo "Opening Microsoft Planner"
+}
+
+# ==================================
+# Microsoft SharePoint Integration
+# ==================================
+
+# Open SharePoint
+mssharepoint-open() {
+  local site_path=${1:-""}
+
+  # Base URL for SharePoint
+  local sharepoint_url="${MS_SHAREPOINT_URL}"
+
+  # Add site path if specified
+  if [[ -n "$site_path" ]]; then
+    sharepoint_url="${sharepoint_url}/${site_path}"
+  fi
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$sharepoint_url"
+  else
+    xdg-open "$sharepoint_url" &> /dev/null
+  fi
+
+  echo "Opening SharePoint${site_path:+ site: $site_path}"
+}
+
+# ==================================
+# Azure Portal Integration
+# ==================================
+
+# Open Azure Portal
+msazure-open() {
+  local resource=${1:-""}
+
+  # Base URL for Azure Portal
+  local azure_url="${MS_AZURE_PORTAL}"
+
+  # Add resource path if specified
+  if [[ -n "$resource" ]]; then
+    azure_url="${azure_url}/#@/resource/${resource}"
+  fi
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$azure_url"
+  else
+    xdg-open "$azure_url" &> /dev/null
+  fi
+
+  echo "Opening Azure Portal${resource:+ resource: $resource}"
+}
+
+# ==================================
+# Microsoft GTD Workflows
+# ==================================
+
+# Open Microsoft GTD system components
+ms-gtd-open() {
+  # Open key Microsoft GTD tools
+  mstodo-open            # To Do
+  msonenote-open         # OneNote
+  msoutlook-open         # Outlook
+  mscalendar-open        # Calendar
+
+  echo "Opened Microsoft 365 GTD system tools"
+}
+
+# Quick capture to Microsoft To Do inbox
+ms-gtd-capture() {
+  local task_text=$1
+
+  if [[ -z "$task_text" ]]; then
+    echo "Usage: ms-gtd-capture <task-text>"
+    echo "Captures a quick task to Microsoft To Do inbox"
+    return 1
+  fi
+
+  # Open Microsoft To Do tasks view
+  mstodo-open
+
+  echo "Opened Microsoft To Do"
+  echo "Please manually add the task: $task_text"
+  echo "Note: Microsoft To Do doesn't support direct task creation via URL"
+}
+
+# Create a project in OneNote
+ms-gtd-project() {
+  local project_name=$1
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: ms-gtd-project <project-name>"
+    echo "Creates a new GTD project template in OneNote"
+    return 1
+  fi
+
+  # Just open OneNote since we can't create pages directly via URL
+  msonenote-open
+
+  echo "Opening OneNote"
+  echo "Please manually create a new page for project: $project_name"
+  echo "Suggested project template structure:"
+  echo "1. Outcome - What is the successful outcome of this project?"
+  echo "2. Purpose - Why am I doing this project?"
+  echo "3. Next Actions - List of next actions to move the project forward"
+  echo "4. Waiting For - List of items or people you're waiting on"
+  echo "5. Reference Material - Links to relevant documents or notes"
+}
+
+# Start a GTD weekly review
+ms-gtd-review() {
+  local date=$(date '+%Y-%m-%d')
+
+  # Open all the GTD components
+  msonenote-open        # For taking notes during review
+  mstodo-open           # For reviewing tasks
+  msoutlook-open        # For processing emails
+  mscalendar-open       # For reviewing upcoming events
+
+  echo "Opened Microsoft 365 tools for weekly review"
+  echo "Weekly Review Process:"
+  echo "1. Process Outlook inbox to zero"
+  echo "2. Check all Microsoft To Do lists"
+  echo "3. Review OneNote for open items and projects"
+  echo "4. Review Calendar for upcoming commitments"
+  echo "5. Create new project pages in OneNote as needed"
+  echo "6. Create new tasks in Microsoft To Do as needed"
+}
+
+# Create a meeting note with calendar integration
+ms-gtd-meeting() {
+  local title=$1
+  local date=$2
+  local attendees=${3:-""}
+
+  if [[ -z "$title" || -z "$date" ]]; then
+    echo "Usage: ms-gtd-meeting <title> <date-time> [attendees]"
+    echo "Example: ms-gtd-meeting \"Project Review\" \"2023-12-15T14:00\" \"John, Mary, Bob\""
+    return 1
+  fi
+
+  # Calculate meeting end time (1 hour later)
+  local end_date=""
+  if [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    # Full day event
+    end_date="$date"
+  else
+    # Time-based event - add 1 hour
+    local hour=$(echo "$date" | grep -o "T[0-9]\{2\}" | sed 's/T//')
+    local next_hour=$((hour + 1))
+    end_date=$(echo "$date" | sed "s/T$hour/T$next_hour/")
+  fi
+
+  # Create calendar event
+  mscalendar-new "$title" "$date" "$end_date"
+
+  # Open OneNote for notes
+  msonenote-open
+
+  echo "Created calendar event for meeting: $title"
+  echo "Opened OneNote for taking notes"
+  echo "Please create a new page with the following structure:"
+  echo "1. Meeting: $title - $(echo $date | cut -dT -f1)"
+  echo "2. Attendees: ${attendees:-'[List attendees]'}"
+  echo "3. Agenda"
+  echo "4. Discussion Notes"
+  echo "5. Action Items"
+}
+
+# Focus session with Microsoft tools
+ms-gtd-focus() {
+  local task=$1
+  local duration=${2:-25}
+
+  if [[ -z "$task" ]]; then
+    echo "Usage: ms-gtd-focus <task-description> [duration-minutes]"
+    echo "Example: ms-gtd-focus \"Write project proposal\" 45"
+    return 1
+  fi
+
+  # Create a focus session
+  # Open OneNote for notes
+  msonenote-open
+
+  # Start timer in background
+  (
+    echo "Focus session started: $task ($duration minutes)"
+    echo "Timer will complete at $(date -d "+${duration} minutes" '+%H:%M' 2>/dev/null || date -v "+${duration}M" '+%H:%M' 2>/dev/null || echo "unknown time")"
+
+    sleep $(( duration * 60 ))
+
+    # Notify when done
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      osascript -e "display notification \"Focus session complete: $task\" with title \"Focus Timer\" sound name \"Glass\""
+    elif command -v notify-send &> /dev/null; then
+      notify-send -u critical "Focus Timer" "Focus session complete: $task"
+    fi
+
+    echo "Focus session complete: $task"
+  ) &
+
+  echo "Focus session started for: $task ($duration minutes)"
+  echo "OneNote opened for notes"
+  echo "Please create a new page with the title \"Focus: $task\""
+}
+
+# Show next actions
+ms-gtd-next() {
+  # Open Microsoft To Do
+  mstodo-myday
+
+  echo "Opened Microsoft To Do My Day view"
+  echo "Tip: Add your next actions to My Day in Microsoft To Do"
+}
+
+# Open the GTD dashboard
+ms-gtd-dashboard() {
+  # Open all the Microsoft GTD tools
+  mstodo-myday           # Today's tasks
+  msoutlook-open         # Outlook
+  mscalendar-today       # Today's calendar
+  msonenote-open         # OneNote
+
+  echo "Opened Microsoft 365 GTD dashboard components"
+}
+
+# Working with Microsoft Cloud projects
+ms-cloud-project() {
+  local project_name=$1
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: ms-cloud-project <project-name>"
+    echo "Opens Microsoft cloud tools for a project"
+    return 1
+  fi
+
+  # Open all relevant cloud tools
+  msazure-open
+  msplanner-open
+  msteams-open
+  mssharepoint-open
+
+  echo "Opened Microsoft Cloud tools for project: $project_name"
+}
+
+{{- end }}

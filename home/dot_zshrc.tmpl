@@ -99,9 +99,17 @@ source "$HOME/.zsh/vscode_workflows.zsh"
 source "$HOME/.zsh/github_workflows.zsh"
 {{- end }}
 
-# macOS GTD workflows with native apps
+# GTD workflows with different platforms
 {{- if or .enable_macos_gtd .enable_gtd }}
 source "$HOME/.zsh/macos_gtd_workflows.zsh"
+{{- end }}
+
+{{- if or .enable_google_gtd .enable_gtd }}
+source "$HOME/.zsh/google_gtd_workflows.zsh"
+{{- end }}
+
+{{- if or .enable_microsoft_gtd .enable_gtd }}
+source "$HOME/.zsh/microsoft_gtd_workflows.zsh"
 {{- end }}
 
 # Local customizations

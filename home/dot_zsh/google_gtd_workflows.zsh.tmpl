@@ -1,0 +1,711 @@
+# Google Tools GTD Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Enable these functions when Google productivity workflow is enabled
+{{ if eq .enable_google_gtd true -}}
+
+# ==================================
+# Google Integration Setup
+# ==================================
+
+# Google service account credentials path (if using API automation)
+GOOGLE_CREDENTIALS_PATH="{{ .preferences.google_credentials_path | default \"$HOME/.config/google/credentials.json\" }}"
+GOOGLE_AUTH_TOKEN_PATH="{{ .preferences.google_auth_token_path | default \"$HOME/.config/google/token.json\" }}"
+
+# Google GTD folder structure for Drive
+GTD_DRIVE_ROOT="{{ .preferences.google_gtd_drive_folder | default \"GTD System\" }}"
+GTD_DRIVE_INBOX="${GTD_DRIVE_ROOT}/Inbox"
+GTD_DRIVE_PROJECTS="${GTD_DRIVE_ROOT}/Projects"
+GTD_DRIVE_REFERENCE="${GTD_DRIVE_ROOT}/Reference"
+GTD_DRIVE_SOMEDAY="${GTD_DRIVE_ROOT}/Someday-Maybe"
+
+# ==================================
+# Google Calendar Integration
+# ==================================
+
+# Open Google Calendar in browser
+gcal-open() {
+  local view=${1:-"week"}
+  local date=${2:-""}
+
+  # Validate the view parameter
+  case "$view" in
+    day|week|month|agenda|year)
+      # Valid view
+      ;;
+    *)
+      echo "Invalid view: $view"
+      echo "Available views: day, week, month, agenda, year"
+      return 1
+      ;;
+  esac
+
+  # Build the URL
+  local gcal_url="https://calendar.google.com/calendar/r/$view"
+
+  # Add date if provided
+  if [[ -n "$date" ]]; then
+    # Convert date format if needed (YYYY-MM-DD to YYYY/MM/DD)
+    if [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+      date="${date//-//}"
+    fi
+
+    gcal_url="$gcal_url/$date"
+  fi
+
+  # Open the URL
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$gcal_url"
+  else
+    xdg-open "$gcal_url" &> /dev/null
+  fi
+
+  echo "Opening Google Calendar in $view view"
+}
+
+# Create a new Google Calendar event
+gcal-new() {
+  local title=$1
+  local start_date=$2
+  local end_date=$3
+  local details=${4:-""}
+  local location=${5:-""}
+
+  if [[ -z "$title" || -z "$start_date" ]]; then
+    echo "Usage: gcal-new <title> <start-date-time> [end-date-time] [details] [location]"
+    echo "Example: gcal-new \"Team Meeting\" \"2023-06-15T14:00\" \"2023-06-15T15:00\" \"Discuss project status\" \"Conference Room\""
+    return 1
+  fi
+
+  # Format start and end dates for Google Calendar URL
+  # Convert YYYY-MM-DDThh:mm to YYYYMMDDThhmmss/YYYYMMDDThhmmss format
+  local formatted_start=$(echo "$start_date" | sed 's/[-:]//g')
+  local formatted_end=""
+
+  # If end date is not provided, set it to 1 hour after start date
+  if [[ -z "$end_date" ]]; then
+    # Parse the start date to determine format
+    if [[ "$start_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+      # Start date is just a date (YYYY-MM-DD), assume all-day event
+      formatted_end=$formatted_start
+    else
+      # Get hour and add 1 hour for end time (simple approximation)
+      formatted_end=$(echo "$formatted_start" | sed 's/T\([0-9]\{2\}\)/T$((\1+1))/')
+    fi
+  else
+    formatted_end=$(echo "$end_date" | sed 's/[-:]//g')
+  fi
+
+  # URL encode the parameters
+  local encoded_title=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$title'''))" 2>/dev/null || echo "$title")
+  local encoded_details=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$details'''))" 2>/dev/null || echo "$details")
+  local encoded_location=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$location'''))" 2>/dev/null || echo "$location")
+
+  # Create the Google Calendar URL
+  local gcal_url="https://calendar.google.com/calendar/r/eventedit?text=${encoded_title}&dates=${formatted_start}/${formatted_end}&details=${encoded_details}&location=${encoded_location}"
+
+  # Open the URL
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$gcal_url"
+  else
+    xdg-open "$gcal_url" &> /dev/null
+  fi
+
+  echo "Opening Google Calendar to create event: $title"
+}
+
+# Show today's Google Calendar events
+gcal-today() {
+  # Open Google Calendar with today's date
+  local today=$(date '+%Y/%m/%d')
+  gcal-open "day" "$today"
+
+  echo "Opening Google Calendar for today's events"
+}
+
+# Open Google Calendar for a specific date range
+gcal-range() {
+  local start_date=$1
+  local end_date=$2
+
+  if [[ -z "$start_date" || -z "$end_date" ]]; then
+    echo "Usage: gcal-range <start-date> <end-date>"
+    echo "Example: gcal-range 2023/06/01 2023/06/30"
+    echo "Note: Dates should be in format YYYY/MM/DD or YYYY-MM-DD"
+    return 1
+  fi
+
+  # Convert dash format to slash if needed
+  if [[ "$start_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    start_date="${start_date//-//}"
+  fi
+
+  if [[ "$end_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    end_date="${end_date//-//}"
+  fi
+
+  # Build the URL for custom view with date range
+  local gcal_url="https://calendar.google.com/calendar/r/customview?start=${start_date}&end=${end_date}"
+
+  # Open the URL
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$gcal_url"
+  else
+    xdg-open "$gcal_url" &> /dev/null
+  fi
+
+  echo "Opening Google Calendar for date range: $start_date to $end_date"
+}
+
+# ==================================
+# Google Tasks Integration
+# ==================================
+
+# Open Google Tasks in a browser
+gtasks-open() {
+  local list=${1:-""}
+
+  # Base URL for Google Tasks
+  local tasks_url="https://tasks.google.com/embed/?origin=https://calendar.google.com&fullWidth=1"
+
+  # If a list is specified, add it to the URL (this is an approximation as Google Tasks doesn't
+  # have direct list URLs, but it will at least open the Tasks interface)
+  if [[ -n "$list" ]]; then
+    tasks_url="${tasks_url}&list=${list}"
+  fi
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$tasks_url"
+  else
+    xdg-open "$tasks_url" &> /dev/null
+  fi
+
+  echo "Opening Google Tasks"
+}
+
+# Open Google Tasks in Gmail
+gtasks-gmail() {
+  # Open Gmail with Tasks sidebar
+  local gmail_url="https://mail.google.com/mail/u/0/#inbox?taskPane=1"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$gmail_url"
+  else
+    xdg-open "$gmail_url" &> /dev/null
+  fi
+
+  echo "Opening Gmail with Google Tasks sidebar"
+}
+
+# ==================================
+# Google Keep Integration
+# ==================================
+
+# Open Google Keep
+gkeep-open() {
+  local search=${1:-""}
+
+  # Base URL for Google Keep
+  local keep_url="https://keep.google.com"
+
+  # If search term provided, add it
+  if [[ -n "$search" ]]; then
+    keep_url="${keep_url}/#search/text=${search}"
+  fi
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$keep_url"
+  else
+    xdg-open "$keep_url" &> /dev/null
+  fi
+
+  echo "Opening Google Keep"
+}
+
+# Create a Google Keep note for quick capture
+gkeep-capture() {
+  local note_text=$1
+
+  if [[ -z "$note_text" ]]; then
+    echo "Usage: gkeep-capture <note-text>"
+    echo "Captures a quick note to Google Keep"
+    return 1
+  fi
+
+  # Escape the note text
+  local encoded_text=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$note_text'''))" 2>/dev/null || echo "$note_text")
+
+  # Construct the URL with note content
+  local keep_url="https://keep.google.com/#create/text=${encoded_text}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$keep_url"
+  else
+    xdg-open "$keep_url" &> /dev/null
+  fi
+
+  echo "Created Google Keep note"
+}
+
+# Open Google Keep with labels
+gkeep-label() {
+  local label=$1
+
+  if [[ -z "$label" ]]; then
+    echo "Usage: gkeep-label <label-name>"
+    echo "Opens Google Keep filtered by label"
+    return 1
+  fi
+
+  # Escape the label name
+  local encoded_label=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$label'''))" 2>/dev/null || echo "$label")
+
+  # Construct the URL with label filter
+  local keep_url="https://keep.google.com/#label/${encoded_label}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$keep_url"
+  else
+    xdg-open "$keep_url" &> /dev/null
+  fi
+
+  echo "Opening Google Keep with label: $label"
+}
+
+# ==================================
+# Gmail Integration
+# ==================================
+
+# Open Gmail
+gmail-open() {
+  local label=${1:-""}
+
+  # Base URL for Gmail
+  local gmail_url="https://mail.google.com/mail/u/0/"
+
+  # If label is specified, add it to the URL
+  if [[ -n "$label" ]]; then
+    gmail_url="${gmail_url}#label/${label}"
+  fi
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$gmail_url"
+  else
+    xdg-open "$gmail_url" &> /dev/null
+  fi
+
+  echo "Opening Gmail"
+}
+
+# Open Gmail with specific search query
+gmail-search() {
+  local search_query=$1
+
+  if [[ -z "$search_query" ]]; then
+    echo "Usage: gmail-search <search-query>"
+    echo "Example: gmail-search \"from:example.com after:2023/01/01\""
+    return 1
+  fi
+
+  # URL encode the search query
+  local encoded_query=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$search_query'''))" 2>/dev/null || echo "$search_query")
+
+  # Construct the Gmail search URL
+  local gmail_url="https://mail.google.com/mail/u/0/#search/${encoded_query}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$gmail_url"
+  else
+    xdg-open "$gmail_url" &> /dev/null
+  fi
+
+  echo "Opening Gmail with search: $search_query"
+}
+
+# Create a new email draft in Gmail
+gmail-compose() {
+  local to=$1
+  local subject=$2
+  local body=$3
+
+  if [[ -z "$to" ]]; then
+    echo "Usage: gmail-compose <to> [subject] [body]"
+    echo "Example: gmail-compose \"user@example.com\" \"Meeting tomorrow\" \"Hi, let's meet tomorrow.\""
+    return 1
+  fi
+
+  # URL encode the parameters
+  local encoded_to=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$to'''))" 2>/dev/null || echo "$to")
+  local encoded_subject=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$subject'''))" 2>/dev/null || echo "$subject")
+  local encoded_body=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$body'''))" 2>/dev/null || echo "$body")
+
+  # Create the mailto URL (Gmail will intercept this if set as default handler)
+  local mailto_url="mailto:${encoded_to}?subject=${encoded_subject}&body=${encoded_body}"
+
+  # Open the mailto URL
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$mailto_url"
+  else
+    xdg-open "$mailto_url" &> /dev/null
+  fi
+
+  echo "Creating email to $to"
+}
+
+# Open Gmail with specific label or filter
+gmail-filter() {
+  local filter=$1
+
+  if [[ -z "$filter" ]]; then
+    echo "Usage: gmail-filter <filter>"
+    echo "Available filters: unread, starred, important, sent, drafts, spam, trash"
+    return 1
+  fi
+
+  local gmail_url=""
+
+  case "$filter" in
+    unread)
+      gmail_url="https://mail.google.com/mail/u/0/#search/is%3Aunread"
+      ;;
+    starred)
+      gmail_url="https://mail.google.com/mail/u/0/#starred"
+      ;;
+    important)
+      gmail_url="https://mail.google.com/mail/u/0/#imp"
+      ;;
+    sent)
+      gmail_url="https://mail.google.com/mail/u/0/#sent"
+      ;;
+    drafts)
+      gmail_url="https://mail.google.com/mail/u/0/#drafts"
+      ;;
+    spam)
+      gmail_url="https://mail.google.com/mail/u/0/#spam"
+      ;;
+    trash)
+      gmail_url="https://mail.google.com/mail/u/0/#trash"
+      ;;
+    *)
+      echo "Invalid filter: $filter"
+      echo "Available filters: unread, starred, important, sent, drafts, spam, trash"
+      return 1
+      ;;
+  esac
+
+  # Open Gmail with the filter
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$gmail_url"
+  else
+    xdg-open "$gmail_url" &> /dev/null
+  fi
+
+  echo "Opening Gmail with filter: $filter"
+}
+
+# ==================================
+# Google Drive Integration
+# ==================================
+
+# Open Google Drive
+gdrive-open() {
+  local folder_path=${1:-""}
+
+  # Base URL for Google Drive
+  local drive_url="https://drive.google.com/drive/u/0"
+
+  # If folder path is specified, we need to work with it
+  # This is a simplification - without API access, we can't directly open folders by path
+  if [[ -n "$folder_path" ]]; then
+    # Direct folder links require folder IDs, so we'll just open to My Drive
+    # and let the user navigate from there
+    drive_url="${drive_url}/my-drive"
+    echo "Opening Google Drive (you'll need to navigate to '$folder_path' manually)"
+  else
+    drive_url="${drive_url}/my-drive"
+    echo "Opening Google Drive My Drive"
+  fi
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$drive_url"
+  else
+    xdg-open "$drive_url" &> /dev/null
+  fi
+}
+
+# Open Google Drive search
+gdrive-search() {
+  local search_term=$1
+
+  if [[ -z "$search_term" ]]; then
+    echo "Usage: gdrive-search <search-term>"
+    echo "Example: gdrive-search \"project proposal\""
+    return 1
+  fi
+
+  # URL encode the search term
+  local encoded_term=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$search_term'''))" 2>/dev/null || echo "$search_term")
+
+  # Construct the Drive search URL
+  local drive_url="https://drive.google.com/drive/u/0/search?q=${encoded_term}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$drive_url"
+  else
+    xdg-open "$drive_url" &> /dev/null
+  fi
+
+  echo "Searching Google Drive for: $search_term"
+}
+
+# Create a new Google Docs document
+gdocs-new() {
+  local title=${1:-"Untitled Document"}
+
+  # URL encode the title
+  local encoded_title=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$title'''))" 2>/dev/null || echo "$title")
+
+  # Create the document URL
+  local docs_url="https://docs.google.com/document/u/0/create?title=${encoded_title}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$docs_url"
+  else
+    xdg-open "$docs_url" &> /dev/null
+  fi
+
+  echo "Creating new Google Doc: $title"
+}
+
+# Create a new Google Sheets spreadsheet
+gsheets-new() {
+  local title=${1:-"Untitled Spreadsheet"}
+
+  # URL encode the title
+  local encoded_title=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$title'''))" 2>/dev/null || echo "$title")
+
+  # Create the spreadsheet URL
+  local sheets_url="https://sheets.google.com/create?title=${encoded_title}"
+
+  # Open the URL in the default browser
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$sheets_url"
+  else
+    xdg-open "$sheets_url" &> /dev/null
+  fi
+
+  echo "Creating new Google Sheet: $title"
+}
+
+# ==================================
+# Google GTD Workflows
+# ==================================
+
+# Open Google Drive GTD system
+ggoog-gtd-open() {
+  # Open the GTD root folder in Google Drive
+  gdrive-search "$GTD_DRIVE_ROOT"
+
+  echo "Opening Google Drive GTD system"
+}
+
+# Capture a new item for GTD inbox
+ggoog-gtd-capture() {
+  local note_text=$1
+
+  if [[ -z "$note_text" ]]; then
+    echo "Usage: ggoog-gtd-capture <note-text>"
+    echo "Captures a quick note to Google Keep for GTD processing"
+    return 1
+  fi
+
+  # Tag the note with GTD and inbox tags
+  local tagged_note="$note_text\n\n#gtd #inbox"
+
+  # Use Keep for quick capture
+  gkeep-capture "$tagged_note"
+
+  echo "Captured note to Google Keep with GTD tags"
+}
+
+# Start a GTD project in Google Docs
+ggoog-gtd-project() {
+  local project_name=$1
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: ggoog-gtd-project <project-name>"
+    echo "Creates a new GTD project template in Google Docs"
+    return 1
+  fi
+
+  # Create a new Google Doc for the project
+  gdocs-new "Project: $project_name"
+
+  echo "Created Google Doc for project: $project_name"
+  echo "Project template note: Add the following sections manually:"
+  echo "1. Outcome - What is the successful outcome of this project?"
+  echo "2. Purpose - Why am I doing this project?"
+  echo "3. Next Actions - List of next actions to move the project forward"
+  echo "4. Waiting For - List of items or people you're waiting on"
+  echo "5. Reference Material - Links to relevant documents or notes"
+}
+
+# Start a GTD weekly review
+ggoog-gtd-review() {
+  local date=$(date '+%Y-%m-%d')
+  local title="GTD Weekly Review - $date"
+
+  # Create a new Google Doc for the weekly review
+  gdocs-new "$title"
+
+  echo "Created weekly review document: $title"
+  echo "Weekly Review Template note: Add the following sections manually:"
+  echo "1. Collect Loose Papers and Materials"
+  echo "2. Process Google Keep notes"
+  echo "3. Process Gmail inbox"
+  echo "4. Empty your head"
+  echo "5. Review Next Actions lists"
+  echo "6. Review Projects list"
+  echo "7. Review Calendar (upcoming weeks)"
+  echo "8. Review Waiting For list"
+  echo "9. Review Someday/Maybe list"
+  echo "10. Set new goals and actions for the week"
+}
+
+# Create a weekly planning doc with calendar integration
+ggoog-gtd-weekly-plan() {
+  local monday_date=$(date -d "monday" "+%Y-%m-%d" 2>/dev/null || date -v monday "+%Y-%m-%d" 2>/dev/null || echo "")
+
+  if [[ -z "$monday_date" ]]; then
+    # Fallback if date commands fail
+    monday_date=$(date "+%Y-%m-%d")
+    echo "Note: Couldn't calculate Monday's date, using today's date instead"
+  fi
+
+  local title="Weekly Plan - Week of $monday_date"
+
+  # Create a new Google Doc for the weekly plan
+  gdocs-new "$title"
+
+  # Also open Google Calendar for the week
+  gcal-open "week"
+
+  echo "Created weekly planning document: $title"
+  echo "Calendar opened for the week"
+  echo "Weekly Plan Template note: Add the following sections manually:"
+  echo "1. Focus Areas & Priorities"
+  echo "2. Weekly Targets"
+  echo "3. Day-by-Day Schedule"
+  echo "4. Projects Progress"
+  echo "5. Waiting For Items"
+  echo "6. Notes & Ideas"
+}
+
+# Create a meeting note with calendar integration
+ggoog-gtd-meeting() {
+  local title=$1
+  local date=$2
+  local attendees=${3:-""}
+
+  if [[ -z "$title" || -z "$date" ]]; then
+    echo "Usage: ggoog-gtd-meeting <title> <date-time> [attendees]"
+    echo "Example: ggoog-gtd-meeting \"Project Review\" \"2023-12-15T14:00\" \"John, Mary, Bob\""
+    return 1
+  fi
+
+  # Create meeting note in Google Docs
+  local meeting_title="Meeting: $title - $(echo $date | cut -dT -f1)"
+  gdocs-new "$meeting_title"
+
+  # Calculate meeting end time (1 hour later)
+  local end_date=$(echo $date | sed 's/T\([0-9]\{2\}\):00/T$((\1+1)):00/')
+
+  # Create calendar event
+  gcal-new "$title" "$date" "$end_date" "Meeting notes: [DOC_LINK_PLACEHOLDER]"
+
+  echo "Created meeting note: $meeting_title"
+  echo "Calendar event created for: $date"
+  echo "Meeting Note Template: Add the following sections manually:"
+  echo "1. Attendees: ${attendees:-'[List attendees]'}"
+  echo "2. Agenda"
+  echo "3. Discussion Notes"
+  echo "4. Action Items"
+  echo "5. Decisions Made"
+}
+
+# Focus session timer with Keep note
+ggoog-gtd-focus() {
+  local task=$1
+  local duration=${2:-25}
+
+  if [[ -z "$task" ]]; then
+    echo "Usage: ggoog-gtd-focus <task-description> [duration-minutes]"
+    echo "Example: ggoog-gtd-focus \"Write project proposal\" 45"
+    return 1
+  fi
+
+  # Create a focus note in Google Keep
+  local focus_title="FOCUS: $task"
+  local focus_note="Focus Session: $task\n\nDuration: $duration minutes\nStarted: $(date '+%Y-%m-%d %H:%M')\n\nObjectives:\n- \n\nNotes:\n- \n\n#focus"
+
+  gkeep-capture "$focus_note"
+
+  # Start timer in background
+  (
+    echo "Focus session started: $task ($duration minutes)"
+    echo "Timer will complete at $(date -d "+${duration} minutes" '+%H:%M' 2>/dev/null || date -v "+${duration}M" '+%H:%M' 2>/dev/null || echo "unknown time")"
+
+    sleep $(( duration * 60 ))
+
+    # Notify when done
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      osascript -e "display notification \"Focus session complete: $task\" with title \"Focus Timer\" sound name \"Glass\""
+    elif command -v notify-send &> /dev/null; then
+      notify-send -u critical "Focus Timer" "Focus session complete: $task"
+    fi
+
+    echo "Focus session complete: $task"
+  ) &
+
+  echo "Focus session started for: $task ($duration minutes)"
+  echo "Google Keep note created"
+}
+
+# Next actions review
+ggoog-gtd-next() {
+  # Open Google Tasks
+  gtasks-open
+
+  # Open Gmail with label:@next-action (if user has this set up)
+  gmail-search "label:@next-action is:open"
+
+  # Open Google Keep with #next-action tag (if user has this set up)
+  gkeep-label "next-action"
+
+  echo "Opened Google Tasks, Gmail, and Google Keep to review next actions"
+  echo "Tip: Use labels @next-action in Gmail and #next-action in Keep for consistent GTD workflow"
+}
+
+# Open the GTD dashboard
+ggoog-gtd-dashboard() {
+  # Open key GTD components in tabs
+  gtasks-open                    # Tasks
+  gkeep-open                     # Keep
+  gmail-filter "unread"          # Unread email
+  gcal-today                     # Today's calendar
+  gdrive-search "$GTD_DRIVE_ROOT" # GTD folder in Drive
+
+  echo "Opened GTD dashboard components in browser tabs"
+}
+
+{{- end }}
