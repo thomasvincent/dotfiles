@@ -26,12 +26,12 @@ ARCHIVE_FILE="$TASK_DIR/archive.txt"
 task-add() {
   local task=$1
   local list=${2:-"CLI Tools"}
-  
+
   if [[ -z "$task" ]]; then
     echo "Usage: task-add <task description> [list-name]"
     return 1
   fi
-  
+
   if [[ "$USE_MACOS_REMINDERS" == "true" ]]; then
     # Use macOS Reminders app
     osascript <<EOF
@@ -54,12 +54,12 @@ EOF
 task-list() {
   local filter=$1
   local list=${2:-"CLI Tools"}
-  
+
   if [[ "$USE_MACOS_REMINDERS" == "true" ]]; then
     # Use macOS Reminders app
     echo "Tasks in '$list' list:"
     echo "======================"
-    
+
     if [[ -z "$filter" ]]; then
       # List all tasks
       osascript <<EOF | awk '{print NR ") " $0}'
@@ -93,17 +93,17 @@ EOF
       echo "No tasks found."
       return 0
     fi
-    
+
     echo "Current tasks:"
     echo "=============="
-    
+
     if [[ -z "$filter" ]]; then
       # List all tasks with numbers
       nl -w3 -s') ' "$TASK_FILE"
     else
       # Filter tasks
       grep -i "$filter" "$TASK_FILE" | nl -w3 -s') '
-      
+
       # If no results, show a message
       if [[ $? -ne 0 ]]; then
         echo "No tasks matching '$filter' found."
@@ -116,12 +116,12 @@ EOF
 task-done() {
   local task_num=$1
   local list=${2:-"CLI Tools"}
-  
+
   if [[ -z "$task_num" ]]; then
     echo "Usage: task-done <task number> [list-name]"
     return 1
   fi
-  
+
   if [[ "$USE_MACOS_REMINDERS" == "true" ]]; then
     # Use macOS Reminders app
     osascript <<EOF
@@ -145,23 +145,23 @@ EOF
       echo "No tasks found."
       return 1
     fi
-    
+
     # Get the task
     local task=$(sed -n "${task_num}p" "$TASK_FILE")
-    
+
     if [[ -z "$task" ]]; then
       echo "Task #$task_num not found."
       return 1
     fi
-    
+
     # Add completion date and move to archive
     local date_completed=$(date '+%Y-%m-%d')
     echo "[$date_completed] DONE: $task" >> "$ARCHIVE_FILE"
-    
+
     # Remove the task from the task file
     sed -i.bak "${task_num}d" "$TASK_FILE"
     rm "$TASK_FILE.bak"
-    
+
     echo "Task completed: $task"
   fi
 }
@@ -170,16 +170,16 @@ EOF
 task-history() {
   local days=${1:-7}  # Default to 7 days
   local list=${2:-"CLI Tools"}
-  
+
   if [[ "$USE_MACOS_REMINDERS" == "true" ]]; then
     # Use macOS Reminders app
     echo "Tasks completed in the last $days days:"
     echo "======================================"
-    
+
     # Calculate the date X days ago
     local cutoff_date
     cutoff_date=$(date -v "-${days}d" '+%Y-%m-%d')
-    
+
     osascript <<EOF | awk '{print NR ") " $0}'
 tell application "Reminders"
   set taskList to list "$list"
@@ -203,7 +203,7 @@ EOF
       echo "No completed tasks found."
       return 0
     fi
-    
+
     # Calculate the date X days ago
     local cutoff_date
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -211,10 +211,10 @@ EOF
     else
       cutoff_date=$(date -d "$days days ago" '+%Y-%m-%d')
     fi
-    
+
     echo "Tasks completed in the last $days days:"
     echo "======================================"
-    
+
     # Filter tasks completed after the cutoff date
     grep -A 999 "\[$cutoff_date\]" "$ARCHIVE_FILE" | nl -w3 -s') '
   fi
@@ -242,12 +242,12 @@ EOF
 # Create a new list (macOS only)
 task-new-list() {
   local list_name=$1
-  
+
   if [[ -z "$list_name" ]]; then
     echo "Usage: task-new-list <list-name>"
     return 1
   fi
-  
+
   if [[ "$USE_MACOS_REMINDERS" == "true" ]]; then
     osascript <<EOF
 tell application "Reminders"
@@ -264,10 +264,10 @@ EOF
 task-clear() {
   local confirm
   local list=${1:-"CLI Tools"}
-  
+
   echo "This will clear all completed tasks. Are you sure? (y/N)"
   read -r confirm
-  
+
   if [[ "$confirm" =~ ^[Yy]$ ]]; then
     if [[ "$USE_MACOS_REMINDERS" == "true" ]]; then
       # Use macOS Reminders app
@@ -285,10 +285,10 @@ EOF
       # Fallback to text file
       # Backup the archive file first
       cp "$ARCHIVE_FILE" "$ARCHIVE_FILE.bak"
-      
+
       # Clear the file
       > "$ARCHIVE_FILE"
-      
+
       echo "Completed tasks cleared. A backup was saved to $ARCHIVE_FILE.bak"
     fi
   else
@@ -318,12 +318,12 @@ note-new() {
   local title=$1
   local folder=${2:-$DEFAULT_NOTES_FOLDER}
   local content=${3:-""}
-  
+
   if [[ -z "$title" ]]; then
     echo "Usage: note-new <title> [folder] [content]"
     return 1
   fi
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Use macOS Notes app
     if [[ -z "$content" ]]; then
@@ -362,7 +362,7 @@ EOF
     local filename=$(echo "$title" | tr ' ' '_' | tr '[:upper:]' '[:lower:]')
     local date=$(date '+%Y-%m-%d')
     filename="${date}_${filename}.md"
-    
+
     # Create the note with a header
     echo "# $title" > "$NOTES_DIR/$filename"
     echo "" >> "$NOTES_DIR/$filename"
@@ -371,12 +371,12 @@ EOF
     echo "" >> "$NOTES_DIR/$filename"
     echo "## Notes" >> "$NOTES_DIR/$filename"
     echo "" >> "$NOTES_DIR/$filename"
-    
+
     # Add content if provided
     if [[ -n "$content" ]]; then
       echo "$content" >> "$NOTES_DIR/$filename"
     fi
-    
+
     # Open the note in the default editor
     {{ if eq .preferences.editor "vscode" -}}
     code "$NOTES_DIR/$filename"
@@ -396,12 +396,12 @@ EOF
 note-list() {
   local filter=$1
   local folder=${2:-$DEFAULT_NOTES_FOLDER}
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Use macOS Notes app
     echo "Notes in '$folder' folder:"
     echo "========================="
-    
+
     if [[ -z "$filter" ]]; then
       # List all notes
       osascript <<EOF | awk '{print NR ") " $0}'
@@ -437,17 +437,17 @@ EOF
       echo "Notes directory not found."
       return 1
     fi
-    
+
     echo "Notes:"
     echo "======"
-    
+
     if [[ -z "$filter" ]]; then
       # List all notes, sorted by date
       ls -l "$NOTES_DIR" | grep -v '^d' | sort -r | awk '{print $9}' | sed 's/\.md$//' | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}_//'
     else
       # Filter notes by content or filename
       grep -l -i "$filter" "$NOTES_DIR"/*.md | xargs basename | sed 's/\.md$//' | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}_//'
-      
+
       # If no results, show a message
       if [[ $? -ne 0 ]]; then
         echo "No notes matching '$filter' found."
@@ -460,12 +460,12 @@ EOF
 note-view() {
   local title=$1
   local folder=${2:-$DEFAULT_NOTES_FOLDER}
-  
+
   if [[ -z "$title" ]]; then
     echo "Usage: note-view <title> [folder]"
     return 1
   fi
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Use macOS Notes app
     # Find the note and open it in Notes app
@@ -496,12 +496,12 @@ EOF
     # Find the note
     local note_file
     note_file=$(find "$NOTES_DIR" -name "*_${title}.md" -o -name "*_${title}*.md" | head -n 1)
-    
+
     if [[ -z "$note_file" ]]; then
       echo "Note '$title' not found."
       return 1
     fi
-    
+
     # View the note
     {{ if eq .preferences.editor "vscode" -}}
     code "$note_file"
@@ -522,17 +522,17 @@ EOF
 note-search() {
   local term=$1
   local folder=${2:-$DEFAULT_NOTES_FOLDER}
-  
+
   if [[ -z "$term" ]]; then
     echo "Usage: note-search <search term> [folder]"
     return 1
   fi
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Use macOS Notes app
     echo "Notes containing '$term':"
     echo "========================="
-    
+
     osascript <<EOF | awk '{print NR ") " $0}'
 tell application "Notes"
   set theFolder to folder "$folder"
@@ -549,7 +549,7 @@ EOF
     # Fallback to text file
     echo "Searching notes for '$term':"
     echo "============================"
-    
+
     grep -n -i "$term" "$NOTES_DIR"/*.md | sed "s|$NOTES_DIR/||" | sort
   fi
 }
@@ -576,12 +576,12 @@ EOF
 # Create a new folder (macOS only)
 note-new-folder() {
   local folder_name=$1
-  
+
   if [[ -z "$folder_name" ]]; then
     echo "Usage: note-new-folder <folder-name>"
     return 1
   fi
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     osascript <<EOF
 tell application "Notes"
@@ -624,29 +624,29 @@ fi
 meeting-start() {
   local title=$1
   local attendees=$2
-  
+
   if [[ -z "$title" ]]; then
     echo "Usage: meeting-start <title> [attendees]"
     return 1
   fi
-  
+
   # Get current date and time
   local date=$(date '+%Y-%m-%d')
   local time=$(date '+%H:%M')
   local meeting_title="Meeting: $title ($date)"
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Format content for macOS Notes
     local meeting_content="# Meeting: $title\n\nDate: $date\nTime: $time\n"
-    
+
     if [[ -n "$attendees" ]]; then
       meeting_content+="Attendees: $attendees\n\n"
     else
       meeting_content+="Attendees: \n\n"
     fi
-    
+
     meeting_content+="## Agenda\n\n1. \n\n## Notes\n\n\n## Action Items\n\n- [ ] "
-    
+
     # Create note in the Meetings folder
     osascript <<EOF
 tell application "Notes"
@@ -655,7 +655,7 @@ tell application "Notes"
   end tell
 end tell
 EOF
-    
+
     # Open the Notes app to this note
     osascript <<EOF
 tell application "Notes"
@@ -665,25 +665,25 @@ tell application "Notes"
   activate
 end tell
 EOF
-    
+
     echo "Meeting note created in macOS Notes (folder: $MEETING_FOLDER)"
   else
     # Fallback to text file
     local filename=$(echo "$title" | tr ' ' '_' | tr '[:upper:]' '[:lower:]')
     filename="${date}_${filename}.md"
-    
+
     # Create the meeting note with a header
     echo "# Meeting: $title" > "$MEETING_DIR/$filename"
     echo "" >> "$MEETING_DIR/$filename"
     echo "Date: $date" >> "$MEETING_DIR/$filename"
     echo "Time: $time" >> "$MEETING_DIR/$filename"
-    
+
     if [[ -n "$attendees" ]]; then
       echo "Attendees: $attendees" >> "$MEETING_DIR/$filename"
     else
       echo "Attendees: " >> "$MEETING_DIR/$filename"
     fi
-    
+
     echo "" >> "$MEETING_DIR/$filename"
     echo "## Agenda" >> "$MEETING_DIR/$filename"
     echo "" >> "$MEETING_DIR/$filename"
@@ -694,7 +694,7 @@ EOF
     echo "## Action Items" >> "$MEETING_DIR/$filename"
     echo "" >> "$MEETING_DIR/$filename"
     echo "- [ ] " >> "$MEETING_DIR/$filename"
-    
+
     # Open the meeting note in the default editor
     {{ if eq .preferences.editor "vscode" -}}
     code "$MEETING_DIR/$filename"
@@ -713,12 +713,12 @@ EOF
 # List meeting notes
 meeting-list() {
   local filter=$1
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Use macOS Notes app
     echo "Meeting Notes:"
     echo "=============="
-    
+
     if [[ -z "$filter" ]]; then
       # List all meeting notes
       osascript <<EOF | awk '{print NR ") " $0}'
@@ -754,17 +754,17 @@ EOF
       echo "Meeting notes directory not found."
       return 1
     fi
-    
+
     echo "Meeting Notes:"
     echo "=============="
-    
+
     if [[ -z "$filter" ]]; then
       # List all meeting notes, sorted by date
       ls -l "$MEETING_DIR" | grep -v '^d' | sort -r | awk '{print $9}' | sed 's/\.md$//' | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}_//'
     else
       # Filter meeting notes by content or filename
       grep -l -i "$filter" "$MEETING_DIR"/*.md | xargs basename | sed 's/\.md$//' | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}_//'
-      
+
       # If no results, show a message
       if [[ $? -ne 0 ]]; then
         echo "No meeting notes matching '$filter' found."
@@ -776,12 +776,12 @@ EOF
 # View a meeting note
 meeting-view() {
   local title=$1
-  
+
   if [[ -z "$title" ]]; then
     echo "Usage: meeting-view <title>"
     return 1
   fi
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Use macOS Notes app
     # Find the note and open it in Notes app
@@ -812,12 +812,12 @@ EOF
     # Find the meeting note
     local note_file
     note_file=$(find "$MEETING_DIR" -name "*_${title}.md" -o -name "*_${title}*.md" | head -n 1)
-    
+
     if [[ -z "$note_file" ]]; then
       echo "Meeting note '$title' not found."
       return 1
     fi
-    
+
     # View the meeting note
     {{ if eq .preferences.editor "vscode" -}}
     code "$note_file"
@@ -837,31 +837,31 @@ EOF
 # Extract action items from meeting notes
 meeting-actions() {
   local days=${1:-30}  # Default to 30 days
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" ]]; then
     # Use macOS Notes app
     echo "Action items from meetings in the last $days days:"
     echo "================================================="
-    
+
     osascript <<EOF
 tell application "Notes"
   set theFolder to folder "$MEETING_FOLDER"
   set cutoffDate to (current date) - $days * days
   set output to ""
-  
+
   repeat with theNote in notes of theFolder
     if creation date of theNote > cutoffDate then
       set noteBody to body of theNote
       set noteName to name of theNote
-      
+
       -- Look for action items by finding "- [ ]" patterns
       set AppleScript's text item delimiters to "- [ ]"
       set actionItems to text items of noteBody
-      
+
       if (count of actionItems) > 1 then
         -- Found action items
         set output to output & "From: " & noteName & "\n"
-        
+
         repeat with i from 2 to count of actionItems
           set actionText to item i of actionItems
           -- Extract just the first line of each action item
@@ -869,12 +869,12 @@ tell application "Notes"
           set actionLine to text item 1 of actionText
           set output to output & "  - [ ] " & actionLine & "\n"
         end repeat
-        
+
         set output to output & "\n"
       end if
     end if
   end repeat
-  
+
   set AppleScript's text item delimiters to ""
   return output
 end tell
@@ -885,7 +885,7 @@ EOF
       echo "Meeting notes directory not found."
       return 1
     fi
-    
+
     # Calculate the date X days ago
     local cutoff_date
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -893,22 +893,22 @@ EOF
     else
       cutoff_date=$(date -d "$days days ago" '+%Y-%m-%d')
     fi
-    
+
     echo "Action items from meetings in the last $days days:"
     echo "================================================="
-    
+
     # Find meeting notes from the last X days
     for file in "$MEETING_DIR"/*.md; do
       # Extract date from filename
       local file_date=$(basename "$file" | cut -d'_' -f1)
-      
+
       # Only process files newer than the cutoff date
       if [[ "$file_date" > "$cutoff_date" ]]; then
         local meeting_title=$(head -n 1 "$file" | sed 's/^# Meeting: //')
-        
+
         # Extract action items
         local actions=$(grep -A999 "## Action Items" "$file" | grep -v "## Action Items" | grep "- \[ \]")
-        
+
         if [[ -n "$actions" ]]; then
           echo "From: $meeting_title ($file_date)"
           echo "$actions" | sed 's/^/  /'
@@ -923,12 +923,12 @@ EOF
 meeting-to-tasks() {
   local meeting_title=$1
   local list=${2:-"Meeting Actions"}
-  
+
   if [[ -z "$meeting_title" ]]; then
     echo "Usage: meeting-to-tasks <meeting-title> [list-name]"
     return 1
   fi
-  
+
   if [[ "$USE_MACOS_NOTES" == "true" && "$USE_MACOS_REMINDERS" == "true" ]]; then
     # Extract action items from a specific note and add them to Reminders
     osascript <<EOF
@@ -937,17 +937,17 @@ tell application "Notes"
     set theFolder to folder "$MEETING_FOLDER"
     set foundNote to false
     set actionItems to {}
-    
+
     repeat with theNote in notes of theFolder
       if name of theNote contains "$meeting_title" then
         set foundNote to true
         set noteBody to body of theNote
         set noteName to name of theNote
-        
+
         -- Look for action items by finding "- [ ]" patterns
         set AppleScript's text item delimiters to "- [ ]"
         set actionTexts to text items of noteBody
-        
+
         if (count of actionTexts) > 1 then
           repeat with i from 2 to count of actionTexts
             set actionText to item i of actionTexts
@@ -958,15 +958,15 @@ tell application "Notes"
             set AppleScript's text item delimiters to "- [ ]"
           end repeat
         end if
-        
+
         exit repeat
       end if
     end repeat
-    
+
     if not foundNote then
       return "Meeting note '$meeting_title' not found."
     end if
-    
+
     -- Add action items to Reminders
     if (count of actionItems) > 0 then
       tell application "Reminders"
@@ -974,14 +974,14 @@ tell application "Notes"
         if not (exists list "$list") then
           make new list with properties {name:"$list"}
         end if
-        
+
         repeat with actionItem in actionItems
           tell list "$list"
             make new reminder with properties {name:actionItem, body:"From meeting: $meeting_title"}
           end tell
         end repeat
       end tell
-      
+
       return "Added " & (count of actionItems) & " action items from '$meeting_title' to Reminders list '$list'."
     else
       return "No action items found in meeting note '$meeting_title'."
@@ -1013,12 +1013,12 @@ CURRENT_TASK_FILE="$TIME_TRACK_DIR/current_task"
 time-start() {
   local project=$1
   local task=$2
-  
+
   if [[ -z "$project" || -z "$task" ]]; then
     echo "Usage: time-start <project> <task>"
     return 1
   fi
-  
+
   # Check if already tracking a task
   if [[ -f "$CURRENT_TASK_FILE" ]]; then
     local current_task
@@ -1027,14 +1027,14 @@ time-start() {
     echo "Use 'time-stop' to stop tracking, or 'time-switch <project> <task>' to switch tasks."
     return 1
   fi
-  
+
   # Record start time
   local date=$(date '+%Y-%m-%d')
   local start_time=$(date '+%H:%M:%S')
-  
+
   # Create the current task file
   echo "$project|$task|$date|$start_time" > "$CURRENT_TASK_FILE"
-  
+
   echo "Started tracking time for $project: $task at $start_time"
 }
 
@@ -1045,7 +1045,7 @@ time-stop() {
     echo "No task being tracked."
     return 1
   fi
-  
+
   # Read current task data
   local current_task
   current_task=$(cat "$CURRENT_TASK_FILE")
@@ -1053,15 +1053,15 @@ time-stop() {
   local task=$(echo "$current_task" | cut -d'|' -f2)
   local date=$(echo "$current_task" | cut -d'|' -f3)
   local start_time=$(echo "$current_task" | cut -d'|' -f4)
-  
+
   # Record end time
   local end_time=$(date '+%H:%M:%S')
-  
+
   # Calculate duration in minutes
   local start_seconds
   local end_seconds
   local duration_minutes
-  
+
   if [[ "$OSTYPE" == "darwin"* ]]; then
     start_seconds=$(date -j -f "%H:%M:%S" "$start_time" "+%s")
     end_seconds=$(date -j -f "%H:%M:%S" "$end_time" "+%s")
@@ -1069,19 +1069,19 @@ time-stop() {
     start_seconds=$(date -d "$start_time" "+%s")
     end_seconds=$(date -d "$end_time" "+%s")
   fi
-  
+
   duration_minutes=$(( (end_seconds - start_seconds) / 60 ))
-  
+
   # Prompt for notes
   echo "Enter notes for this time entry (optional):"
   read -r notes
-  
+
   # Add entry to time tracking file
   echo "$date,$start_time,$end_time,$project,$task,$duration_minutes,\"$notes\"" >> "$TIME_TRACK_FILE"
-  
+
   # Remove current task file
   rm "$CURRENT_TASK_FILE"
-  
+
   echo "Stopped tracking time for $project: $task"
   echo "Duration: $duration_minutes minutes"
 }
@@ -1090,17 +1090,17 @@ time-stop() {
 time-switch() {
   local project=$1
   local task=$2
-  
+
   if [[ -z "$project" || -z "$task" ]]; then
     echo "Usage: time-switch <project> <task>"
     return 1
   fi
-  
+
   # Stop tracking current task if any
   if [[ -f "$CURRENT_TASK_FILE" ]]; then
     time-stop
   fi
-  
+
   # Start tracking new task
   time-start "$project" "$task"
 }
@@ -1108,12 +1108,12 @@ time-switch() {
 # Show time tracking summary
 time-summary() {
   local period=${1:-today}  # Default to today
-  
+
   if [[ ! -f "$TIME_TRACK_FILE" ]]; then
     echo "No time tracking data found."
     return 1
   fi
-  
+
   # Calculate the filter date based on the period
   local filter_date
   case "$period" in
@@ -1145,18 +1145,18 @@ time-summary() {
       filter_date=$period  # Try to use as a specific date
       ;;
   esac
-  
+
   echo "Time tracking summary for $period:"
   echo "================================="
-  
+
   # Filter and process time entries
-  awk -F, -v date="$filter_date" 'BEGIN {total=0; print "Project,Task,Duration (min)"} 
+  awk -F, -v date="$filter_date" 'BEGIN {total=0; print "Project,Task,Duration (min)"}
        NR > 1 && (date == "all" || $1 >= date || $1 == date) {
-         total += $6; 
-         projects[$4] += $6; 
+         total += $6;
+         projects[$4] += $6;
          tasks[$4 "|" $5] += $6;
          print $4 "," $5 "," $6
-       } 
+       }
        END {
          print "\nProject summary:";
          for (p in projects) {
@@ -1179,17 +1179,17 @@ POMODORO_CYCLES={{ .preferences.pomodoro_cycles | default 4 }}  # Number of work
 pomodoro() {
   local task=$1
   local cycles=${2:-$POMODORO_CYCLES}
-  
+
   if [[ -z "$task" ]]; then
     echo "Usage: pomodoro <task description> [cycles]"
     return 1
   fi
-  
+
   echo "Starting Pomodoro timer for: $task"
   echo "Will run for $cycles cycles"
   echo "Press Ctrl+C to stop"
   echo ""
-  
+
   for ((cycle=1; cycle<=cycles; cycle++)); do
     # Determine break length
     if [[ $cycle -eq $cycles ]]; then
@@ -1199,13 +1199,13 @@ pomodoro() {
       break_length=$POMODORO_BREAK
       break_type="short break"
     fi
-    
+
     # Work period
     echo "Cycle $cycle/$cycles: Starting work period ($POMODORO_WORK minutes)"
     echo "Task: $task"
     echo "Time started: $(date '+%H:%M')"
     echo "Focus until: $(date -v "+${POMODORO_WORK}M" '+%H:%M' 2>/dev/null || date --date="+${POMODORO_WORK} minutes" '+%H:%M')"
-    
+
     if [[ "$OSTYPE" == "darwin"* ]]; then
       # Use AppleScript to show a notification on macOS
       osascript -e "display notification \"Focus time started for: $task\" with title \"Pomodoro Timer\""
@@ -1213,34 +1213,34 @@ pomodoro() {
       # Use notify-send on Linux if available
       command -v notify-send >/dev/null && notify-send "Pomodoro Timer" "Focus time started for: $task"
     fi
-    
+
     sleep $(( POMODORO_WORK * 60 ))
-    
+
     # Work period complete, notify
     if [[ "$OSTYPE" == "darwin"* ]]; then
       osascript -e "display notification \"Time for a ${break_type}!\" with title \"Pomodoro Timer\" sound name \"Glass\""
     else
       command -v notify-send >/dev/null && notify-send -u critical "Pomodoro Timer" "Time for a ${break_type}!"
     fi
-    
+
     echo "Work period complete! Time for a $break_type"
-    
+
     # Break period
     echo "Starting $break_type ($break_length minutes)"
     echo "Break until: $(date -v "+${break_length}M" '+%H:%M' 2>/dev/null || date --date="+${break_length} minutes" '+%H:%M')"
-    
+
     sleep $(( break_length * 60 ))
-    
+
     # Break complete, notify
     if [[ "$OSTYPE" == "darwin"* ]]; then
       osascript -e "display notification \"Break over. Back to work!\" with title \"Pomodoro Timer\" sound name \"Glass\""
     else
       command -v notify-send >/dev/null && notify-send -u critical "Pomodoro Timer" "Break over. Back to work!"
     fi
-    
+
     [[ $cycle -lt $cycles ]] && echo "Break complete! Back to work"
   done
-  
+
   echo "Pomodoro sessions complete! Great job!"
 }
 
@@ -1248,32 +1248,32 @@ pomodoro() {
 timer() {
   local minutes=$1
   local task=$2
-  
+
   if [[ -z "$minutes" ]]; then
     echo "Usage: timer <minutes> [task description]"
     return 1
   fi
-  
+
   local description="${task:-Timer}"
   local end_time
-  
+
   if [[ "$OSTYPE" == "darwin"* ]]; then
     end_time=$(date -v "+${minutes}M" '+%H:%M')
   else
     end_time=$(date --date="+${minutes} minutes" '+%H:%M')
   fi
-  
+
   echo "Starting timer for $minutes minutes: $description"
   echo "Timer will end at: $end_time"
-  
+
   sleep $(( minutes * 60 ))
-  
+
   # Timer complete, notify
   if [[ "$OSTYPE" == "darwin"* ]]; then
     osascript -e "display notification \"$description timer complete!\" with title \"Timer\" sound name \"Glass\""
   else
     command -v notify-send >/dev/null && notify-send -u critical "Timer" "$description timer complete!"
   fi
-  
+
   echo "Timer complete! $description"
 }

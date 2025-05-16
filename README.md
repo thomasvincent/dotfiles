@@ -362,7 +362,7 @@ On macOS systems, this dotfiles setup integrates with native applications:
 - **Reminders App**: Task management functions automatically use Apple Reminders
 - **Notes App**: Note taking functions integrate with Apple Notes
 - **Mail.app**: Email management functions
-- **Calendar.app**: Calendar management functions 
+- **Calendar.app**: Calendar management functions
 - **Notification Center**: Timers and alerts use native notifications
 - **Folders & Organization**: Specific folders for meetings and tasks sync with the native apps
 
@@ -374,7 +374,7 @@ To customize the macOS integration, use the following settings in your `chezmoi.
     notes_folder = "CLI Notes"     # Default folder name in macOS Notes app
     meeting_folder = "Meetings"    # Folder for meetings in macOS Notes app
     reminders_list = "CLI Tools"   # Default list name in macOS Reminders app
-    
+
     # GTD workflow preferences
     gtd_inbox_folder = "GTD/Inbox"   # Folder for GTD inbox in Notes app
     gtd_projects_folder = "GTD/Projects"  # Folder for GTD projects in Notes app
@@ -389,15 +389,15 @@ Chezmoi uses a config file to customize dotfiles for different environments:
 ```toml
 # ~/.config/chezmoi/chezmoi.toml
 [data]
-    name = "Your Name" 
+    name = "Your Name"
     email = "your.email@example.com"
     github_username = "yourusername"
-    
+
     # Feature toggles
     enable_cloud = true
     enable_containers = true
     enable_kubernetes = true
-    
+
     # Cloud providers to configure
     [data.cloud]
         aws = true

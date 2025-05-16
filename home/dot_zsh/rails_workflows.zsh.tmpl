@@ -12,39 +12,39 @@ rails-init-project() {
   local db_type=${2:-"postgresql"}
   local options=${@:3}
   local directory=${4:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
-  
+
   if [[ -z "$project_name" ]]; then
     echo "Usage: rails-init-project <project-name> [db-type] [options] [directory]"
     echo "Example: rails-init-project my-app postgresql \"--skip-action-mailbox --skip-action-text\" ~/Projects/my-app"
     echo "Available db-types: postgresql, mysql, sqlite3"
     return 1
   fi
-  
+
   # Check if Rails is installed
   if ! command -v rails >/dev/null 2>&1; then
     echo "Error: Rails is not installed."
     echo "Install it with: gem install rails"
     return 1
   fi
-  
+
   # Create project directory if it doesn't exist
   mkdir -p "$(dirname "$directory")"
-  
+
   # Default options if none provided
   if [[ -z "$options" ]]; then
     options="--skip-action-mailbox --skip-action-text --skip-spring --skip-turbolinks"
   fi
-  
+
   # Create new Rails app
   echo "Creating new Rails application: $project_name"
   echo "Database: $db_type"
   echo "Options: $options"
-  
+
   rails new "$directory" --database="$db_type" $options
-  
+
   # Move into the project directory
   cd "$directory" || return 1
-  
+
   # Add useful gems to Gemfile
   cat >> Gemfile << 'EOF'
 
@@ -85,11 +85,11 @@ EOF
 
   # Install gems
   bundle install
-  
+
   # Setup RSpec if installed
   if bundle list | grep -q 'rspec-rails'; then
     rails generate rspec:install
-    
+
     # Configure shoulda-matchers
     cat > spec/support/shoulda_matchers.rb << 'EOF'
 require 'shoulda/matchers'
@@ -107,10 +107,10 @@ EOF
     # Update rails_helper.rb to require support files
     sed -i '' '/^# Dir\[Rails\.root\.join/s/^# //' spec/rails_helper.rb
   fi
-  
+
   # Create .env files
   touch .env.development .env.test
-  
+
   # Add .env files to .gitignore
   cat >> .gitignore << 'EOF'
 
@@ -300,7 +300,7 @@ EOF
     sed -i '' '/DATABASE_URL/d' docker-compose.yml
     sed -i '' 's/  postgres_data://g' docker-compose.yml
   fi
-  
+
   # Create bin/setup-dev script
   mkdir -p bin
   cat > bin/setup-dev << 'EOF'
@@ -342,7 +342,7 @@ FileUtils.chdir APP_ROOT do
 end
 EOF
   chmod +x bin/setup-dev
-  
+
   # Add Procfile for Heroku or Foreman
   cat > Procfile << 'EOF'
 web: bundle exec rails server -p $PORT
@@ -354,12 +354,12 @@ EOF
 web: bundle exec rails server -p 3000
 worker: bundle exec sidekiq -C config/sidekiq.yml
 EOF
-  
+
   # Initialize Git repository
   git init
   git add .
   git commit -m "Initial Rails application setup"
-  
+
   echo "Rails project '$project_name' initialized successfully at $directory"
   echo "Next steps:"
   echo "1. cd $directory"
@@ -372,27 +372,27 @@ EOF
 rails-gen-model() {
   local model_name=$1
   local fields=${2:-""}
-  
+
   if [[ -z "$model_name" ]]; then
     echo "Usage: rails-gen-model <model-name> [fields]"
     echo "Example: rails-gen-model User \"name:string email:string:uniq age:integer\""
     return 1
   fi
-  
+
   # Check if this is a Rails project
   if [[ ! -f "config/application.rb" ]]; then
     echo "Error: Not in a Rails project directory."
     echo "Please run this command from the root of your Rails project."
     return 1
   fi
-  
+
   # Generate the model
   if [[ -n "$fields" ]]; then
     rails generate model "$model_name" $fields
   else
     rails generate model "$model_name"
   fi
-  
+
   # Check if RSpec is used in this project
   if [[ -d "spec" && -f "spec/rails_helper.rb" ]]; then
     # Add model specs with FactoryBot if available
@@ -400,23 +400,23 @@ rails-gen-model() {
       # Determine the correct factory file path
       local factory_dir="spec/factories"
       mkdir -p "$factory_dir"
-      
+
       # Model name in snake_case
       local model_snake=$(echo "$model_name" | tr '[:upper:]' '[:lower:]')
-      
+
       # Determine if the factory file exists
       local factory_file="$factory_dir/${model_snake}.rb"
-      
+
       # Only create factory file if it doesn't exist
       if [[ ! -f "$factory_file" ]]; then
         echo "Enhancing factory for $model_name"
-        
+
         # Create a basic factory
         cat > "$factory_file" << EOF
 FactoryBot.define do
   factory :$model_snake do
 EOF
-        
+
         # Add factory attributes based on fields if provided
         if [[ -n "$fields" ]]; then
           IFS=' ' read -ra FIELD_PARTS <<< "$fields"
@@ -425,12 +425,12 @@ EOF
             IFS=':' read -ra FIELD_INFO <<< "$field"
             local field_name="${FIELD_INFO[0]}"
             local field_type="${FIELD_INFO[1]}"
-            
+
             # Skip fields with no type
             if [[ -z "$field_type" ]]; then
               continue
             fi
-            
+
             # Add appropriate Faker data based on field type and name
             if [[ "$field_type" == "string" ]]; then
               if [[ "$field_name" == *"name"* ]]; then
@@ -473,18 +473,18 @@ EOF
             fi
           done
         fi
-        
+
         # Close the factory
         echo "  end" >> "$factory_file"
         echo "end" >> "$factory_file"
       fi
-      
+
       # Enhance the model spec
       local model_spec_file="spec/models/${model_snake}_spec.rb"
-      
+
       if [[ -f "$model_spec_file" ]]; then
         echo "Enhancing model spec for $model_name"
-        
+
         # Create a basic spec setup
         cat > "$model_spec_file" << EOF
 require 'rails_helper'
@@ -497,36 +497,36 @@ RSpec.describe $model_name, type: :model do
   end
 
 EOF
-        
+
         # Add validation specs if fields were provided
         if [[ -n "$fields" ]]; then
           echo "  describe 'validations' do" >> "$model_spec_file"
-          
+
           IFS=' ' read -ra FIELD_PARTS <<< "$fields"
           for field in "${FIELD_PARTS[@]}"; do
             # Split field into name and type
             IFS=':' read -ra FIELD_INFO <<< "$field"
             local field_name="${FIELD_INFO[0]}"
-            
+
             # Check if field has a presence validation
             if grep -q "validates.*$field_name.*presence" "app/models/${model_snake}.rb" 2>/dev/null; then
               echo "    it { is_expected.to validate_presence_of(:$field_name) }" >> "$model_spec_file"
             fi
-            
+
             # Check if field has uniqueness constraint
             if [[ "$field" == *":uniq"* || "$field" == *":unique"* ]]; then
               echo "    it { is_expected.to validate_uniqueness_of(:$field_name) }" >> "$model_spec_file"
             fi
           done
-          
+
           echo "  end" >> "$model_spec_file"
           echo "" >> "$model_spec_file"
         fi
-        
+
         # Add associations specs if any are found in the model
         if grep -q "belongs_to\|has_many\|has_one" "app/models/${model_snake}.rb" 2>/dev/null; then
           echo "  describe 'associations' do" >> "$model_spec_file"
-          
+
           # Check for belongs_to associations
           while read -r assoc; do
             local assoc_name=$(echo "$assoc" | sed -E 's/.*belongs_to[[:space:]]+:([[:alnum:]_]+).*/\1/')
@@ -534,7 +534,7 @@ EOF
               echo "    it { is_expected.to belong_to(:$assoc_name) }" >> "$model_spec_file"
             fi
           done < <(grep "belongs_to" "app/models/${model_snake}.rb" 2>/dev/null)
-          
+
           # Check for has_many associations
           while read -r assoc; do
             local assoc_name=$(echo "$assoc" | sed -E 's/.*has_many[[:space:]]+:([[:alnum:]_]+).*/\1/')
@@ -542,7 +542,7 @@ EOF
               echo "    it { is_expected.to have_many(:$assoc_name) }" >> "$model_spec_file"
             fi
           done < <(grep "has_many" "app/models/${model_snake}.rb" 2>/dev/null)
-          
+
           # Check for has_one associations
           while read -r assoc; do
             local assoc_name=$(echo "$assoc" | sed -E 's/.*has_one[[:space:]]+:([[:alnum:]_]+).*/\1/')
@@ -550,16 +550,16 @@ EOF
               echo "    it { is_expected.to have_one(:$assoc_name) }" >> "$model_spec_file"
             fi
           done < <(grep "has_one" "app/models/${model_snake}.rb" 2>/dev/null)
-          
+
           echo "  end" >> "$model_spec_file"
         fi
-        
+
         # Close the describe block
         echo "end" >> "$model_spec_file"
       fi
     fi
   fi
-  
+
   echo "Model $model_name generated successfully"
   echo "Don't forget to run migrations: rails db:migrate"
 }
@@ -568,49 +568,49 @@ EOF
 rails-gen-controller() {
   local controller_name=$1
   local actions=${@:2}
-  
+
   if [[ -z "$controller_name" ]]; then
     echo "Usage: rails-gen-controller <controller-name> [actions]"
     echo "Example: rails-gen-controller Users index show new create edit update destroy"
     return 1
   fi
-  
+
   # Check if this is a Rails project
   if [[ ! -f "config/application.rb" ]]; then
     echo "Error: Not in a Rails project directory."
     echo "Please run this command from the root of your Rails project."
     return 1
   fi
-  
+
   # Generate the controller
   rails generate controller "$controller_name" $actions
-  
+
   # Check if RSpec is used in this project
   if [[ -d "spec" && -f "spec/rails_helper.rb" ]]; then
     # Controller name in snake_case
     local controller_snake=$(echo "$controller_name" | tr '[:upper:]' '[:lower:]')
-    
+
     # Controller file path
     local controller_spec_file="spec/controllers/${controller_snake}_controller_spec.rb"
-    
+
     # Only enhance spec if it exists
     if [[ -f "$controller_spec_file" ]]; then
       echo "Enhancing controller spec for $controller_name"
-      
+
       # Create a more comprehensive controller spec
       cat > "$controller_spec_file" << EOF
 require 'rails_helper'
 
 RSpec.describe ${controller_name}Controller, type: :controller do
 EOF
-      
+
       # Add specs for each action
       for action in $actions; do
         # Skip helper, js, etc.
         if [[ "$action" =~ ^(_|.*\..*) ]]; then
           continue
         fi
-        
+
         cat >> "$controller_spec_file" << EOF
 
   describe "GET #$action" do
@@ -618,7 +618,7 @@ EOF
       get :$action
       expect(response).to be_successful
     end
-    
+
     it "renders the $action template" do
       get :$action
       expect(response).to render_template("$action")
@@ -626,35 +626,35 @@ EOF
   end
 EOF
       done
-      
+
       # Close the describe block
       echo "end" >> "$controller_spec_file"
     fi
-    
+
     # Also enhance request specs if they exist
     local request_spec_file="spec/requests/${controller_snake}_spec.rb"
-    
+
     if [[ -f "$request_spec_file" ]]; then
       echo "Enhancing request spec for $controller_name"
-      
+
       # Create a comprehensive request spec
       cat > "$request_spec_file" << EOF
 require 'rails_helper'
 
 RSpec.describe "${controller_name}", type: :request do
 EOF
-      
+
       # Add specs for each action
       for action in $actions; do
         # Skip helper, js, etc.
         if [[ "$action" =~ ^(_|.*\..*) ]]; then
           continue
         fi
-        
+
         # Determine HTTP verb based on action name
         local verb="get"
         local path="/${controller_snake}/$action"
-        
+
         if [[ "$action" == "create" ]]; then
           verb="post"
           path="/${controller_snake}"
@@ -669,7 +669,7 @@ EOF
         elif [[ "$action" == "index" ]]; then
           path="/${controller_snake}"
         fi
-        
+
         cat >> "$request_spec_file" << EOF
 
   describe "$verb $path" do
@@ -680,12 +680,12 @@ EOF
   end
 EOF
       done
-      
+
       # Close the describe block
       echo "end" >> "$request_spec_file"
     fi
   fi
-  
+
   echo "Controller $controller_name generated successfully"
 }
 
@@ -695,24 +695,24 @@ rails-init-api() {
   local db_type=${2:-"postgresql"}
   local options=${@:3}
   local directory=${4:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
-  
+
   if [[ -z "$project_name" ]]; then
     echo "Usage: rails-init-api <project-name> [db-type] [options] [directory]"
     echo "Example: rails-init-api my-api postgresql \"--skip-action-mailbox --skip-action-text\" ~/Projects/my-api"
     echo "Available db-types: postgresql, mysql, sqlite3"
     return 1
   fi
-  
+
   # Check if Rails is installed
   if ! command -v rails >/dev/null 2>&1; then
     echo "Error: Rails is not installed."
     echo "Install it with: gem install rails"
     return 1
   fi
-  
+
   # Create project directory if it doesn't exist
   mkdir -p "$(dirname "$directory")"
-  
+
   # Default options if none provided
   if [[ -z "$options" ]]; then
     options="--skip-action-mailbox --skip-action-text --skip-sprockets --skip-spring --skip-javascript --skip-hotwire --skip-jbuilder --skip-system-test --skip-test --api"
@@ -720,17 +720,17 @@ rails-init-api() {
     # Ensure --api is included
     options="$options --api"
   fi
-  
+
   # Create new Rails API app
   echo "Creating new Rails API application: $project_name"
   echo "Database: $db_type"
   echo "Options: $options"
-  
+
   rails new "$directory" --database="$db_type" $options
-  
+
   # Move into the project directory
   cd "$directory" || return 1
-  
+
   # Add useful gems to Gemfile
   cat >> Gemfile << 'EOF'
 
@@ -772,11 +772,11 @@ EOF
 
   # Install gems
   bundle install
-  
+
   # Setup RSpec if installed
   if bundle list | grep -q 'rspec-rails'; then
     rails generate rspec:install
-    
+
     # Configure shoulda-matchers
     mkdir -p spec/support
     cat > spec/support/shoulda_matchers.rb << 'EOF'
@@ -794,7 +794,7 @@ EOF
 
     # Update rails_helper.rb to require support files
     sed -i '' '/^# Dir\[Rails\.root\.join/s/^# //' spec/rails_helper.rb
-    
+
     # Add FactoryBot configuration
     cat > spec/support/factory_bot.rb << 'EOF'
 RSpec.configure do |config|
@@ -802,7 +802,7 @@ RSpec.configure do |config|
 end
 EOF
   fi
-  
+
   # Configure CORS
   cat > config/initializers/cors.rb << 'EOF'
 # Be sure to restart your server when you modify this file.
@@ -831,7 +831,7 @@ module JwtAuthenticatable
 
   included do
     before_action :authenticate_request
-    
+
     attr_reader :current_user
   end
 
@@ -846,7 +846,7 @@ EOF
 
   # Create JWT service directory
   mkdir -p app/services/auth
-  
+
   # Create JWT authentication service
   cat > app/services/auth/authorize_api_request.rb << 'EOF'
 class Auth::AuthorizeApiRequest
@@ -909,13 +909,13 @@ EOF
   # Create API versioning module
   mkdir -p app/controllers/api
   mkdir -p app/controllers/api/v1
-  
+
   # Create base API controller
   cat > app/controllers/api/base_controller.rb << 'EOF'
 module Api
   class BaseController < ApplicationController
     # Common API concerns and methods
-    
+
     rescue_from ActiveRecord::RecordNotFound, with: :not_found
     rescue_from ActionController::ParameterMissing, with: :bad_request
     rescue_from ActiveRecord::RecordInvalid, with: :unprocessable_entity
@@ -954,7 +954,7 @@ module Api
   module V1
     class HealthController < BaseController
       skip_before_action :authenticate_request, only: [:index]
-      
+
       def index
         render json: { status: 'ok', version: '1.0.0' }
       end
@@ -970,16 +970,16 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       get 'health', to: 'health#index'
-      
+
       # Add your API endpoints here
     end
   end
 end
 EOF
-  
+
   # Create .env files
   touch .env.development .env.test
-  
+
   # Add .env files to .gitignore
   cat >> .gitignore << 'EOF'
 
@@ -1164,7 +1164,7 @@ EOF
     sed -i '' '/DATABASE_URL/d' docker-compose.yml
     sed -i '' 's/  postgres_data://g' docker-compose.yml
   fi
-  
+
   # Create bin/setup-dev script
   mkdir -p bin
   cat > bin/setup-dev << 'EOF'
@@ -1203,7 +1203,7 @@ FileUtils.chdir APP_ROOT do
 end
 EOF
   chmod +x bin/setup-dev
-  
+
   # Add Procfile for Heroku or Foreman
   cat > Procfile << 'EOF'
 web: bundle exec rails server -p $PORT
@@ -1215,12 +1215,12 @@ EOF
 api: bundle exec rails server -p 3000
 worker: bundle exec sidekiq -C config/sidekiq.yml
 EOF
-  
+
   # Initialize Git repository
   git init
   git add .
   git commit -m "Initial Rails API application setup"
-  
+
   echo "Rails API project '$project_name' initialized successfully at $directory"
   echo "Next steps:"
   echo "1. cd $directory"
@@ -1234,38 +1234,38 @@ EOF
 rails-gen-api-resource() {
   local resource_name=$1
   local fields=${2:-""}
-  
+
   if [[ -z "$resource_name" ]]; then
     echo "Usage: rails-gen-api-resource <resource-name> [fields]"
     echo "Example: rails-gen-api-resource post \"title:string content:text published:boolean\""
     return 1
   fi
-  
+
   # Check if this is a Rails project
   if [[ ! -f "config/application.rb" ]]; then
     echo "Error: Not in a Rails project directory."
     echo "Please run this command from the root of your Rails project."
     return 1
   fi
-  
+
   # Convert resource name to singular form
   local resource_singular=$(echo "$resource_name" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.singularize")
-  
+
   # Generate the model
   rails generate model "$resource_singular" $fields
-  
+
   # Generate the API controller
   local controller_name="api/v1/${resource_name}"
   rails generate controller "$controller_name" index show create update destroy --skip-template-engine --skip-helper --skip-assets
-  
+
   # Modify the API controller
   local controller_file="app/controllers/api/v1/${resource_name}_controller.rb"
-  
+
   # Check if the controller file exists
   if [[ -f "$controller_file" ]]; then
     # Get the model class name in proper case
     local model_class=$(echo "$resource_singular" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.camelize")
-    
+
     # Create or override the controller file
     cat > "$controller_file" << EOF
 module Api
@@ -1276,10 +1276,10 @@ module Api
       # GET /api/v1/${resource_name}
       def index
         @${resource_name} = ${model_class}.all
-        
+
         # Add pagination if available
         @${resource_name} = @${resource_name}.page(params[:page]).per(params[:per_page]) if defined?(Kaminari)
-        
+
         render json: @${resource_name}
       end
 
@@ -1315,7 +1315,7 @@ module Api
       end
 
       private
-        
+
       def set_${resource_singular}
         @${resource_singular} = ${model_class}.find(params[:id])
       end
@@ -1331,13 +1331,13 @@ EOF
     # Generate permitted parameters based on fields
     if [[ -n "$fields" ]]; then
       local permitted_params=""
-      
+
       IFS=' ' read -ra FIELD_PARTS <<< "$fields"
       for field in "${FIELD_PARTS[@]}"; do
         # Split field into name and type
         IFS=':' read -ra FIELD_INFO <<< "$field"
         local field_name="${FIELD_INFO[0]}"
-        
+
         # Append field to permitted params
         if [[ -n "$permitted_params" ]]; then
           permitted_params="$permitted_params, :$field_name"
@@ -1345,7 +1345,7 @@ EOF
           permitted_params=":$field_name"
         fi
       done
-      
+
       # Replace the placeholder with the actual permitted params
       sed -i '' "s/\${permitted_params}/$permitted_params/" "$controller_file"
     else
@@ -1353,10 +1353,10 @@ EOF
       sed -i '' "s/\${permitted_params}/*/" "$controller_file"
     fi
   fi
-  
+
   # Update routes
   local routes_file="config/routes.rb"
-  
+
   # Check if the API namespace already exists
   if grep -q "namespace :api" "$routes_file"; then
     # Check if the v1 namespace already exists
@@ -1395,20 +1395,20 @@ EOF
   end # end api\\
 " "$routes_file"
   fi
-  
+
   # Generate serializer if jsonapi-serializer gem is available
   if bundle list | grep -q 'jsonapi-serializer'; then
     mkdir -p app/serializers
-    
+
     local serializer_file="app/serializers/${resource_singular}_serializer.rb"
-    
+
     cat > "$serializer_file" << EOF
 class ${model_class}Serializer
   include JSONAPI::Serializer
-  
+
   # Define attributes to include
 EOF
-    
+
     # Add attributes based on fields
     if [[ -n "$fields" ]]; then
       IFS=' ' read -ra FIELD_PARTS <<< "$fields"
@@ -1416,7 +1416,7 @@ EOF
         # Split field into name and type
         IFS=':' read -ra FIELD_INFO <<< "$field"
         local field_name="${FIELD_INFO[0]}"
-        
+
         # Add attribute to serializer
         echo "  attribute :$field_name" >> "$serializer_file"
       done
@@ -1426,23 +1426,23 @@ EOF
       echo "  # attribute :title" >> "$serializer_file"
       echo "  # attribute :content" >> "$serializer_file"
     fi
-    
+
     # Close the serializer class
     echo "end" >> "$serializer_file"
-    
+
     # Update the controller to use the serializer
     sed -i '' "s/render json: @${resource_name}/render json: ${model_class}Serializer.new(@${resource_name}).serializable_hash/" "$controller_file"
     sed -i '' "s/render json: @${resource_singular}, status: :created/render json: ${model_class}Serializer.new(@${resource_singular}).serializable_hash, status: :created/" "$controller_file"
     sed -i '' "s/render json: @${resource_singular}$/render json: ${model_class}Serializer.new(@${resource_singular}).serializable_hash/" "$controller_file"
   fi
-  
+
   # Check if RSpec is used in this project
   if [[ -d "spec" && -f "spec/rails_helper.rb" ]]; then
     # Add request specs for the API
     mkdir -p spec/requests/api/v1
-    
+
     local request_spec_file="spec/requests/api/v1/${resource_name}_spec.rb"
-    
+
     cat > "$request_spec_file" << EOF
 require 'rails_helper'
 
@@ -1475,15 +1475,15 @@ RSpec.describe "Api::V1::${resource_name^}", type: :request do
 
       it "creates a new ${model_class}" do
         expect {
-          post api_v1_${resource_name}_path, 
-               params: { ${resource_singular}: valid_attributes }, 
+          post api_v1_${resource_name}_path,
+               params: { ${resource_singular}: valid_attributes },
                headers: valid_headers
         }.to change(${model_class}, :count).by(1)
       end
 
       it "returns a created status" do
-        post api_v1_${resource_name}_path, 
-             params: { ${resource_singular}: valid_attributes }, 
+        post api_v1_${resource_name}_path,
+             params: { ${resource_singular}: valid_attributes },
              headers: valid_headers
         expect(response).to have_http_status(:created)
       end
@@ -1497,15 +1497,15 @@ RSpec.describe "Api::V1::${resource_name^}", type: :request do
 
       it "does not create a new ${model_class}" do
         expect {
-          post api_v1_${resource_name}_path, 
-               params: { ${resource_singular}: invalid_attributes }, 
+          post api_v1_${resource_name}_path,
+               params: { ${resource_singular}: invalid_attributes },
                headers: valid_headers
         }.to change(${model_class}, :count).by(0)
       end
 
       it "returns an unprocessable entity status" do
-        post api_v1_${resource_name}_path, 
-             params: { ${resource_singular}: invalid_attributes }, 
+        post api_v1_${resource_name}_path,
+             params: { ${resource_singular}: invalid_attributes },
              headers: valid_headers
         expect(response).to have_http_status(:unprocessable_entity)
       end
@@ -1521,8 +1521,8 @@ RSpec.describe "Api::V1::${resource_name^}", type: :request do
 
       it "updates the requested ${resource_singular}" do
         ${resource_singular} = create(:${resource_singular})
-        put api_v1_${resource_singular}_path(${resource_singular}), 
-            params: { ${resource_singular}: new_attributes }, 
+        put api_v1_${resource_singular}_path(${resource_singular}),
+            params: { ${resource_singular}: new_attributes },
             headers: valid_headers
         ${resource_singular}.reload
         # Add assertions for the updated fields
@@ -1531,8 +1531,8 @@ RSpec.describe "Api::V1::${resource_name^}", type: :request do
 
       it "returns a success response" do
         ${resource_singular} = create(:${resource_singular})
-        put api_v1_${resource_singular}_path(${resource_singular}), 
-            params: { ${resource_singular}: new_attributes }, 
+        put api_v1_${resource_singular}_path(${resource_singular}),
+            params: { ${resource_singular}: new_attributes },
             headers: valid_headers
         expect(response).to be_successful
       end
@@ -1556,7 +1556,7 @@ RSpec.describe "Api::V1::${resource_name^}", type: :request do
 end
 EOF
   fi
-  
+
   echo "API Resource ${resource_name} generated successfully"
   echo "Routes added to config/routes.rb"
   echo "Don't forget to run migrations: rails db:migrate"
@@ -1566,73 +1566,73 @@ EOF
 rails-gen-service() {
   local service_name=$1
   local method_name=${2:-"call"}
-  
+
   if [[ -z "$service_name" ]]; then
     echo "Usage: rails-gen-service <service-name> [method-name]"
     echo "Example: rails-gen-service ProcessPayment execute"
     return 1
   fi
-  
+
   # Check if this is a Rails project
   if [[ ! -f "config/application.rb" ]]; then
     echo "Error: Not in a Rails project directory."
     echo "Please run this command from the root of your Rails project."
     return 1
   fi
-  
+
   # Create services directory if it doesn't exist
   mkdir -p app/services
-  
+
   # Convert service name to proper class name
   local service_class=$(echo "$service_name" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.camelize")
-  
+
   # Create the service file
   local service_file="app/services/${service_name.rb}"
-  
+
   cat > "app/services/${service_name}.rb" << EOF
 class ${service_class}
   def self.${method_name}(*args)
     new(*args).${method_name}
   end
-  
+
   def initialize(options = {})
     # Initialize with arguments or options
     @options = options
   end
-  
+
   def ${method_name}
     # Main service method
     # Add your business logic here
-    
+
     # Example:
     # return success_response(result) if valid?
     # failure_response("Error message")
   end
-  
+
   private
-  
+
   def success_response(data = nil)
     { success: true, data: data }
   end
-  
+
   def failure_response(error = nil)
     { success: false, error: error }
   end
-  
+
   def valid?
     # Add validation logic here
     true
   end
 end
 EOF
-  
+
   # Check if RSpec is used in this project
   if [[ -d "spec" && -f "spec/rails_helper.rb" ]]; then
     # Create service spec
     mkdir -p spec/services
-    
+
     local spec_file="spec/services/${service_name}_spec.rb"
-    
+
     cat > "$spec_file" << EOF
 require 'rails_helper'
 
@@ -1641,38 +1641,38 @@ RSpec.describe ${service_class} do
     it "calls instance method ${method_name}" do
       options = { key: 'value' }
       instance = instance_double(${service_class})
-      
+
       expect(${service_class}).to receive(:new).with(options).and_return(instance)
       expect(instance).to receive(:${method_name})
-      
+
       ${service_class}.${method_name}(options)
     end
   end
-  
+
   describe "#${method_name}" do
     subject { ${service_class}.new(options) }
     let(:options) { {} }
-    
+
     it "returns a success response when valid" do
       allow(subject).to receive(:valid?).and_return(true)
-      
+
       result = subject.${method_name}
-      
+
       expect(result).to include(success: true)
     end
-    
+
     it "returns a failure response when invalid" do
       allow(subject).to receive(:valid?).and_return(false)
-      
+
       result = subject.${method_name}
-      
+
       expect(result).to include(success: false)
     end
   end
 end
 EOF
   fi
-  
+
   echo "Service ${service_class} generated successfully at app/services/${service_name}.rb"
   if [[ -f "$spec_file" ]]; then
     echo "Spec file created at $spec_file"
@@ -1682,16 +1682,16 @@ EOF
 # Run a Rails database migration
 rails-db-migrate() {
   local env=${1:-"development"}
-  
+
   # Check if this is a Rails project
   if [[ ! -f "config/application.rb" ]]; then
     echo "Error: Not in a Rails project directory."
     echo "Please run this command from the root of your Rails project."
     return 1
   fi
-  
+
   echo "Running migrations in $env environment..."
-  
+
   if [[ "$env" == "production" ]]; then
     read -p "Are you sure you want to run migrations in production? (y/n) " confirm
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
@@ -1699,10 +1699,10 @@ rails-db-migrate() {
       return 1
     fi
   fi
-  
+
   # Run the migration
   RAILS_ENV=$env rails db:migrate
-  
+
   # Show the schema version
   echo "Current schema version:"
   RAILS_ENV=$env rails db:version
@@ -1712,14 +1712,14 @@ rails-db-migrate() {
 rails-db() {
   local operation=$1
   local env=${2:-"development"}
-  
+
   # Check if this is a Rails project
   if [[ ! -f "config/application.rb" ]]; then
     echo "Error: Not in a Rails project directory."
     echo "Please run this command from the root of your Rails project."
     return 1
   fi
-  
+
   case "$operation" in
     migrate)
       echo "Running migrations in $env environment..."
@@ -1735,7 +1735,7 @@ rails-db() {
         echo "If you really want to do this, use rails directly."
         return 1
       fi
-      
+
       echo "Resetting $env database (all data will be lost)..."
       read -p "Are you sure? (y/n) " confirm
       if [[ "$confirm" =~ ^[Yy]$ ]]; then
@@ -1754,7 +1754,7 @@ rails-db() {
         echo "If you really want to do this, use rails directly."
         return 1
       fi
-      
+
       echo "Dropping $env database (all data will be lost)..."
       read -p "Are you sure? (y/n) " confirm
       if [[ "$confirm" =~ ^[Yy]$ ]]; then
@@ -1773,7 +1773,7 @@ rails-db() {
         echo "If you really want to do this, use rails directly."
         return 1
       fi
-      
+
       echo "Setting up $env database..."
       RAILS_ENV=$env rails db:setup
       ;;
@@ -1786,9 +1786,9 @@ rails-db() {
       local backup_dir="db/backups"
       mkdir -p "$backup_dir"
       local backup_file="$backup_dir/${env}_${timestamp}.sql"
-      
+
       echo "Backing up $env database to $backup_file..."
-      
+
       # Check if this is a PostgreSQL or MySQL database
       if grep -q "adapter: postgresql" config/database.yml; then
         # PostgreSQL
@@ -1801,23 +1801,23 @@ rails-db() {
         echo "Only PostgreSQL and MySQL are supported for backups."
         return 1
       fi
-      
+
       echo "Backup complete: $backup_file"
       ;;
     restore)
       local backup_file=$3
-      
+
       if [[ -z "$backup_file" ]]; then
         echo "Error: No backup file specified."
         echo "Usage: rails-db restore <environment> <backup-file>"
         return 1
       fi
-      
+
       if [[ ! -f "$backup_file" ]]; then
         echo "Error: Backup file not found: $backup_file"
         return 1
       fi
-      
+
       echo "Restoring $env database from $backup_file..."
       read -p "This will overwrite all data in the $env database. Continue? (y/n) " confirm
       if [[ "$confirm" =~ ^[Yy]$ ]]; then
@@ -1833,7 +1833,7 @@ rails-db() {
           echo "Only PostgreSQL and MySQL are supported for restores."
           return 1
         fi
-        
+
         echo "Restore complete."
       else
         echo "Database restore cancelled."

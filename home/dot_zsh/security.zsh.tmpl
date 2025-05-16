@@ -6,10 +6,10 @@
 # Start SSH agent if not running
 if [[ -z "$SSH_AUTH_SOCK" && -z "$SSH_CONNECTION" ]]; then
   local ssh_agent_env="$HOME/.ssh/agent.env"
-  
+
   if [[ -f "$ssh_agent_env" ]]; then
     source "$ssh_agent_env" > /dev/null
-    
+
     # Check if the agent is still running
     if ! ps -p $SSH_AGENT_PID > /dev/null; then
       # Agent not running, start a new one
@@ -60,16 +60,16 @@ gpg-add-key() {
 if command -v op >/dev/null; then
   # 1Password SSH agent
   export SSH_AUTH_SOCK=~/.1password/agent.sock
-  
+
   # 1Password functions
   op-signin() {
     eval $(op signin)
   }
-  
+
   op-get-password() {
     op get item "$1" | jq -r '.details.fields[] | select(.designation=="password").value'
   }
-  
+
   op-get-note() {
     op get item "$1" | jq -r '.details.notesPlain'
   }
@@ -83,15 +83,15 @@ if command -v ykman >/dev/null; then
   yubikey-status() {
     ykman info
   }
-  
+
   yubikey-otp() {
     ykman otp
   }
-  
+
   yubikey-fido() {
     ykman fido
   }
-  
+
   yubikey-piv() {
     ykman piv info
   }
@@ -124,14 +124,14 @@ decrypt-file() {
 # Check for security tools
 security-check() {
   echo "Checking for security tools..."
-  
+
   command -v gpg >/dev/null && echo "✅ GPG is installed" || echo "❌ GPG is not installed"
   command -v ssh-agent >/dev/null && echo "✅ SSH agent is installed" || echo "❌ SSH agent is not installed"
-  
+
   if [[ "$OSTYPE" == "darwin"* ]]; then
     command -v security >/dev/null && echo "✅ macOS keychain CLI tools are installed" || echo "❌ macOS keychain CLI tools are not installed"
   fi
-  
+
   command -v openssl >/dev/null && echo "✅ OpenSSL is installed" || echo "❌ OpenSSL is not installed"
 }
 
