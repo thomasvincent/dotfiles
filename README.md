@@ -48,6 +48,11 @@ cd ~/dotfiles && ./install.sh
 
 After installation, you can use make commands to manage your dotfiles:
 
+### Utility Scripts
+
+- **setup-hooks.sh** - Sets up pre-commit hooks for development
+- **fix-code-style.sh** - Fixes common code style issues (trailing whitespace, newlines)
+
 ```bash
 # Show available commands
 make help
