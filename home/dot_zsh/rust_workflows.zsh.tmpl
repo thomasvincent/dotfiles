@@ -1,0 +1,399 @@
+# Rust Development Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if or (eq .preferences.enable_rust true) (eq .enable_dev_tools true) -}}
+# Rust cargo aliases and environment
+export CARGO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/cargo"
+export RUSTUP_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/rustup"
+export PATH="$CARGO_HOME/bin:$PATH"
+
+# Common Rust aliases
+alias cr="cargo run"
+alias cb="cargo build"
+alias crr="cargo run --release"
+alias cbr="cargo build --release"
+alias ct="cargo test"
+alias cc="cargo check"
+alias cf="cargo fmt"
+alias cff="cargo fmt --all"
+alias ccl="cargo clean"
+alias cup="cargo update"
+alias cpub="cargo publish"
+
+# Initialize a new Rust project
+rust-init() {
+  local project_name=$1
+  local project_type=${2:-"bin"}
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: rust-init <project-name> [bin|lib]"
+    echo "Example: rust-init my-awesome-app bin"
+    return 1
+  fi
+
+  # Check if cargo is installed
+  if ! command -v cargo &>/dev/null; then
+    echo "Error: Rust's Cargo not found."
+    echo "Install Rust and Cargo with: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+    return 1
+  fi
+
+  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+
+  # Create project directory if it doesn't exist
+  mkdir -p "$(dirname "$project_dir")"
+
+  echo "Creating new Rust $project_type project: $project_name"
+
+  if [[ "$project_type" == "lib" ]]; then
+    cargo new --lib "$project_dir"
+  else
+    cargo new "$project_dir"
+  fi
+
+  # Navigate to project directory
+  cd "$project_dir" || return 1
+
+  # Initialize git repository (cargo already does this)
+
+  # Add a better .gitignore if one doesn't exist
+  if [[ -f ".gitignore" ]]; then
+    # Append additional patterns to the existing .gitignore
+    cat >> .gitignore << 'EOF'
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Build artifacts beyond what cargo adds
+*.profraw
+flamegraph.svg
+perf.data*
+EOF
+  fi
+
+  # Create a README.md if it doesn't exist
+  if [[ ! -f "README.md" ]]; then
+    cat > README.md << EOF
+# $project_name
+
+Description of your project goes here.
+
+## Features
+
+* Feature 1
+* Feature 2
+
+## Usage
+
+\`\`\`
+cargo run
+\`\`\`
+
+## License
+
+MIT or Apache-2.0
+EOF
+  fi
+
+  echo "Rust project '$project_name' initialized successfully at $project_dir"
+  echo "Run 'cd $project_dir && cargo run' to build and run your project"
+}
+
+# Run rust-analyzer language server
+ra-server() {
+  rust-analyzer
+}
+
+# Create a new workspace in current directory
+rust-workspace() {
+  local members=("$@")
+
+  if [[ ${#members[@]} -eq 0 ]]; then
+    echo "Usage: rust-workspace <member1> <member2> ..."
+    echo "Example: rust-workspace app utils tests"
+    return 1
+  fi
+
+  # Create Cargo.toml for the workspace
+  cat > Cargo.toml << EOF
+[workspace]
+members = [
+EOF
+
+  # Add each member to the workspace
+  for member in "${members[@]}"; do
+    echo "    \"$member\"," >> Cargo.toml
+    # Create the package if it doesn't exist
+    if [[ ! -d "$member" ]]; then
+      cargo new "$member"
+    fi
+  done
+
+  # Close the members array
+  echo "]" >> Cargo.toml
+
+  echo "Workspace created with members: ${members[*]}"
+}
+
+# Run cargo clippy with pedantic warnings
+rust-lint() {
+  cargo clippy -- -W clippy::pedantic
+}
+
+# Start a Rust project with common dependencies
+rust-project() {
+  local project_name=$1
+  local project_type=${2:-"bin"}
+
+  # First create a basic project
+  rust-init "$project_name" "$project_type" || return 1
+
+  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  cd "$project_dir" || return 1
+
+  # Add common dependencies
+  cargo add clap --features derive  # Command line argument parsing
+  cargo add serde --features derive  # Serialization/deserialization
+  cargo add serde_json              # JSON support
+  cargo add tokio --features full   # Async runtime
+  cargo add anyhow                  # Error handling
+  cargo add tracing                 # Logging and tracing
+  cargo add tracing-subscriber      # Subscriber for tracing
+
+  # Add development dependencies
+  cargo add --dev pretty_assertions # Better test assertions
+
+  # Update main.rs with a better template for applications
+  if [[ "$project_type" == "bin" ]]; then
+    cat > src/main.rs << 'EOF'
+use anyhow::{Context, Result};
+use clap::Parser;
+use tracing::{info, level_filters::LevelFilter};
+use tracing_subscriber::EnvFilter;
+
+/// Command line arguments
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Input file
+    #[arg(short, long)]
+    input: Option<String>,
+
+    /// Verbose mode
+    #[arg(short, long)]
+    verbose: bool,
+}
+
+fn main() -> Result<()> {
+    // Parse command line arguments
+    let args = Args::parse();
+
+    // Setup logging
+    let filter = if args.verbose {
+        LevelFilter::DEBUG
+    } else {
+        LevelFilter::INFO
+    };
+
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env().add_directive(filter.into()))
+        .init();
+
+    info!("Application starting");
+
+    // Your application logic here
+    if let Some(input) = &args.input {
+        info!("Processing input file: {}", input);
+        // Process the input file
+    } else {
+        info!("No input file provided");
+    }
+
+    info!("Application finished successfully");
+    Ok(())
+}
+EOF
+  fi
+
+  echo "Enhanced Rust project setup complete with common dependencies"
+  echo "Run 'cargo run' to build and run your project"
+}
+
+# Check rust project dependencies for security vulnerabilities
+rust-audit() {
+  # Check if cargo-audit is installed
+  if ! command -v cargo-audit &>/dev/null; then
+    echo "Installing cargo-audit..."
+    cargo install cargo-audit
+  fi
+
+  echo "Checking for vulnerable dependencies..."
+  cargo audit
+}
+
+# Build and run a release version with timing
+rust-profile() {
+  echo "Building release version..."
+  time cargo build --release
+
+  echo "Running release version..."
+  time cargo run --release
+}
+
+# Check for outdated dependencies
+rust-outdated() {
+  # Check if cargo-outdated is installed
+  if ! command -v cargo-outdated &>/dev/null; then
+    echo "Installing cargo-outdated..."
+    cargo install cargo-outdated
+  fi
+
+  echo "Checking for outdated dependencies..."
+  cargo outdated
+}
+
+# Generate dependency graph
+rust-depgraph() {
+  local output=${1:-"deps-graph.png"}
+
+  # Check if cargo-depgraph is installed
+  if ! command -v cargo-depgraph &>/dev/null; then
+    echo "Installing cargo-depgraph..."
+    cargo install cargo-depgraph
+  fi
+
+  # Check if dot is installed (from graphviz)
+  if ! command -v dot &>/dev/null; then
+    echo "Error: 'dot' command not found. Please install graphviz."
+    return 1
+  fi
+
+  echo "Generating dependency graph at $output..."
+  cargo depgraph | dot -Tpng > "$output"
+
+  echo "Dependency graph generated at $output"
+  if command -v open &>/dev/null; then
+    open "$output"
+  fi
+}
+
+# Start a new Rust application with a basic CLI
+rust-cli() {
+  local app_name=$1
+
+  if [[ -z "$app_name" ]]; then
+    echo "Usage: rust-cli <app-name>"
+    return 1
+  fi
+
+  rust-init "$app_name" || return 1
+
+  local app_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$app_name"
+  cd "$app_dir" || return 1
+
+  # Add CLI-related dependencies
+  cargo add clap --features derive
+  cargo add anyhow
+  cargo add tracing
+  cargo add tracing-subscriber
+
+  # Create a better main.rs template for CLI
+  cat > src/main.rs << 'EOF'
+use anyhow::Result;
+use clap::{Parser, Subcommand};
+use tracing::{debug, info};
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Optional name to operate on
+    #[arg(short, long)]
+    name: Option<String>,
+
+    /// Sets a custom config file
+    #[arg(short, long, value_name = "FILE")]
+    config: Option<std::path::PathBuf>,
+
+    /// Turn debugging information on
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    debug: u8,
+
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Add a new entry
+    Add {
+        /// Entry value
+        #[arg(short, long)]
+        value: String,
+    },
+    /// List all entries
+    List {
+        /// Only show entries within the last days
+        #[arg(short, long)]
+        days: Option<u16>,
+    },
+}
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    // Setup logging based on verbosity
+    let log_level = match cli.debug {
+        0 => tracing::Level::INFO,
+        1 => tracing::Level::DEBUG,
+        _ => tracing::Level::TRACE,
+    };
+
+    tracing_subscriber::fmt()
+        .with_max_level(log_level)
+        .init();
+
+    // Process arguments
+    debug!("Debug mode is on");
+
+    if let Some(name) = cli.name.as_deref() {
+        info!("Using name: {name}");
+    }
+
+    if let Some(config_path) = cli.config.as_deref() {
+        info!("Using config file: {}", config_path.display());
+    }
+
+    // Process subcommands
+    match &cli.command {
+        Some(Commands::Add { value }) => {
+            info!("Adding entry: {value}");
+            // Implement add logic
+        }
+        Some(Commands::List { days }) => {
+            if let Some(days) = days {
+                info!("Listing entries from last {days} days");
+            } else {
+                info!("Listing all entries");
+            }
+            // Implement list logic
+        }
+        None => {
+            info!("No subcommand provided, showing help");
+            // You could show help here or implement default behavior
+        }
+    }
+
+    Ok(())
+}
+EOF
+
+  echo "CLI application template created successfully at $app_dir"
+  echo "Run 'cargo run -- --help' to see available options"
+}
+{{- end }}

@@ -74,6 +74,31 @@ source "$HOME/.zsh/rails_workflows.zsh"
 source "$HOME/.zsh/omnifocus_workflows.zsh"
 {{- end }}
 
+# Rust workflows
+{{- if or .preferences.enable_rust .enable_dev_tools }}
+source "$HOME/.zsh/rust_workflows.zsh"
+{{- end }}
+
+# Ruby workflows
+{{- if or .preferences.enable_ruby .enable_dev_tools }}
+source "$HOME/.zsh/ruby_workflows.zsh"
+{{- end }}
+
+# HashiCorp workflows
+{{- if or .preferences.enable_hashicorp .enable_dev_tools }}
+source "$HOME/.zsh/hashicorp_workflows.zsh"
+{{- end }}
+
+# VS Code workflows
+{{- if or .preferences.enable_vscode .enable_editors }}
+source "$HOME/.zsh/vscode_workflows.zsh"
+{{- end }}
+
+# GitHub workflows
+{{- if or .preferences.enable_github .enable_dev_tools }}
+source "$HOME/.zsh/github_workflows.zsh"
+{{- end }}
+
 # Local customizations
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 

@@ -1,0 +1,877 @@
+# Ruby Development Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if or (eq .preferences.enable_ruby true) (eq .enable_dev_tools true) -}}
+# Ruby environment configuration
+export RBENV_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/rbenv"
+export PATH="$RBENV_ROOT/bin:$PATH"
+export PATH="$RBENV_ROOT/shims:$PATH"
+
+# Initialize rbenv if available
+if command -v rbenv &>/dev/null; then
+  eval "$(rbenv init -)"
+fi
+
+# Initialize chruby if available
+if [[ -f /usr/local/share/chruby/chruby.sh ]]; then
+  source /usr/local/share/chruby/chruby.sh
+  source /usr/local/share/chruby/auto.sh
+elif [[ -f /opt/homebrew/share/chruby/chruby.sh ]]; then
+  source /opt/homebrew/share/chruby/chruby.sh
+  source /opt/homebrew/share/chruby/auto.sh
+fi
+
+# Ruby aliases
+alias be="bundle exec"
+alias bi="bundle install"
+alias bu="bundle update"
+alias bx="bundle exec"
+alias berk="bundle exec rake"
+alias birb="bundle exec irb"
+alias bspec="bundle exec rspec"
+alias brails="bundle exec rails"
+
+# Initialize a new Ruby project
+ruby-init() {
+  local project_name=$1
+  local ruby_version=${2:-$(ruby -e 'puts RUBY_VERSION')}
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: ruby-init <project-name> [ruby-version]"
+    echo "Example: ruby-init my-ruby-app 3.2.0"
+    return 1
+  fi
+
+  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+
+  # Create project directory
+  mkdir -p "$project_dir"
+  cd "$project_dir" || return 1
+
+  # Initialize git repository
+  git init
+
+  # Set Ruby version
+  if command -v rbenv &>/dev/null; then
+    rbenv local "$ruby_version"
+  elif command -v chruby &>/dev/null; then
+    echo "$ruby_version" > .ruby-version
+  fi
+
+  # Create Gemfile
+  cat > Gemfile << EOF
+source 'https://rubygems.org'
+
+ruby '$ruby_version'
+
+# Add your dependencies here
+gem 'rake'
+gem 'minitest'
+EOF
+
+  # Create basic project structure
+  mkdir -p lib test bin
+
+  # Create a basic lib file
+  cat > "lib/${project_name//-/_}.rb" << EOF
+# Main module for $project_name
+module ${project_name//-/_}
+  VERSION = '0.1.0'
+
+  class Error < StandardError; end
+
+  # Your code goes here...
+end
+EOF
+
+  # Create a basic test file
+  cat > "test/test_${project_name//-/_}.rb" << EOF
+require 'minitest/autorun'
+require '${project_name//-/_}'
+
+class Test${project_name//-/_} < Minitest::Test
+  def test_version
+    refute_nil ${project_name//-/_}::VERSION
+  end
+
+  # Add more tests here
+end
+EOF
+
+  # Create a Rakefile
+  cat > Rakefile << EOF
+require 'rake/testtask'
+
+Rake::TestTask.new(:test) do |t|
+  t.libs << 'test'
+  t.libs << 'lib'
+  t.test_files = FileList['test/**/*_test.rb', 'test/**/test_*.rb']
+end
+
+task default: :test
+EOF
+
+  # Create README.md
+  cat > README.md << EOF
+# ${project_name}
+
+Description of your project.
+
+## Installation
+
+\`\`\`
+gem install ${project_name}
+\`\`\`
+
+## Usage
+
+\`\`\`ruby
+require '${project_name//-/_}'
+
+# Example code
+\`\`\`
+
+## Development
+
+After checking out the repo, run \`bin/setup\` to install dependencies. Then, run \`rake test\` to run the tests.
+
+## License
+
+The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+EOF
+
+  # Create .gitignore
+  cat > .gitignore << EOF
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+*.gem
+*.rbc
+.DS_Store
+.idea/
+.vscode/
+EOF
+
+  # Create bin/setup script
+  mkdir -p bin
+  cat > bin/setup << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+set -vx
+
+bundle install
+
+# Do any other setup tasks here
+EOF
+  chmod +x bin/setup
+
+  # Create bin/console script
+  cat > bin/console << 'EOF'
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require_relative "../lib/#{File.basename(Dir.pwd).gsub('-', '_')}"
+
+# You can add fixtures and/or initialization code here to make experimenting
+# with your gem easier. You can also use a different console, if you like.
+
+require "irb"
+IRB.start(__FILE__)
+EOF
+  chmod +x bin/console
+
+  # Initialize Bundler
+  bundle install
+
+  echo "Ruby project '$project_name' initialized successfully at $project_dir"
+  echo "Run 'cd $project_dir && rake test' to run tests"
+}
+
+# Initialize a new Rails project
+rails-init() {
+  local project_name=$1
+  local db=${2:-postgresql}
+  local options=${@:3}
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: rails-init <project-name> [database] [additional options]"
+    echo "Example: rails-init my-rails-app postgresql --api"
+    echo "Database options: postgresql, mysql, sqlite3"
+    return 1
+  fi
+
+  # Check if Rails is installed
+  if ! gem list rails -i &>/dev/null; then
+    echo "Rails is not installed. Installing Rails..."
+    gem install rails
+  fi
+
+  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+
+  # Create parent directory if it doesn't exist
+  mkdir -p "$(dirname "$project_dir")"
+
+  # Navigate to parent directory
+  cd "$(dirname "$project_dir")" || return 1
+
+  echo "Creating new Rails project: $project_name with $db database"
+  rails new "$(basename "$project_dir")" --database="$db" $options
+
+  # Navigate to project directory
+  cd "$(basename "$project_dir")" || return 1
+
+  # Additional setup
+  if [[ "$db" == "postgresql" ]]; then
+    # Update database.yml with better default settings
+    cat > config/database.yml << EOF
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  database: ${project_name//-/_}_development
+  username: postgres
+  password:
+  host: localhost
+
+test:
+  <<: *default
+  database: ${project_name//-/_}_test
+  username: postgres
+  password:
+  host: localhost
+
+production:
+  <<: *default
+  database: ${project_name//-/_}_production
+  username: <%= ENV['DATABASE_USERNAME'] %>
+  password: <%= ENV['DATABASE_PASSWORD'] %>
+  host: <%= ENV['DATABASE_HOST'] %>
+EOF
+  fi
+
+  # Add useful gems to Gemfile
+  cat >> Gemfile << EOF
+
+# Development and testing gems
+group :development, :test do
+  gem 'rspec-rails'
+  gem 'factory_bot_rails'
+  gem 'faker'
+  gem 'pry-byebug'
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
+  gem 'rubocop-rspec', require: false
+end
+
+# Development tools
+group :development do
+  gem 'annotate'
+  gem 'bullet'
+  gem 'brakeman', require: false
+end
+
+# Test tools
+group :test do
+  gem 'shoulda-matchers'
+  gem 'simplecov', require: false
+end
+EOF
+
+  # Create .gitignore additions
+  cat >> .gitignore << EOF
+
+# Ignore Mac OS files
+.DS_Store
+
+# Ignore RubyMine settings
+.idea/
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore coverage reports
+/coverage/
+
+# Ignore master key
+/config/master.key
+
+# Ignore storage
+/storage/*
+!/storage/.keep
+
+# Ignore node modules
+/node_modules/
+
+# Ignore yarn files
+/yarn-error.log
+yarn-debug.log*
+.yarn-integrity
+
+# Ignore .env files
+.env
+.env.*
+!.env.example
+EOF
+
+  # Update bundle
+  bundle install
+
+  # Setup RSpec if included
+  if bundle list | grep -q 'rspec-rails'; then
+    bundle exec rails generate rspec:install
+
+    # Configure RSpec and FactoryBot
+    cat > .rspec << EOF
+--require spec_helper
+--color
+--format documentation
+EOF
+
+    # Configure shoulda_matchers
+    cat >> spec/rails_helper.rb << 'EOF'
+
+# Configure shoulda-matchers
+Shoulda::Matchers.configure do |config|
+  config.integrate do |with|
+    with.test_framework :rspec
+    with.library :rails
+  end
+end
+EOF
+  fi
+
+  # Setup database
+  bundle exec rails db:create
+
+  # Initial commit
+  git add .
+  git commit -m "Initial Rails application setup"
+
+  echo "Rails project '$project_name' initialized successfully at $project_dir"
+  echo "Run 'cd $project_dir && rails server' to start the development server"
+}
+
+# Run Ruby linter
+ruby-lint() {
+  # Check if Rubocop is available
+  if ! bundle list | grep -q 'rubocop'; then
+    echo "Rubocop not found in Gemfile. Installing..."
+    gem install rubocop
+  fi
+
+  echo "Running Ruby linter..."
+  if bundle exec rubocop -v &>/dev/null; then
+    bundle exec rubocop "$@"
+  else
+    rubocop "$@"
+  fi
+}
+
+# Run Ruby tests
+ruby-test() {
+  if [[ -f bin/rails && -d spec ]]; then
+    echo "Running RSpec tests..."
+    bundle exec rspec "$@"
+  elif [[ -f bin/rails && -d test ]]; then
+    echo "Running Rails tests..."
+    bundle exec rails test "$@"
+  elif [[ -d spec ]]; then
+    echo "Running RSpec tests..."
+    bundle exec rspec "$@"
+  elif [[ -d test ]]; then
+    echo "Running Minitest tests..."
+    bundle exec rake test "$@"
+  else
+    echo "No test directory found."
+    return 1
+  fi
+}
+
+# Run Rails console
+rc() {
+  bundle exec rails console "$@"
+}
+
+# Run Rails server
+rs() {
+  bundle exec rails server "$@"
+}
+
+# Run Rails generator
+rg() {
+  bundle exec rails generate "$@"
+}
+
+# Run Rails migrations
+rmig() {
+  bundle exec rails db:migrate "$@"
+}
+
+# Run Rails routes
+rr() {
+  bundle exec rails routes "$@"
+}
+
+# Create a new Rails controller
+rails-controller() {
+  local controller_name=$1
+  local actions=("${@:2}")
+
+  if [[ -z "$controller_name" ]]; then
+    echo "Usage: rails-controller <controller-name> [action1 action2 ...]"
+    echo "Example: rails-controller Users index show create update destroy"
+    return 1
+  fi
+
+  # Check if we're in a Rails app
+  if [[ ! -f bin/rails ]]; then
+    echo "Error: Not in a Rails application directory."
+    echo "Run this command from the root of your Rails app."
+    return 1
+  fi
+
+  local action_list=""
+  for action in "${actions[@]}"; do
+    action_list="$action_list $action"
+  done
+
+  bundle exec rails generate controller "$controller_name" $action_list
+}
+
+# Create a new Rails model
+rails-model() {
+  local model_name=$1
+  local attributes=("${@:2}")
+
+  if [[ -z "$model_name" ]]; then
+    echo "Usage: rails-model <model-name> [attribute1:type attribute2:type ...]"
+    echo "Example: rails-model User name:string email:string:uniq age:integer"
+    return 1
+  fi
+
+  # Check if we're in a Rails app
+  if [[ ! -f bin/rails ]]; then
+    echo "Error: Not in a Rails application directory."
+    echo "Run this command from the root of your Rails app."
+    return 1
+  fi
+
+  local attribute_list=""
+  for attribute in "${attributes[@]}"; do
+    attribute_list="$attribute_list $attribute"
+  done
+
+  bundle exec rails generate model "$model_name" $attribute_list
+}
+
+# Set up a Rails API project
+rails-api() {
+  local project_name=$1
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: rails-api <project-name>"
+    echo "Example: rails-api my-api"
+    return 1
+  fi
+
+  rails-init "$project_name" postgresql --api
+
+  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  cd "$project_dir" || return 1
+
+  # Add API gems
+  cat >> Gemfile << EOF
+
+# API gems
+gem 'rack-cors'
+gem 'fast_jsonapi'
+gem 'jwt'
+EOF
+
+  bundle install
+
+  # Configure CORS
+  cat > config/initializers/cors.rb << 'EOF'
+# Be sure to restart your server when you modify this file.
+
+# Avoid CORS issues when API is called from the frontend app.
+# Handle Cross-Origin Resource Sharing (CORS) in order to accept cross-origin AJAX requests.
+
+# Read more: https://github.com/cyu/rack-cors
+
+Rails.application.config.middleware.insert_before 0, Rack::Cors do
+  allow do
+    origins '*'
+
+    resource '*',
+      headers: :any,
+      methods: [:get, :post, :put, :patch, :delete, :options, :head]
+  end
+end
+EOF
+
+  echo "Rails API project setup complete!"
+}
+
+# Create Rails scaffold with API endpoints
+rails-api-scaffold() {
+  local model_name=$1
+  local attributes=("${@:2}")
+
+  if [[ -z "$model_name" ]]; then
+    echo "Usage: rails-api-scaffold <model-name> [attribute1:type attribute2:type ...]"
+    echo "Example: rails-api-scaffold User name:string email:string:uniq"
+    return 1
+  fi
+
+  # Check if we're in a Rails app
+  if [[ ! -f bin/rails ]]; then
+    echo "Error: Not in a Rails application directory."
+    echo "Run this command from the root of your Rails app."
+    return 1
+  fi
+
+  local attribute_list=""
+  for attribute in "${attributes[@]}"; do
+    attribute_list="$attribute_list $attribute"
+  done
+
+  bundle exec rails generate scaffold "$model_name" $attribute_list --api
+
+  # Run migrations
+  bundle exec rails db:migrate
+}
+
+# Generate ERD diagram for Rails models
+rails-erd() {
+  # Check if we're in a Rails app
+  if [[ ! -f bin/rails ]]; then
+    echo "Error: Not in a Rails application directory."
+    echo "Run this command from the root of your Rails app."
+    return 1
+  fi
+
+  # Check if rails-erd gem is installed
+  if ! bundle list | grep -q 'rails-erd'; then
+    echo "rails-erd gem not found. Adding it to Gemfile..."
+    echo "gem 'rails-erd', group: :development" >> Gemfile
+    bundle install
+  fi
+
+  # Check if graphviz is installed
+  if ! command -v dot &>/dev/null; then
+    echo "Error: graphviz is not installed."
+    echo "Please install graphviz first."
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "Run: brew install graphviz"
+    {{ else }}
+    echo "Run: sudo apt-get install graphviz"
+    {{ end }}
+    return 1
+  fi
+
+  echo "Generating ERD diagram..."
+  bundle exec rake erd
+
+  if [[ -f erd.pdf ]]; then
+    echo "ERD generated at erd.pdf"
+    if command -v open &>/dev/null; then
+      open erd.pdf
+    fi
+  else
+    echo "ERD generation failed."
+  fi
+}
+
+# Run bundle exec with args
+bun() {
+  bundle exec "$@"
+}
+
+# Create a gem from template
+ruby-gem() {
+  local gem_name=$1
+
+  if [[ -z "$gem_name" ]]; then
+    echo "Usage: ruby-gem <gem-name>"
+    echo "Example: ruby-gem my_awesome_gem"
+    return 1
+  fi
+
+  # Check if bundler is installed
+  if ! command -v bundler &>/dev/null; then
+    echo "Bundler not found. Installing..."
+    gem install bundler
+  fi
+
+  local gem_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$gem_name"
+
+  echo "Creating new Ruby gem: $gem_name"
+  bundler gem "$gem_dir"
+
+  cd "$gem_dir" || return 1
+
+  # Update the gemspec with better defaults
+  sed -i.bak "s/spec.summary.*/spec.summary = \"${gem_name} gem\"/" "${gem_name}.gemspec"
+  sed -i.bak "s/spec.description.*/spec.description = \"A detailed description of ${gem_name}.\"/" "${gem_name}.gemspec"
+  sed -i.bak "s|spec.homepage.*|spec.homepage = \"https://github.com/$(git config user.name || echo "username")/${gem_name}\"|" "${gem_name}.gemspec"
+  rm -f "${gem_name}.gemspec.bak"
+
+  # Add development dependencies
+  sed -i.bak "/add_development_dependency/d" "${gem_name}.gemspec"
+  cat >> "${gem_name}.gemspec" << 'EOF'
+  spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_development_dependency "rubocop", "~> 1.0"
+  spec.add_development_dependency "yard", "~> 0.9"
+  spec.add_development_dependency "pry", "~> 0.13"
+EOF
+  rm -f "${gem_name}.gemspec.bak"
+
+  # Update bundle
+  bundle install
+
+  echo "Ruby gem '$gem_name' created successfully at $gem_dir"
+  echo "Run 'cd $gem_dir && bundle exec rspec' to run tests"
+}
+
+# Install Ruby version with rbenv
+ruby-install() {
+  local ruby_version=$1
+
+  if [[ -z "$ruby_version" ]]; then
+    echo "Usage: ruby-install <version>"
+    echo "Example: ruby-install 3.2.0"
+    echo "Available versions:"
+    rbenv install -l | grep -v - | tail -10
+    return 1
+  fi
+
+  # Check if rbenv is installed
+  if ! command -v rbenv &>/dev/null; then
+    echo "rbenv not found. Please install rbenv first."
+    return 1
+  fi
+
+  echo "Installing Ruby $ruby_version..."
+  rbenv install "$ruby_version"
+
+  echo "Setting global Ruby version to $ruby_version..."
+  rbenv global "$ruby_version"
+
+  echo "Updating RubyGems..."
+  gem update --system
+
+  echo "Installing common gems..."
+  gem install bundler pry rubocop solargraph
+
+  rbenv rehash
+
+  echo "Ruby $ruby_version installed successfully"
+  ruby -v
+}
+
+# Run Rails security check
+rails-security() {
+  # Check if we're in a Rails app
+  if [[ ! -f bin/rails ]]; then
+    echo "Error: Not in a Rails application directory."
+    echo "Run this command from the root of your Rails app."
+    return 1
+  fi
+
+  # Check if brakeman is available
+  if ! bundle list | grep -q 'brakeman'; then
+    echo "Brakeman not found in Gemfile. Installing..."
+    echo "gem 'brakeman', require: false, group: :development" >> Gemfile
+    bundle install
+  fi
+
+  echo "Running Rails security check with Brakeman..."
+  bundle exec brakeman -A
+}
+
+# Create a new Sinatra app
+sinatra-init() {
+  local app_name=$1
+
+  if [[ -z "$app_name" ]]; then
+    echo "Usage: sinatra-init <app-name>"
+    echo "Example: sinatra-init my-sinatra-app"
+    return 1
+  fi
+
+  local app_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$app_name"
+
+  # Create project directory
+  mkdir -p "$app_dir"
+  cd "$app_dir" || return 1
+
+  # Initialize git repository
+  git init
+
+  # Create Gemfile
+  cat > Gemfile << EOF
+source 'https://rubygems.org'
+
+ruby '$(ruby -e 'puts RUBY_VERSION')'
+
+gem 'sinatra'
+gem 'sinatra-contrib'
+gem 'puma'
+gem 'thin'
+gem 'rerun'
+
+group :development, :test do
+  gem 'rack-test'
+  gem 'minitest'
+  gem 'rspec'
+end
+EOF
+
+  # Create basic project structure
+  mkdir -p public views config
+
+  # Create app.rb
+  cat > app.rb << 'EOF'
+require 'sinatra'
+require 'sinatra/reloader' if development?
+
+configure do
+  set :public_folder, 'public'
+  set :views, 'views'
+  enable :sessions
+  set :session_secret, ENV.fetch('SESSION_SECRET') { SecureRandom.hex(64) }
+end
+
+get '/' do
+  erb :index
+end
+EOF
+
+  # Create config.ru
+  cat > config.ru << 'EOF'
+require './app'
+run Sinatra::Application
+EOF
+
+  # Create views/layout.erb
+  mkdir -p views
+  cat > views/layout.erb << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sinatra App</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <%= yield %>
+  </div>
+  <script src="/js/app.js"></script>
+</body>
+</html>
+EOF
+
+  # Create views/index.erb
+  cat > views/index.erb << 'EOF'
+<h1>Welcome to Sinatra</h1>
+<p>This is a basic Sinatra application.</p>
+EOF
+
+  # Create public directories
+  mkdir -p public/{css,js,images}
+
+  # Create a basic stylesheet
+  cat > public/css/style.css << 'EOF'
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  background: #f4f4f4;
+}
+
+.container {
+  width: 80%;
+  margin: auto;
+  overflow: hidden;
+  padding: 20px;
+}
+
+h1 {
+  color: #333;
+}
+EOF
+
+  # Create a basic JavaScript file
+  cat > public/js/app.js << 'EOF'
+// Your JavaScript code here
+console.log('Sinatra app initialized');
+EOF
+
+  # Create .gitignore
+  cat > .gitignore << EOF
+/.bundle/
+/vendor/bundle
+/.sass-cache/
+/node_modules/
+*.log
+.DS_Store
+.env
+EOF
+
+  # Create README.md
+  cat > README.md << EOF
+# ${app_name}
+
+A simple Sinatra application.
+
+## Installation
+
+\`\`\`
+bundle install
+\`\`\`
+
+## Usage
+
+\`\`\`
+ruby app.rb
+\`\`\`
+
+Or using Rack:
+
+\`\`\`
+rackup -p 4567
+\`\`\`
+
+For development with auto-reload:
+
+\`\`\`
+rerun 'ruby app.rb'
+\`\`\`
+
+## License
+
+[MIT License](LICENSE)
+EOF
+
+  # Initialize Bundler
+  bundle install
+
+  # Initial commit
+  git add .
+  git commit -m "Initial Sinatra application setup"
+
+  echo "Sinatra application '$app_name' initialized successfully at $app_dir"
+  echo "Run 'cd $app_dir && ruby app.rb' to start the development server"
+}
+{{- end }}

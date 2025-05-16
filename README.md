@@ -21,7 +21,9 @@ My personal dotfiles optimized for macOS and Linux development, managed with che
 - **Workflow Automation** - Project management, Git, and Docker workflows
 - **Productivity Tools** - Task management, note-taking, and time tracking
 - **macOS Integration** - Native Notes, Reminders, Mail, and Calendar apps integration
-- **Development Workflows** - WordPress, Chef, Puppet, Ansible, Java, Groovy, and Rails development environments
+- **Development Workflows** - WordPress, Chef, Puppet, Ansible, Java, Groovy, Rails, Ruby, and Rust
+- **DevOps Toolchain** - HashiCorp suite (Terraform, Vault, Consul, Nomad, Packer, Boundary, Waypoint)
+- **Editor Integration** - VS Code workflows, settings, and extensions
 - **GTD Methodology** - Getting Things Done workflow support with OmniFocus integration
 - **Chat Integration** - Slack and Microsoft Teams workflows
 - **Email & Calendar** - Gmail, Google Calendar, and Office365 integrations
@@ -88,6 +90,11 @@ make lint
   - **java_gradle_workflows.zsh.tmpl** - Java and Gradle development workflows
   - **groovy_workflows.zsh.tmpl** - Groovy scripting and development workflows
   - **rails_workflows.zsh.tmpl** - Ruby on Rails development workflows
+  - **ruby_workflows.zsh.tmpl** - Ruby development workflows and tools
+  - **rust_workflows.zsh.tmpl** - Rust development workflows and cargo tools
+  - **hashicorp_workflows.zsh.tmpl** - HashiCorp suite workflows (Terraform, Vault, etc.)
+  - **vscode_workflows.zsh.tmpl** - VS Code editor integration and workflows
+  - **github_workflows.zsh.tmpl** - GitHub CLI integration and workflows
   - **omnifocus_workflows.zsh.tmpl** - OmniFocus task management integration
 - **.config/** - XDG configuration files
 - **bin/** - Executable scripts
@@ -106,6 +113,39 @@ This dotfiles configuration supports multiple cloud providers:
 - **Linode** - Linode CLI
 
 Each cloud provider has its own set of functions and aliases configured in `~/.zsh/cloud.zsh`.
+
+## Language Support
+
+This dotfiles configuration includes specific support for multiple programming languages:
+
+- **Ruby** - Ruby environment with rbenv, management tools, project templates
+- **Rust** - Cargo tools, project templates, dependency management
+- **Node.js** - npm/yarn workflows, project templates
+- **Python** - virtualenv, project templates, dependency management
+- **Go** - Project templates, build tools
+- **Java** - JVM environment, Gradle workflows
+- **Groovy** - Scripting workflows, project templates
+- **C++/C** - Build tools, project templates
+
+## HashiCorp Stack Support
+
+Full workflows for the HashiCorp toolchain:
+
+- **Terraform** - Aliases, project templates, environment-specific configs
+- **Vault** - Secret management, token creation, policy management
+- **Consul** - Service discovery, KV store management
+- **Nomad** - Job management, deployment workflows
+- **Packer** - VM image building, template management
+- **Boundary** - Access management workflows
+- **Waypoint** - Deployment workflows
+
+## Editor Support
+
+Integrated support for popular editors:
+
+- **VS Code** - Project templates, extension management, settings templates
+- **Vim/Neovim** - Plugin management, configuration
+- **JetBrains IDEs** - Configuration and workflow helpers
 
 ## Security Features
 
@@ -257,6 +297,138 @@ Various workflow automation functions are provided to streamline your developmen
 - `of-templates` - List all OmniFocus templates
 - `of-quick-entry` - Create a quick OmniFocus entry with project and context
 - `of-weekly-review` - Create a GTD weekly review workflow in OmniFocus
+
+### Ruby Development Workflows
+- `ruby-init <project-name> [ruby-version]` - Initialize a new Ruby project
+- `rails-init <project-name> [database] [additional options]` - Initialize a new Rails project
+- `ruby-lint` - Run Ruby linter
+- `ruby-test` - Run Ruby tests
+- `rc` - Run Rails console
+- `rs` - Run Rails server
+- `rg` - Run Rails generator
+- `rmig` - Run Rails migrations
+- `rr` - Run Rails routes
+- `rails-controller <controller-name> [action1 action2 ...]` - Create a new Rails controller
+- `rails-model <model-name> [attribute1:type attribute2:type ...]` - Create a new Rails model
+- `rails-api <project-name>` - Set up a Rails API project
+- `rails-api-scaffold <model-name> [attribute1:type attribute2:type ...]` - Create Rails scaffold with API endpoints
+- `rails-erd` - Generate ERD diagram for Rails models
+- `ruby-gem <gem-name>` - Create a gem from template
+- `ruby-install <version>` - Install Ruby version with rbenv
+- `rails-security` - Run Rails security check
+- `sinatra-init <app-name>` - Create a new Sinatra app
+
+### Rust Development Workflows
+- `rust-init <project-name> [bin|lib]` - Initialize a new Rust project
+- `ra-server` - Run rust-analyzer language server
+- `rust-workspace <member1> <member2> ...` - Create a new workspace in current directory
+- `rust-lint` - Run cargo clippy with pedantic warnings
+- `rust-project <project-name> [bin|lib]` - Start a Rust project with common dependencies
+- `rust-audit` - Check rust project dependencies for security vulnerabilities
+- `rust-profile` - Build and run a release version with timing
+- `rust-outdated` - Check for outdated dependencies
+- `rust-depgraph [output.png]` - Generate dependency graph
+- `rust-cli <app-name>` - Start a new Rust application with a basic CLI
+
+### HashiCorp Workflows
+
+#### Terraform Workflows
+- `tf-init-backend [env]` - Initialize Terraform with backend config
+- `tf-plan-env [env]` - Plan Terraform with variables file
+- `tf-apply-env [env]` - Apply Terraform with variables file
+- `tf-project <project-name> [provider]` - Create Terraform directory structure for a new project
+- `tf-module <module-name> [description]` - Create a new Terraform module
+- `tf-visualize [planfile]` - Visualize Terraform plan
+- `tf-docs [dir]` - Generate Terraform documentation
+- `tf-check` - Run Terraform validation and security checks
+- `tf-workspace-create <workspace-name>` - Create a Terraform workspace
+- `tf-cost [env]` - Calculate Terraform cost estimate
+- `tf-export` - Export Terraform outputs to environment variables
+
+#### Vault Workflows
+- `vault-dev [vault-dir]` - Initialize a Vault development server
+- `vault-env [addr] [token]` - Set up Vault environment variables
+- `vault-kv-init [path]` - Initialize a Vault KV store
+- `vault-store <path> <key> [value]` - Store a secret in Vault with confirmation
+- `vault-get <path> [key]` - Retrieve a secret from Vault
+- `vault-export <path>` - Export Vault secrets as environment variables
+- `vault-policy-create <policy-name> <policy-file>` - Create a new Vault policy
+- `vault-policy-template <policy-name> [path-prefix]` - Generate a policy file template
+- `vault-token-create <policy> [ttl]` - Create a new Vault token with a specific policy
+
+#### Consul Workflows
+- `consul-dev [data-dir]` - Start a Consul development server
+- `consul-put <key> <value>` - Store a key-value pair in Consul
+- `consul-get <key>` - Retrieve a value from Consul KV store
+- `consul-list [prefix]` - List keys in Consul KV store
+- `consul-export [prefix]` - Export Consul KV pairs as environment variables
+- `consul-register <service-name> [port] [tags]` - Register a service with Consul
+- `consul-deregister <service-name>` - Deregister a service from Consul
+
+#### Nomad Workflows
+- `nomad-dev [data-dir]` - Start a Nomad development server
+- `nomad-job-template <job-name> [job-type]` - Create a Nomad job template
+- `nomad-run <job-file>` - Run a Nomad job
+- `nomad-status <job-name>` - Check Nomad job status
+- `nomad-logs <job-name> [task-name]` - View Nomad job logs
+- `nomad-exec <job-name> [command] [task-name]` - Execute a command in a Nomad allocation
+- `nomad-stop <job-name>` - Stop a Nomad job
+
+#### Packer Workflows
+- `packer-template <template-name> [builder]` - Create a Packer template
+- `packer-lint [dir]` - Check and format Packer templates
+- `packer-build [template-dir] [vars...]` - Build a Packer image with variables
+- `packer-inspect [template-dir]` - Inspect a Packer template
+
+#### Boundary Workflows
+- `boundary-env [addr]` - Set up Boundary environment
+- `boundary-login [auth-method-id] [username] [password]` - Authenticate with Boundary
+- `boundary-targets [scope-id]` - List Boundary targets
+- `boundary-connect <target-id> [port]` - Connect to a Boundary target
+
+#### Waypoint Workflows
+- `waypoint-template <project-name> [platform]` - Create a Waypoint project template
+- `waypoint-server-dev` - Initialize Waypoint server in development mode
+- `waypoint-up [folder]` - Run the complete Waypoint deployment workflow
+- `waypoint-status` - Check Waypoint project status
+- `waypoint-logs [deployment]` - View Waypoint deployment logs
+- `waypoint-exec <command> [deployment]` - Execute a command in a Waypoint deployment
+
+### VS Code Workflows
+- `vs [directory]` - Open VS Code in current directory
+- `vsproj [project-name]` - Open VS Code with a specific project
+- `vscode-export-extensions [output-file]` - Export a list of installed VS Code extensions
+- `vscode-install-extensions [input-file]` - Install VS Code extensions from a list
+- `vscode-create-workspace <workspace-name> [extension1 extension2 ...]` - Create a workspace with recommended extensions
+- `vsworkspace <workspace-file>` - Open VS Code with a specific workspace
+- `vscode-setup <project-type>` - Create a collection of recommended settings for different project types
+- `vscode-customize [keybinding-style]` - Set up VS Code with custom keybindings and settings
+- `vsdiff <file1> <file2>` - Create a diff view for two files
+- `vscode-snippet <snippet-name> <language> [description]` - Create a new code snippet
+
+### GitHub Workflows
+- `gh-init <repo-name> [visibility] [description]` - Initialize a new GitHub repository
+- `gh-init-current [visibility] [description]` - Create a GitHub repository from the current directory
+- `gh-fork <owner/repo> [clone-directory]` - Fork a GitHub repository
+- `gh-new-issue <title> [body] [repo] [labels] [assignee]` - Create a GitHub issue
+- `gh-new-pr <title> [body] [base-branch] [repo] [labels] [reviewers]` - Create a pull request
+- `gh-search-repos <query> [limit]` - Search GitHub repositories
+- `gh-search-issues <query> [limit]` - Search GitHub issues
+- `gh-clone <repo> [destination]` - Clone a GitHub repository
+- `gh-new-gist <description> <file-path> [is-public]` - Create a GitHub Gist
+- `gh-release <tag-name> [title] [notes-file] [prerelease] [draft] [target]` - Create a GitHub release
+- `gh-release-notes <previous-tag> <new-tag> [output-file]` - Generate a GitHub release notes file
+- `gh-workflows [repo]` - List GitHub workflows
+- `gh-run-workflow <workflow> [ref] [repo] [inputs]` - Run a GitHub workflow
+- `gh-new-workflow <workflow-name> [template]` - Create a GitHub Actions workflow file
+- `gh-project-setup [repo-name] [template]` - Setup GitHub project with common files
+- `gh-stats [owner/repo]` - Display GitHub repository stats
+- `gh-codeowners [content]` - Create a GitHub CODEOWNERS file
+- `gh-badge <workflow-name> [branch]` - Generate GitHub Actions status badge for README
+- `gh-dependabot` - Create a GitHub dependabot configuration
+- `gh-pr-template` - Create a GitHub pull request template
+- `gh-security-policy` - Create a GitHub security policy
+- `gh-branch-protection [branch] [owner/repo]` - Set up GitHub branch protection rules
 
 ## Productivity Tools
 

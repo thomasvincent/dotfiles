@@ -1,0 +1,2170 @@
+# HashiCorp Toolchain Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if or (eq .preferences.enable_hashicorp true) (eq .enable_dev_tools true) -}}
+# =====================
+# Terraform Workflows
+# =====================
+
+# Extended Terraform aliases
+alias tf='terraform'
+alias tfi='terraform init'
+alias tfp='terraform plan'
+alias tfa='terraform apply'
+alias tfaa='terraform apply -auto-approve'
+alias tfd='terraform destroy'
+alias tfda='terraform destroy -auto-approve'
+alias tfo='terraform output'
+alias tfs='terraform state'
+alias tfsl='terraform state list'
+alias tfss='terraform state show'
+alias tfv='terraform validate'
+alias tff='terraform fmt'
+alias tffr='terraform fmt -recursive'
+alias tfg='terraform graph'
+alias tfc='terraform console'
+alias tfpj='terraform providers'
+alias tfimport='terraform import'
+alias tfw='terraform workspace'
+alias tfws='terraform workspace select'
+alias tfwl='terraform workspace list'
+alias tfwn='terraform workspace new'
+
+# Function to initialize Terraform with backend config
+tf-init-backend() {
+  local env="${1:-dev}"
+  local backend_file="env/$env.tfbackend"
+
+  if [[ ! -f "$backend_file" ]]; then
+    echo "Backend file not found: $backend_file"
+    echo "Available backend files:"
+    ls -la env/*.tfbackend 2>/dev/null || echo "No backend files found in env/ directory."
+    return 1
+  fi
+
+  echo "Initializing Terraform with backend config: $backend_file"
+  terraform init -backend-config="$backend_file"
+}
+
+# Function to run Terraform with proper variables file
+tf-plan-env() {
+  local env="${1:-dev}"
+  local vars_file="env/$env.tfvars"
+
+  if [[ ! -f "$vars_file" ]]; then
+    echo "Variables file not found: $vars_file"
+    echo "Available variables files:"
+    ls -la env/*.tfvars 2>/dev/null || echo "No tfvars files found in env/ directory."
+    return 1
+  fi
+
+  echo "Planning Terraform with variables: $vars_file"
+  terraform plan -var-file="$vars_file"
+}
+
+# Function to apply Terraform with proper variables file
+tf-apply-env() {
+  local env="${1:-dev}"
+  local vars_file="env/$env.tfvars"
+
+  if [[ ! -f "$vars_file" ]]; then
+    echo "Variables file not found: $vars_file"
+    echo "Available variables files:"
+    ls -la env/*.tfvars 2>/dev/null || echo "No tfvars files found in env/ directory."
+    return 1
+  fi
+
+  echo "Applying Terraform with variables: $vars_file"
+  terraform apply -var-file="$vars_file"
+}
+
+# Create Terraform directory structure for a new project
+tf-project() {
+  local project_name=$1
+  local provider=${2:-aws}
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: tf-project <project-name> [provider]"
+    echo "Example: tf-project my-infra aws"
+    echo "Supported providers: aws, azure, gcp, oci"
+    return 1
+  fi
+
+  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+
+  # Create project directory
+  mkdir -p "$project_dir"
+  cd "$project_dir" || return 1
+
+  # Create directory structure
+  mkdir -p {modules,env,scripts,docs}
+
+  # Create main Terraform files
+  cat > main.tf << EOF
+# $project_name - Main Terraform configuration
+
+terraform {
+  required_version = ">= 1.0.0"
+
+  required_providers {
+EOF
+
+  case $provider in
+    aws)
+      cat >> main.tf << EOF
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+EOF
+      ;;
+    azure)
+      cat >> main.tf << EOF
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+EOF
+      ;;
+    gcp)
+      cat >> main.tf << EOF
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.0"
+    }
+EOF
+      ;;
+    oci)
+      cat >> main.tf << EOF
+    oci = {
+      source  = "oracle/oci"
+      version = "~> 4.0"
+    }
+EOF
+      ;;
+  esac
+
+  cat >> main.tf << EOF
+  }
+
+  backend "s3" {
+    # This will be configured via backend config files in the env directory
+  }
+}
+
+EOF
+
+  # Add provider-specific configuration
+  case $provider in
+    aws)
+      cat >> main.tf << EOF
+provider "aws" {
+  region = var.aws_region
+
+  default_tags {
+    tags = {
+      Environment = var.environment
+      Project     = "$project_name"
+      ManagedBy   = "terraform"
+    }
+  }
+}
+EOF
+      ;;
+    azure)
+      cat >> main.tf << EOF
+provider "azurerm" {
+  features {}
+
+  subscription_id = var.subscription_id
+  tenant_id       = var.tenant_id
+}
+EOF
+      ;;
+    gcp)
+      cat >> main.tf << EOF
+provider "google" {
+  project = var.project_id
+  region  = var.gcp_region
+  zone    = var.gcp_zone
+}
+EOF
+      ;;
+    oci)
+      cat >> main.tf << EOF
+provider "oci" {
+  region       = var.oci_region
+  tenancy_ocid = var.tenancy_ocid
+}
+EOF
+      ;;
+  esac
+
+  # Create variables.tf
+  cat > variables.tf << EOF
+# $project_name - Variables
+
+variable "environment" {
+  description = "Environment name (e.g. dev, staging, prod)"
+  type        = string
+  default     = "dev"
+}
+EOF
+
+  # Add provider-specific variables
+  case $provider in
+    aws)
+      cat >> variables.tf << EOF
+
+variable "aws_region" {
+  description = "AWS region to deploy resources"
+  type        = string
+  default     = "us-west-2"
+}
+EOF
+      ;;
+    azure)
+      cat >> variables.tf << EOF
+
+variable "subscription_id" {
+  description = "Azure subscription ID"
+  type        = string
+}
+
+variable "tenant_id" {
+  description = "Azure tenant ID"
+  type        = string
+}
+
+variable "location" {
+  description = "Azure region to deploy resources"
+  type        = string
+  default     = "East US"
+}
+EOF
+      ;;
+    gcp)
+      cat >> variables.tf << EOF
+
+variable "project_id" {
+  description = "GCP project ID"
+  type        = string
+}
+
+variable "gcp_region" {
+  description = "GCP region to deploy resources"
+  type        = string
+  default     = "us-central1"
+}
+
+variable "gcp_zone" {
+  description = "GCP zone to deploy resources"
+  type        = string
+  default     = "us-central1-a"
+}
+EOF
+      ;;
+    oci)
+      cat >> variables.tf << EOF
+
+variable "tenancy_ocid" {
+  description = "OCI tenancy OCID"
+  type        = string
+}
+
+variable "oci_region" {
+  description = "OCI region to deploy resources"
+  type        = string
+  default     = "us-ashburn-1"
+}
+EOF
+      ;;
+  esac
+
+  # Create outputs.tf
+  cat > outputs.tf << EOF
+# $project_name - Outputs
+
+# Add your outputs here
+EOF
+
+  # Create env files
+  for env in dev staging prod; do
+    # Create .tfvars file
+    cat > "env/$env.tfvars" << EOF
+# $project_name - $env environment
+
+environment = "$env"
+EOF
+
+    # Add provider-specific variables
+    case $provider in
+      aws)
+        cat >> "env/$env.tfvars" << EOF
+aws_region  = "us-west-2"
+EOF
+        ;;
+      azure)
+        cat >> "env/$env.tfvars" << EOF
+location = "East US"
+EOF
+        ;;
+      gcp)
+        cat >> "env/$env.tfvars" << EOF
+gcp_region = "us-central1"
+gcp_zone   = "us-central1-a"
+EOF
+        ;;
+      oci)
+        cat >> "env/$env.tfvars" << EOF
+oci_region = "us-ashburn-1"
+EOF
+        ;;
+    esac
+
+    # Create backend config file
+    cat > "env/$env.tfbackend" << EOF
+# $project_name - $env environment - Backend configuration
+
+bucket         = "$project_name-terraform-state-$env"
+key            = "terraform.tfstate"
+region         = "us-west-2"
+encrypt        = true
+dynamodb_table = "$project_name-terraform-locks-$env"
+EOF
+  done
+
+  # Create .gitignore
+  cat > .gitignore << EOF
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files, which are likely to contain sensitive data
+# *.tfvars
+# *.tfvars.json
+
+# Ignore override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Include override files you do wish to add to version control
+# !example_override.tf
+
+# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
+*tfplan*
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Ignore lock files for now
+.terraform.lock.hcl
+
+# Ignore Mac system files
+.DS_Store
+
+# Ignore local environment variables
+.env
+
+# Editor files
+.vscode/
+.idea/
+EOF
+
+  # Create README.md
+  cat > README.md << EOF
+# $project_name Terraform Infrastructure
+
+This repository contains Terraform code to deploy and manage the infrastructure for $project_name.
+
+## Structure
+
+- \`main.tf\` - Main Terraform configuration
+- \`variables.tf\` - Variable definitions
+- \`outputs.tf\` - Output definitions
+- \`env/\` - Environment-specific configuration
+  - \`dev.tfvars\` - Development environment variables
+  - \`staging.tfvars\` - Staging environment variables
+  - \`prod.tfvars\` - Production environment variables
+  - \`dev.tfbackend\` - Development backend configuration
+  - \`staging.tfbackend\` - Staging backend configuration
+  - \`prod.tfbackend\` - Production backend configuration
+- \`modules/\` - Reusable Terraform modules
+- \`scripts/\` - Helper scripts
+- \`docs/\` - Documentation
+
+## Usage
+
+Initialize Terraform with the appropriate backend:
+
+\`\`\`
+terraform init -backend-config=env/dev.tfbackend
+\`\`\`
+
+Plan your changes:
+
+\`\`\`
+terraform plan -var-file=env/dev.tfvars
+\`\`\`
+
+Apply your changes:
+
+\`\`\`
+terraform apply -var-file=env/dev.tfvars
+\`\`\`
+
+## Prerequisites
+
+- Terraform >= 1.0.0
+- AWS CLI (for AWS provider)
+- Azure CLI (for Azure provider)
+- GCloud CLI (for GCP provider)
+- OCI CLI (for Oracle Cloud provider)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+EOF
+
+  # Initialize git repository
+  git init
+  git add .
+  git commit -m "Initial Terraform project setup"
+
+  echo "Terraform project '$project_name' initialized successfully at $project_dir"
+  echo "Next steps:"
+  echo "1. cd $project_dir"
+  echo "2. Update env/*.tfvars with your environment-specific variables"
+  echo "3. Update env/*.tfbackend with your backend configuration"
+  echo "4. Run: terraform init -backend-config=env/dev.tfbackend"
+}
+
+# Create a new Terraform module
+tf-module() {
+  local module_name=$1
+  local description=${2:-"A Terraform module for $1"}
+
+  if [[ -z "$module_name" ]]; then
+    echo "Usage: tf-module <module-name> [description]"
+    echo "Example: tf-module vpc \"A Terraform module for creating a VPC\""
+    return 1
+  fi
+
+  # Check if in a Terraform project with modules directory
+  if [[ ! -d "modules" ]]; then
+    echo "Creating modules directory..."
+    mkdir -p modules
+  fi
+
+  local module_dir="modules/$module_name"
+
+  # Create module directory
+  mkdir -p "$module_dir"
+  cd "$module_dir" || return 1
+
+  # Create module files
+  cat > main.tf << EOF
+# Module: $module_name
+
+EOF
+
+  cat > variables.tf << EOF
+# Module: $module_name - Variables
+
+EOF
+
+  cat > outputs.tf << EOF
+# Module: $module_name - Outputs
+
+EOF
+
+  cat > README.md << EOF
+# Terraform Module: $module_name
+
+$description
+
+## Usage
+
+\`\`\`hcl
+module "$module_name" {
+  source = "./modules/$module_name"
+
+  # Add your variables here
+}
+\`\`\`
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|:----:|:-------:|:--------:|
+| | | | | |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| | |
+EOF
+
+  echo "Terraform module '$module_name' created successfully at $module_dir"
+  echo "Next steps:"
+  echo "1. Add your module resources to main.tf"
+  echo "2. Define your variables in variables.tf"
+  echo "3. Define your outputs in outputs.tf"
+  echo "4. Update the README.md with module documentation"
+}
+
+# Visualize Terraform plan
+tf-visualize() {
+  local planfile="${1:-tfplan.out}"
+
+  # Check if terraform is installed
+  if ! command -v terraform &>/dev/null; then
+    echo "Error: terraform not found."
+    return 1
+  fi
+
+  # Check if graphviz is installed
+  if ! command -v dot &>/dev/null; then
+    echo "Error: graphviz is not installed."
+    echo "Please install graphviz to visualize Terraform graphs."
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "Run: brew install graphviz"
+    {{ else }}
+    echo "Run: sudo apt-get install graphviz"
+    {{ end }}
+    return 1
+  fi
+
+  # Generate plan if not exists
+  if [[ ! -f "$planfile" && ! -f "terraform.tfstate" ]]; then
+    echo "No plan file found. Creating plan..."
+    terraform plan -out="$planfile"
+  fi
+
+  # Create a temporary file for the DOT graph
+  local dotfile=$(mktemp)
+  local pngfile="terraform-graph-$(date +%Y%m%d-%H%M%S).png"
+
+  # Generate graph
+  if [[ -f "$planfile" ]]; then
+    echo "Generating graph from plan file: $planfile"
+    terraform graph -plan="$planfile" > "$dotfile"
+  else
+    echo "Generating graph from current state"
+    terraform graph > "$dotfile"
+  fi
+
+  # Convert DOT to PNG
+  dot -Tpng "$dotfile" -o "$pngfile"
+
+  # Clean up
+  rm "$dotfile"
+
+  echo "Terraform graph generated: $pngfile"
+
+  # Open the PNG file if possible
+  if command -v open &>/dev/null; then
+    open "$pngfile"
+  elif command -v xdg-open &>/dev/null; then
+    xdg-open "$pngfile"
+  fi
+}
+
+# Generate Terraform documentation
+tf-docs() {
+  local dir="${1:-.}"
+
+  # Check if terraform-docs is installed
+  if ! command -v terraform-docs &>/dev/null; then
+    echo "Error: terraform-docs not found."
+    echo "Install it with:"
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "brew install terraform-docs"
+    {{ else }}
+    echo "See https://terraform-docs.io/user-guide/installation/"
+    {{ end }}
+    return 1
+  fi
+
+  cd "$dir" || return 1
+
+  echo "Generating Terraform documentation..."
+  terraform-docs markdown table --output-file README.md --output-mode inject .
+
+  echo "Documentation generated successfully."
+}
+
+# Run Terraform validation and security checks
+tf-check() {
+  # Check for required tools
+  local missing_tools=()
+
+  if ! command -v terraform &>/dev/null; then
+    missing_tools+=("terraform")
+  fi
+
+  if ! command -v tflint &>/dev/null; then
+    missing_tools+=("tflint")
+  fi
+
+  if ! command -v tfsec &>/dev/null; then
+    missing_tools+=("tfsec")
+  fi
+
+  if [[ ${#missing_tools[@]} -gt 0 ]]; then
+    echo "Error: The following required tools are missing:"
+    for tool in "${missing_tools[@]}"; do
+      echo "- $tool"
+    done
+
+    echo "Please install the missing tools:"
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "brew install terraform tflint tfsec"
+    {{ else }}
+    echo "See the respective documentation for installation instructions"
+    {{ end }}
+    return 1
+  fi
+
+  echo "Running Terraform validation..."
+  terraform validate
+
+  echo -e "\nRunning Terraform fmt check..."
+  terraform fmt -check -recursive
+
+  echo -e "\nRunning TFLint..."
+  tflint
+
+  echo -e "\nRunning tfsec..."
+  tfsec .
+
+  echo -e "\nAll checks completed."
+}
+
+# Create a Terraform workspace
+tf-workspace-create() {
+  local workspace=$1
+
+  if [[ -z "$workspace" ]]; then
+    echo "Usage: tf-workspace-create <workspace-name>"
+    echo "Example: tf-workspace-create staging"
+    return 1
+  fi
+
+  # Check if workspace already exists
+  if terraform workspace list | grep -q "$workspace"; then
+    echo "Workspace '$workspace' already exists. Selecting it..."
+    terraform workspace select "$workspace"
+    return 0
+  fi
+
+  echo "Creating Terraform workspace: $workspace"
+  terraform workspace new "$workspace"
+
+  # Create a corresponding tfvars file if it doesn't exist
+  if [[ ! -f "env/$workspace.tfvars" ]]; then
+    echo "Creating tfvars file for workspace: env/$workspace.tfvars"
+
+    # Start with environment variable
+    cat > "env/$workspace.tfvars" << EOF
+# $workspace environment variables
+
+environment = "$workspace"
+
+EOF
+
+    echo "Please update env/$workspace.tfvars with appropriate values for the $workspace environment."
+  fi
+}
+
+# Calculate Terraform cost estimate
+tf-cost() {
+  local env="${1:-dev}"
+
+  # Check if infracost is installed
+  if ! command -v infracost &>/dev/null; then
+    echo "Error: infracost not found."
+    echo "Install it with:"
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "brew install infracost"
+    {{ else }}
+    echo "See https://www.infracost.io/docs/#quick-start"
+    {{ end }}
+    return 1
+  fi
+
+  echo "Calculating cost estimate for $env environment..."
+
+  # Generate Terraform plan
+  terraform plan -var-file="env/$env.tfvars" -out=tfplan.binary
+
+  # Convert binary plan to JSON
+  terraform show -json tfplan.binary > tfplan.json
+
+  # Run Infracost
+  infracost breakdown --path tfplan.json
+
+  # Clean up
+  rm -f tfplan.binary tfplan.json
+}
+
+# Export Terraform outputs to environment variables
+tf-export() {
+  echo "Exporting Terraform outputs as environment variables..."
+
+  # Check if terraform is installed
+  if ! command -v terraform &>/dev/null; then
+    echo "Error: terraform not found."
+    return 1
+  fi
+
+  # Get outputs in JSON format
+  local outputs_json=$(terraform output -json)
+
+  # Check if there are any outputs
+  if [[ -z "$outputs_json" || "$outputs_json" == "{}" ]]; then
+    echo "No Terraform outputs found."
+    return 0
+  fi
+
+  # Extract output names and values
+  local output_names=($(echo "$outputs_json" | jq -r 'keys[]'))
+
+  if [[ ${#output_names[@]} -eq 0 ]]; then
+    echo "No outputs found."
+    return 0
+  fi
+
+  echo "# Terraform outputs" > .env.terraform
+
+  for name in "${output_names[@]}"; do
+    local value=$(echo "$outputs_json" | jq -r ".[\"$name\"].value")
+    local type=$(echo "$outputs_json" | jq -r ".[\"$name\"].type")
+
+    # Convert to uppercase for environment variable name
+    local env_name=$(echo "$name" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
+
+    # Handle different types
+    if [[ "$type" == "string" || -z "$type" ]]; then
+      echo "export TF_$env_name=\"$value\"" >> .env.terraform
+      export "TF_$env_name=$value"
+    elif [[ "$type" == "map" || "$type" == "object" ]]; then
+      echo "# TF_$env_name is a complex type, exporting as JSON" >> .env.terraform
+      echo "export TF_${env_name}_JSON='$value'" >> .env.terraform
+      export "TF_${env_name}_JSON=$value"
+    elif [[ "$type" == "list" ]]; then
+      echo "# TF_$env_name is a list" >> .env.terraform
+      echo "export TF_${env_name}_JSON='$value'" >> .env.terraform
+      export "TF_${env_name}_JSON=$value"
+
+      # For convenience, also export the first element if it's a list of strings
+      local first_element=$(echo "$value" | jq -r '.[0] | select(. != null) | if type=="string" then . else empty end')
+      if [[ -n "$first_element" ]]; then
+        echo "export TF_${env_name}_FIRST=\"$first_element\"" >> .env.terraform
+        export "TF_${env_name}_FIRST=$first_element"
+      fi
+    fi
+
+    echo "Exported TF_$env_name"
+  done
+
+  echo "Terraform outputs exported to .env.terraform and current environment."
+  echo "To load in a new shell, run: source .env.terraform"
+}
+
+# =====================
+# Vault Workflows
+# =====================
+
+# Vault aliases
+alias vl='vault login'
+alias vs='vault server'
+alias vsecret='vault secret'
+alias vsl='vault secrets list'
+alias vsr='vault secrets read'
+alias vsw='vault secrets write'
+alias vsd='vault secrets delete'
+alias vtt='vault token'
+alias vkey='vault kv'
+alias vkg='vault kv get'
+alias vkp='vault kv put'
+alias vkd='vault kv delete'
+alias vkm='vault kv metadata'
+
+# Initialize a Vault development server
+vault-dev() {
+  local vault_dir=${1:-"$HOME/.vault-dev"}
+
+  # Check if Vault is installed
+  if ! command -v vault &>/dev/null; then
+    echo "Error: vault not found."
+    echo "Install it with:"
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "brew install vault"
+    {{ else }}
+    echo "See https://developer.hashicorp.com/vault/downloads"
+    {{ end }}
+    return 1
+  fi
+
+  # Create vault directory if it doesn't exist
+  mkdir -p "$vault_dir"
+  cd "$vault_dir" || return 1
+
+  echo "Starting Vault development server in: $vault_dir"
+
+  # Export Vault development address
+  export VAULT_ADDR='http://127.0.0.1:8200'
+
+  # Start Vault in development mode
+  vault server -dev -dev-root-token-id=root
+}
+
+# Set up Vault environment variables
+vault-env() {
+  local addr=${1:-"http://127.0.0.1:8200"}
+  local token=${2:-"root"}
+
+  export VAULT_ADDR="$addr"
+  export VAULT_TOKEN="$token"
+
+  echo "Vault environment variables set:"
+  echo "VAULT_ADDR=$VAULT_ADDR"
+  echo "VAULT_TOKEN=<redacted>"
+
+  # Verify connection
+  vault status
+}
+
+# Initialize a Vault KV store
+vault-kv-init() {
+  local path=${1:-"secret"}
+
+  echo "Enabling KV secrets engine at: $path"
+  vault secrets enable -path="$path" kv-v2
+
+  echo "KV secrets engine enabled successfully."
+}
+
+# Store a secret in Vault with confirmation
+vault-store() {
+  local path=$1
+  local key=$2
+  local value=$3
+
+  if [[ -z "$path" || -z "$key" ]]; then
+    echo "Usage: vault-store <path> <key> [value]"
+    echo "Example: vault-store secret/database username mysecretuser"
+    return 1
+  fi
+
+  # If value is not provided, prompt for it securely
+  if [[ -z "$value" ]]; then
+    echo -n "Enter value for $key: "
+    read -s value
+    echo
+  fi
+
+  echo "Storing secret at $path with key $key"
+  vault kv put "$path" "$key=$value"
+
+  echo "Secret stored successfully."
+}
+
+# Retrieve a secret from Vault
+vault-get() {
+  local path=$1
+  local key=$2
+
+  if [[ -z "$path" ]]; then
+    echo "Usage: vault-get <path> [key]"
+    echo "Example: vault-get secret/database username"
+    return 1
+  fi
+
+  if [[ -z "$key" ]]; then
+    echo "Retrieving all secrets at: $path"
+    vault kv get "$path"
+  else
+    echo "Retrieving $key from: $path"
+    vault kv get -field="$key" "$path"
+  fi
+}
+
+# Export Vault secrets as environment variables
+vault-export() {
+  local path=$1
+
+  if [[ -z "$path" ]]; then
+    echo "Usage: vault-export <path>"
+    echo "Example: vault-export secret/database"
+    return 1
+  fi
+
+  echo "Exporting secrets from $path as environment variables..."
+
+  # Get secrets in JSON format
+  local secrets_json=$(vault kv get -format=json "$path" | jq -r '.data.data')
+
+  # Check if there are any secrets
+  if [[ -z "$secrets_json" || "$secrets_json" == "null" ]]; then
+    echo "No secrets found at: $path"
+    return 1
+  fi
+
+  # Extract key names
+  local key_names=($(echo "$secrets_json" | jq -r 'keys[]'))
+
+  if [[ ${#key_names[@]} -eq 0 ]]; then
+    echo "No keys found."
+    return 1
+  fi
+
+  echo "# Vault secrets from $path" > .env.vault
+
+  for key in "${key_names[@]}"; do
+    local value=$(echo "$secrets_json" | jq -r ".[\"$key\"]")
+
+    # Convert to uppercase for environment variable name
+    local env_name=$(echo "$key" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
+
+    echo "export VAULT_${env_name}=\"$value\"" >> .env.vault
+    export "VAULT_${env_name}=$value"
+
+    echo "Exported VAULT_$env_name"
+  done
+
+  echo "Vault secrets exported to .env.vault and current environment."
+  echo "To load in a new shell, run: source .env.vault"
+}
+
+# Create a new Vault policy
+vault-policy-create() {
+  local policy_name=$1
+  local policy_file=$2
+
+  if [[ -z "$policy_name" || -z "$policy_file" ]]; then
+    echo "Usage: vault-policy-create <policy-name> <policy-file>"
+    echo "Example: vault-policy-create dev-policy dev-policy.hcl"
+    return 1
+  fi
+
+  if [[ ! -f "$policy_file" ]]; then
+    echo "Error: Policy file not found: $policy_file"
+    return 1
+  fi
+
+  echo "Creating Vault policy: $policy_name from file: $policy_file"
+  vault policy write "$policy_name" "$policy_file"
+
+  echo "Policy created successfully."
+}
+
+# Generate a policy file template
+vault-policy-template() {
+  local policy_name=$1
+  local path_prefix=${2:-"secret"}
+
+  if [[ -z "$policy_name" ]]; then
+    echo "Usage: vault-policy-template <policy-name> [path-prefix]"
+    echo "Example: vault-policy-template dev-policy secret/dev"
+    return 1
+  fi
+
+  local policy_file="${policy_name}.hcl"
+
+  cat > "$policy_file" << EOF
+# Vault Policy: $policy_name
+
+# Allow listing secrets
+path "$path_prefix/*" {
+  capabilities = ["list"]
+}
+
+# Allow reading secrets
+path "$path_prefix/data/*" {
+  capabilities = ["read"]
+}
+
+# Allow creating and updating secrets
+path "$path_prefix/data/*" {
+  capabilities = ["create", "update"]
+}
+
+# Allow deleting secrets
+path "$path_prefix/delete/*" {
+  capabilities = ["update"]
+}
+
+# Allow viewing metadata
+path "$path_prefix/metadata/*" {
+  capabilities = ["list", "read"]
+}
+
+# Deny these specific paths
+path "$path_prefix/data/admin" {
+  capabilities = ["deny"]
+}
+EOF
+
+  echo "Policy template created at: $policy_file"
+  echo "Review and modify it according to your needs before applying it with:"
+  echo "vault-policy-create $policy_name $policy_file"
+}
+
+# Create a new Vault token with a specific policy
+vault-token-create() {
+  local policy=$1
+  local ttl=${2:-"24h"}
+
+  if [[ -z "$policy" ]]; then
+    echo "Usage: vault-token-create <policy> [ttl]"
+    echo "Example: vault-token-create dev-policy 48h"
+    return 1
+  fi
+
+  echo "Creating Vault token with policy: $policy and TTL: $ttl"
+  vault token create -policy="$policy" -ttl="$ttl"
+}
+
+# =====================
+# Consul Workflows
+# =====================
+
+# Consul aliases
+alias cl='consul'
+alias cls='consul server'
+alias cla='consul agent'
+alias clk='consul kv'
+alias clkg='consul kv get'
+alias clkp='consul kv put'
+alias clkd='consul kv delete'
+alias clkl='consul kv list'
+alias cls='consul services'
+alias cln='consul nodes'
+
+# Start a Consul development server
+consul-dev() {
+  local data_dir=${1:-"$HOME/.consul-dev"}
+
+  # Check if Consul is installed
+  if ! command -v consul &>/dev/null; then
+    echo "Error: consul not found."
+    echo "Install it with:"
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "brew install consul"
+    {{ else }}
+    echo "See https://developer.hashicorp.com/consul/downloads"
+    {{ end }}
+    return 1
+  fi
+
+  # Create data directory if it doesn't exist
+  mkdir -p "$data_dir"
+
+  echo "Starting Consul development server with data directory: $data_dir"
+
+  consul agent -dev -data-dir="$data_dir"
+}
+
+# Store a key-value pair in Consul
+consul-put() {
+  local key=$1
+  local value=$2
+
+  if [[ -z "$key" || -z "$value" ]]; then
+    echo "Usage: consul-put <key> <value>"
+    echo "Example: consul-put config/database/url mysql://localhost:3306"
+    return 1
+  fi
+
+  echo "Storing $key = $value in Consul KV store"
+  consul kv put "$key" "$value"
+
+  echo "Key-value pair stored successfully."
+}
+
+# Retrieve a value from Consul KV store
+consul-get() {
+  local key=$1
+
+  if [[ -z "$key" ]]; then
+    echo "Usage: consul-get <key>"
+    echo "Example: consul-get config/database/url"
+    return 1
+  fi
+
+  echo "Retrieving value for key: $key"
+  consul kv get "$key"
+}
+
+# List keys in Consul KV store
+consul-list() {
+  local prefix=${1:-""}
+
+  echo "Listing keys with prefix: $prefix"
+  consul kv list -recurse "$prefix"
+}
+
+# Export Consul KV pairs as environment variables
+consul-export() {
+  local prefix=${1:-""}
+
+  echo "Exporting Consul KV pairs as environment variables..."
+
+  # Get all keys with the given prefix
+  local keys=($(consul kv list -recurse "$prefix"))
+
+  if [[ ${#keys[@]} -eq 0 ]]; then
+    echo "No keys found with prefix: $prefix"
+    return 0
+  fi
+
+  echo "# Consul KV pairs" > .env.consul
+
+  for key in "${keys[@]}"; do
+    local value=$(consul kv get "$key")
+
+    # Convert key to environment variable name
+    local env_name=$(echo "$key" | tr '/' '_' | tr '[:lower:]' '[:upper:]' | tr '-' '_')
+
+    echo "export CONSUL_${env_name}=\"$value\"" >> .env.consul
+    export "CONSUL_${env_name}=$value"
+
+    echo "Exported CONSUL_$env_name"
+  done
+
+  echo "Consul KV pairs exported to .env.consul and current environment."
+  echo "To load in a new shell, run: source .env.consul"
+}
+
+# Register a service with Consul
+consul-register() {
+  local service_name=$1
+  local port=${2:-8080}
+  local tags=${3:-""}
+
+  if [[ -z "$service_name" ]]; then
+    echo "Usage: consul-register <service-name> [port] [tags]"
+    echo "Example: consul-register web-app 8080 'web,http'"
+    return 1
+  fi
+
+  # Create a service definition file
+  local service_file="$service_name.json"
+
+  cat > "$service_file" << EOF
+{
+  "ID": "$service_name",
+  "Name": "$service_name",
+  "Port": $port,
+EOF
+
+  if [[ -n "$tags" ]]; then
+    IFS=',' read -ra TAG_ARRAY <<< "$tags"
+    echo "  \"Tags\": [" >> "$service_file"
+
+    for i in "${!TAG_ARRAY[@]}"; do
+      if [[ $i -eq $((${#TAG_ARRAY[@]}-1)) ]]; then
+        echo "    \"${TAG_ARRAY[$i]}\"" >> "$service_file"
+      else
+        echo "    \"${TAG_ARRAY[$i]}\"," >> "$service_file"
+      fi
+    done
+
+    echo "  ]," >> "$service_file"
+  fi
+
+  cat >> "$service_file" << EOF
+  "Check": {
+    "HTTP": "http://localhost:$port/health",
+    "Interval": "10s",
+    "Timeout": "1s"
+  }
+}
+EOF
+
+  echo "Registering service: $service_name with Consul"
+  consul services register "$service_file"
+
+  echo "Service registered successfully."
+  echo "Service definition saved to: $service_file"
+}
+
+# Deregister a service from Consul
+consul-deregister() {
+  local service_name=$1
+
+  if [[ -z "$service_name" ]]; then
+    echo "Usage: consul-deregister <service-name>"
+    echo "Example: consul-deregister web-app"
+    return 1
+  fi
+
+  echo "Deregistering service: $service_name from Consul"
+  consul services deregister -id="$service_name"
+
+  echo "Service deregistered successfully."
+}
+
+# =====================
+# Nomad Workflows
+# =====================
+
+# Nomad aliases
+alias nd='nomad'
+alias ndj='nomad job'
+alias ndje='nomad job run'
+alias ndjl='nomad job list'
+alias nds='nomad status'
+alias nda='nomad alloc'
+alias ndal='nomad alloc logs'
+alias ndae='nomad alloc exec'
+alias ndn='nomad node'
+alias ndnl='nomad node list'
+alias ndns='nomad node status'
+
+# Start a Nomad development server
+nomad-dev() {
+  local data_dir=${1:-"$HOME/.nomad-dev"}
+
+  # Check if Nomad is installed
+  if ! command -v nomad &>/dev/null; then
+    echo "Error: nomad not found."
+    echo "Install it with:"
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "brew install nomad"
+    {{ else }}
+    echo "See https://developer.hashicorp.com/nomad/downloads"
+    {{ end }}
+    return 1
+  fi
+
+  # Create data directory if it doesn't exist
+  mkdir -p "$data_dir"
+
+  echo "Starting Nomad development server with data directory: $data_dir"
+
+  nomad agent -dev -data-dir="$data_dir"
+}
+
+# Create a Nomad job template
+nomad-job-template() {
+  local job_name=$1
+  local job_type=${2:-"service"}
+
+  if [[ -z "$job_name" ]]; then
+    echo "Usage: nomad-job-template <job-name> [job-type]"
+    echo "Example: nomad-job-template web-app service"
+    echo "Job types: service, batch, system"
+    return 1
+  fi
+
+  local job_file="${job_name}.nomad"
+
+  cat > "$job_file" << EOF
+# Job: $job_name
+job "$job_name" {
+  datacenters = ["dc1"]
+  type = "$job_type"
+
+  group "app" {
+    count = 1
+
+    network {
+      port "http" {
+        to = 8080
+      }
+    }
+
+    service {
+      name = "$job_name"
+      port = "http"
+
+      check {
+        type     = "http"
+        path     = "/health"
+        interval = "10s"
+        timeout  = "2s"
+      }
+    }
+
+    task "server" {
+      driver = "docker"
+
+      config {
+        image = "nginx:latest"
+        ports = ["http"]
+      }
+
+      resources {
+        cpu    = 500
+        memory = 256
+      }
+    }
+  }
+}
+EOF
+
+  echo "Nomad job template created at: $job_file"
+  echo "Review and modify it according to your needs before applying it with:"
+  echo "nomad job run $job_file"
+}
+
+# Run a Nomad job
+nomad-run() {
+  local job_file=$1
+
+  if [[ -z "$job_file" ]]; then
+    echo "Usage: nomad-run <job-file>"
+    echo "Example: nomad-run web-app.nomad"
+    return 1
+  fi
+
+  if [[ ! -f "$job_file" ]]; then
+    echo "Error: Job file not found: $job_file"
+    return 1
+  fi
+
+  echo "Running Nomad job: $job_file"
+  nomad job run "$job_file"
+}
+
+# Check Nomad job status
+nomad-status() {
+  local job_name=$1
+
+  if [[ -z "$job_name" ]]; then
+    echo "Usage: nomad-status <job-name>"
+    echo "Example: nomad-status web-app"
+    return 1
+  fi
+
+  echo "Checking status of Nomad job: $job_name"
+  nomad status "$job_name"
+}
+
+# View Nomad job logs
+nomad-logs() {
+  local job_name=$1
+  local task=${2:-"server"}
+
+  if [[ -z "$job_name" ]]; then
+    echo "Usage: nomad-logs <job-name> [task-name]"
+    echo "Example: nomad-logs web-app server"
+    return 1
+  fi
+
+  # Get the allocation ID for the job
+  local alloc_id=$(nomad job status -t '{{range .Allocations}}{{if eq .ClientStatus "running"}}{{.ID}}{{end}}{{end}}' "$job_name")
+
+  if [[ -z "$alloc_id" ]]; then
+    echo "Error: No running allocation found for job: $job_name"
+    return 1
+  fi
+
+  echo "Viewing logs for job: $job_name, task: $task, allocation: $alloc_id"
+  nomad alloc logs "$alloc_id" "$task"
+}
+
+# Execute a command in a Nomad allocation
+nomad-exec() {
+  local job_name=$1
+  local command=${2:-"/bin/sh"}
+  local task=${3:-"server"}
+
+  if [[ -z "$job_name" ]]; then
+    echo "Usage: nomad-exec <job-name> [command] [task-name]"
+    echo "Example: nomad-exec web-app '/bin/sh' server"
+    return 1
+  fi
+
+  # Get the allocation ID for the job
+  local alloc_id=$(nomad job status -t '{{range .Allocations}}{{if eq .ClientStatus "running"}}{{.ID}}{{end}}{{end}}' "$job_name")
+
+  if [[ -z "$alloc_id" ]]; then
+    echo "Error: No running allocation found for job: $job_name"
+    return 1
+  fi
+
+  echo "Executing command in job: $job_name, task: $task, allocation: $alloc_id"
+  nomad alloc exec -task="$task" -i -t "$alloc_id" "$command"
+}
+
+# Stop a Nomad job
+nomad-stop() {
+  local job_name=$1
+
+  if [[ -z "$job_name" ]]; then
+    echo "Usage: nomad-stop <job-name>"
+    echo "Example: nomad-stop web-app"
+    return 1
+  fi
+
+  echo "Stopping Nomad job: $job_name"
+  nomad job stop "$job_name"
+}
+
+# =====================
+# Packer Workflows
+# =====================
+
+# Packer aliases
+alias pk='packer'
+alias pkb='packer build'
+alias pkv='packer validate'
+alias pkf='packer fmt'
+alias pki='packer init'
+
+# Create a Packer template
+packer-template() {
+  local template_name=$1
+  local builder=${2:-"amazon-ebs"}
+
+  if [[ -z "$template_name" ]]; then
+    echo "Usage: packer-template <template-name> [builder]"
+    echo "Example: packer-template web-server amazon-ebs"
+    echo "Builders: amazon-ebs, docker, virtualbox-iso, azure-arm, googlecompute, etc."
+    return 1
+  fi
+
+  local template_dir="$template_name-packer"
+  mkdir -p "$template_dir"
+  cd "$template_dir" || return 1
+
+  # Create variables file
+  cat > variables.pkr.hcl << EOF
+# Packer Variables
+variable "ami_name" {
+  type    = string
+  default = "$template_name-{{timestamp}}"
+}
+
+variable "region" {
+  type    = string
+  default = "us-west-2"
+}
+
+variable "instance_type" {
+  type    = string
+  default = "t2.micro"
+}
+
+variable "ssh_username" {
+  type    = string
+  default = "ubuntu"
+}
+
+locals {
+  timestamp = regex_replace(timestamp(), "[- TZ:]", "")
+}
+EOF
+
+  # Create main template file
+  cat > main.pkr.hcl << EOF
+# Packer Template for $template_name
+
+packer {
+  required_plugins {
+    amazon = {
+      version = ">= 1.0.0"
+      source  = "github.com/hashicorp/amazon"
+    }
+  }
+}
+
+source "$builder" "$template_name" {
+EOF
+
+  # Add builder-specific configuration
+  case $builder in
+    amazon-ebs)
+      cat >> main.pkr.hcl << EOF
+  ami_name      = var.ami_name
+  instance_type = var.instance_type
+  region        = var.region
+  source_ami_filter {
+    filters = {
+      name                = "ubuntu/images/*ubuntu-focal-20.04-amd64-server-*"
+      root-device-type    = "ebs"
+      virtualization-type = "hvm"
+    }
+    most_recent = true
+    owners      = ["099720109477"] # Canonical
+  }
+  ssh_username = var.ssh_username
+EOF
+      ;;
+    docker)
+      cat >> main.pkr.hcl << EOF
+  image  = "ubuntu:20.04"
+  commit = true
+EOF
+      ;;
+    virtualbox-iso)
+      cat >> main.pkr.hcl << EOF
+  guest_os_type    = "Ubuntu_64"
+  iso_url          = "http://releases.ubuntu.com/20.04/ubuntu-20.04.3-live-server-amd64.iso"
+  iso_checksum     = "sha256:f8e3086f3cea0fb3fefb29937ab5ed9d19e767079633960ccb50e76153effc98"
+  ssh_username     = var.ssh_username
+  ssh_password     = "packer"
+  shutdown_command = "echo 'packer' | sudo -S shutdown -P now"
+EOF
+      ;;
+    azure-arm)
+      cat >> main.pkr.hcl << EOF
+  os_type          = "Linux"
+  image_publisher  = "Canonical"
+  image_offer      = "UbuntuServer"
+  image_sku        = "18.04-LTS"
+  location         = "West US 2"
+  vm_size          = "Standard_B1s"
+  managed_image_resource_group_name = "packer_images"
+  managed_image_name               = var.ami_name
+EOF
+      ;;
+    googlecompute)
+      cat >> main.pkr.hcl << EOF
+  project_id      = "your-project-id"
+  source_image    = "ubuntu-2004-focal-v20220204"
+  zone            = "us-central1-a"
+  ssh_username    = var.ssh_username
+  image_name      = var.ami_name
+EOF
+      ;;
+  esac
+
+  # Close the source block
+  cat >> main.pkr.hcl << EOF
+}
+
+build {
+  sources = ["source.$builder.$template_name"]
+
+  provisioner "shell" {
+    inline = [
+      "echo Updating system packages",
+      "sudo apt-get update",
+      "sudo apt-get upgrade -y"
+    ]
+  }
+
+  provisioner "shell" {
+    script = "scripts/setup.sh"
+  }
+
+  post-processor "manifest" {
+    output     = "manifest.json"
+    strip_path = true
+  }
+}
+EOF
+
+  # Create scripts directory and setup script
+  mkdir -p scripts
+  cat > scripts/setup.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "Installing essential packages..."
+sudo apt-get update
+sudo apt-get install -y \
+  curl \
+  wget \
+  git \
+  vim \
+  unzip \
+  jq \
+  nginx
+
+echo "Configuring system..."
+sudo systemctl enable nginx
+sudo systemctl start nginx
+
+echo "Cleaning up..."
+sudo apt-get clean
+sudo apt-get autoremove -y
+
+echo "Setup completed successfully!"
+EOF
+  chmod +x scripts/setup.sh
+
+  # Create .gitignore
+  cat > .gitignore << EOF
+*.box
+output/
+output-*/
+manifest.json
+packer_cache/
+.env
+*.log
+.DS_Store
+EOF
+
+  # Create README.md
+  cat > README.md << EOF
+# $template_name Packer Template
+
+This repository contains a Packer template for building a $template_name image.
+
+## Prerequisites
+
+- [Packer](https://www.packer.io/downloads) (>= 1.7.0)
+- Access to the cloud provider: $(echo "$builder" | sed 's/-.*$//')
+
+## Usage
+
+Initialize Packer plugins:
+
+\`\`\`
+packer init .
+\`\`\`
+
+Validate the template:
+
+\`\`\`
+packer validate .
+\`\`\`
+
+Build the image:
+
+\`\`\`
+packer build .
+\`\`\`
+
+## Customization
+
+Edit \`variables.pkr.hcl\` to customize the build parameters.
+
+## License
+
+MIT
+EOF
+
+  # Initialize git repository
+  git init
+  git add .
+  git commit -m "Initial Packer template for $template_name"
+
+  echo "Packer template for $template_name created successfully at: $template_dir"
+  echo "Next steps:"
+  echo "1. cd $template_dir"
+  echo "2. Edit variables.pkr.hcl to customize parameters"
+  echo "3. Edit scripts/setup.sh to add your provisioning steps"
+  echo "4. Run: packer init ."
+  echo "5. Run: packer validate ."
+  echo "6. Run: packer build ."
+}
+
+# Check and format Packer templates
+packer-lint() {
+  local dir=${1:-.}
+
+  # Check if packer is installed
+  if ! command -v packer &>/dev/null; then
+    echo "Error: packer not found."
+    return 1
+  fi
+
+  echo "Validating Packer templates in $dir..."
+
+  # First format all HCL files
+  echo "Formatting Packer HCL files..."
+  find "$dir" -name "*.pkr.hcl" -exec packer fmt {} \;
+
+  # Then validate the templates
+  echo "Validating Packer templates..."
+  packer validate "$dir"
+
+  echo "Packer templates validated successfully."
+}
+
+# Build a Packer image with variables
+packer-build() {
+  local template_dir=${1:-.}
+  shift
+  local vars=("$@")
+
+  if [[ ! -d "$template_dir" ]]; then
+    echo "Error: Template directory not found: $template_dir"
+    return 1
+  fi
+
+  cd "$template_dir" || return 1
+
+  # Initialize packer plugins if needed
+  if [[ -f "main.pkr.hcl" && ! -d ".packer.d/plugins" ]]; then
+    echo "Initializing Packer plugins..."
+    packer init .
+  fi
+
+  # Construct var flags
+  local var_flags=""
+  for var in "${vars[@]}"; do
+    var_flags="$var_flags -var=$var"
+  done
+
+  echo "Building Packer image from $template_dir..."
+
+  if [[ -f "variables.pkr.hcl" ]]; then
+    echo "Using variables from variables.pkr.hcl"
+  fi
+
+  packer build $var_flags .
+}
+
+# Inspect a Packer template
+packer-inspect() {
+  local template_dir=${1:-.}
+
+  if [[ ! -d "$template_dir" ]]; then
+    echo "Error: Template directory not found: $template_dir"
+    return 1
+  fi
+
+  cd "$template_dir" || return 1
+
+  echo "Inspecting Packer template in $template_dir..."
+
+  # Print template files
+  echo "Template files:"
+  find . -name "*.pkr.hcl" | sort
+
+  # Print variables
+  if [[ -f "variables.pkr.hcl" ]]; then
+    echo -e "\nVariables:"
+    grep -E "^variable" variables.pkr.hcl | sed 's/variable "//' | sed 's/" {//'
+
+    echo -e "\nDefault values:"
+    grep -A2 "default =" variables.pkr.hcl | grep -v "^#" | sed 's/  default = //'
+  fi
+
+  # Print builders
+  echo -e "\nBuilders:"
+  grep -E "^source" main.pkr.hcl | sed 's/source "//' | sed 's/" "/: /' | sed 's/" {//'
+
+  # Print provisioners
+  echo -e "\nProvisioners:"
+  grep -A1 "provisioner" main.pkr.hcl | grep -v "^#" | grep "{" | sed 's/  provisioner "//' | sed 's/" {//'
+
+  # Print post-processors
+  echo -e "\nPost-processors:"
+  grep -A1 "post-processor" main.pkr.hcl | grep -v "^#" | grep "{" | sed 's/  post-processor "//' | sed 's/" {//'
+}
+
+# =====================
+# Boundary Workflows
+# =====================
+
+# Boundary aliases
+alias bd='boundary'
+alias bda='boundary authenticate'
+alias bdt='boundary targets'
+alias bdtl='boundary targets list'
+alias bdc='boundary connect'
+
+# Set up Boundary environment
+boundary-env() {
+  local addr=${1:-"http://127.0.0.1:9200"}
+
+  export BOUNDARY_ADDR="$addr"
+
+  echo "Boundary environment variables set:"
+  echo "BOUNDARY_ADDR=$BOUNDARY_ADDR"
+
+  # Check if boundary is installed
+  if ! command -v boundary &>/dev/null; then
+    echo "Warning: boundary command not found."
+    echo "Install it with:"
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "brew install boundary"
+    {{ else }}
+    echo "See https://developer.hashicorp.com/boundary/downloads"
+    {{ end }}
+  fi
+}
+
+# Authenticate with Boundary
+boundary-login() {
+  local auth_method_id=${1:-"ampw_1234567890"}
+  local username=${2:-"admin"}
+  local password=${3:-"password"}
+
+  if [[ -z "$BOUNDARY_ADDR" ]]; then
+    echo "BOUNDARY_ADDR not set. Run boundary-env first."
+    return 1
+  fi
+
+  # If password is not provided, prompt for it securely
+  if [[ -z "$password" ]]; then
+    echo -n "Enter password for $username: "
+    read -s password
+    echo
+  fi
+
+  echo "Authenticating with Boundary as $username..."
+  boundary authenticate password \
+    -auth-method-id="$auth_method_id" \
+    -login-name="$username" \
+    -password="$password"
+
+  echo "Authentication successful."
+}
+
+# List Boundary targets
+boundary-targets() {
+  local scope_id=${1:-"global"}
+
+  echo "Listing Boundary targets in scope $scope_id..."
+  boundary targets list -scope-id="$scope_id"
+}
+
+# Connect to a Boundary target
+boundary-connect() {
+  local target_id=$1
+  local port=${2:-22}
+
+  if [[ -z "$target_id" ]]; then
+    echo "Usage: boundary-connect <target-id> [port]"
+    echo "Example: boundary-connect ttcp_1234567890 22"
+    return 1
+  fi
+
+  echo "Connecting to Boundary target $target_id on port $port..."
+  boundary connect -target-id="$target_id" -port="$port"
+}
+
+# =====================
+# Waypoint Workflows
+# =====================
+
+# Waypoint aliases
+alias wp='waypoint'
+alias wpi='waypoint init'
+alias wpb='waypoint build'
+alias wpd='waypoint deploy'
+alias wpr='waypoint release'
+alias wps='waypoint status'
+alias wpu='waypoint up'
+
+# Create a Waypoint project template
+waypoint-template() {
+  local project_name=$1
+  local platform=${2:-"docker"}
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: waypoint-template <project-name> [platform]"
+    echo "Example: waypoint-template my-app docker"
+    echo "Platforms: docker, kubernetes, aws-ecs, nomad, etc."
+    return 1
+  fi
+
+  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+
+  # Create project directory if it doesn't exist
+  mkdir -p "$project_dir"
+  cd "$project_dir" || return 1
+
+  # Create the waypoint.hcl file
+  cat > waypoint.hcl << EOF
+# The name of your project
+project = "$project_name"
+
+# Labels can be specified for organizational purposes
+labels = {
+  "env" = "dev",
+  "app" = "$project_name",
+  "owner" = "$(git config --get user.name || echo "developer")"
+}
+
+# App defines a single application to be deployed
+app "$project_name" {
+  # Build specifies how an application is built
+  build {
+    use "docker" {
+EOF
+
+  # Add platform-specific build configuration
+  case $platform in
+    docker)
+      cat >> waypoint.hcl << EOF
+      dockerfile = "Dockerfile"
+      disable_entrypoint = false
+EOF
+      ;;
+    pack)
+      cat >> waypoint.hcl << EOF
+      use "pack" {
+        builder = "heroku/buildpacks:20"
+      }
+EOF
+      ;;
+  esac
+
+  # Close the build block
+  cat >> waypoint.hcl << EOF
+    }
+
+    # Registry configures where the built image is stored
+    registry {
+      use "docker" {
+        image = "$project_name"
+        tag = "latest"
+        local = true
+      }
+    }
+  }
+
+  # Deploy defines how the application is deployed
+  deploy {
+EOF
+
+  # Add platform-specific deploy configuration
+  case $platform in
+    docker)
+      cat >> waypoint.hcl << EOF
+    use "docker" {
+      service_port = 3000
+      static_environment = {
+        "PORT" = "3000"
+      }
+    }
+EOF
+      ;;
+    kubernetes)
+      cat >> waypoint.hcl << EOF
+    use "kubernetes" {
+      namespace = "default"
+      probe_path = "/"
+      service_port = 3000
+
+      env = {
+        "PORT" = "3000"
+      }
+    }
+EOF
+      ;;
+    aws-ecs)
+      cat >> waypoint.hcl << EOF
+    use "aws-ecs" {
+      region = "us-west-2"
+      memory = 512
+      cpu = 256
+
+      environment = {
+        "PORT" = "3000"
+      }
+    }
+EOF
+      ;;
+    nomad)
+      cat >> waypoint.hcl << EOF
+    use "nomad" {
+      datacenter = "dc1"
+      namespace = "default"
+
+      env = {
+        "PORT" = "3000"
+      }
+
+      service_port = 3000
+    }
+EOF
+      ;;
+  esac
+
+  # Close the deploy block and add release configuration
+  cat >> waypoint.hcl << EOF
+  }
+
+  # Release configures how the application is released
+  release {
+    use "exec" {
+      command = ["echo", "Application $project_name released!"]
+    }
+  }
+}
+EOF
+
+  # Create a sample Dockerfile
+  cat > Dockerfile << EOF
+FROM node:14-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+EOF
+
+  # Create a basic package.json for Node.js app
+  cat > package.json << EOF
+{
+  "name": "$project_name",
+  "version": "1.0.0",
+  "description": "A sample application for Waypoint",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \\"Error: no test specified\\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
+EOF
+
+  # Create a basic Express app
+  cat > index.js << EOF
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('Hello from $project_name!');
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.listen(port, () => {
+  console.log(\`$project_name listening at http://localhost:\${port}\`);
+});
+EOF
+
+  # Create .gitignore
+  cat > .gitignore << EOF
+node_modules/
+.waypoint/
+dist/
+.env
+*.log
+.DS_Store
+EOF
+
+  # Create README.md
+  cat > README.md << EOF
+# $project_name
+
+A Waypoint project using the $platform platform.
+
+## Prerequisites
+
+- [Waypoint](https://www.waypointproject.io/downloads) installed
+- Docker or applicable platform dependencies
+
+## Usage
+
+Initialize the project:
+
+\`\`\`
+waypoint init
+\`\`\`
+
+Deploy the application:
+
+\`\`\`
+waypoint up
+\`\`\`
+
+Or run build, deploy, and release separately:
+
+\`\`\`
+waypoint build
+waypoint deploy
+waypoint release
+\`\`\`
+
+## License
+
+MIT
+EOF
+
+  # Initialize git repository
+  git init
+  git add .
+  git commit -m "Initial Waypoint project setup"
+
+  echo "Waypoint project '$project_name' initialized successfully at $project_dir"
+  echo "Next steps:"
+  echo "1. cd $project_dir"
+  echo "2. Install dependencies: npm install"
+  echo "3. Initialize Waypoint: waypoint init"
+  echo "4. Deploy your app: waypoint up"
+}
+
+# Initialize Waypoint server in development mode
+waypoint-server-dev() {
+  # Check if waypoint is installed
+  if ! command -v waypoint &>/dev/null; then
+    echo "Error: waypoint not found."
+    echo "Install it with:"
+    {{ if eq .chezmoi.os "darwin" }}
+    echo "brew install waypoint"
+    {{ else }}
+    echo "See https://developer.hashicorp.com/waypoint/downloads"
+    {{ end }}
+    return 1
+  fi
+
+  echo "Starting Waypoint server in development mode..."
+  waypoint server run
+}
+
+# Run the complete Waypoint deployment workflow
+waypoint-up() {
+  local folder=${1:-.}
+
+  cd "$folder" || return 1
+
+  echo "Running Waypoint up in $(basename "$PWD")..."
+  waypoint up
+}
+
+# Check Waypoint project status
+waypoint-status() {
+  echo "Checking Waypoint project status..."
+  waypoint status
+}
+
+# View Waypoint deployment logs
+waypoint-logs() {
+  local deployment=${1:-"latest"}
+
+  echo "Viewing logs for deployment: $deployment"
+  waypoint logs -deployment="$deployment"
+}
+
+# Execute a command in a Waypoint deployment
+waypoint-exec() {
+  local command=${1:-"/bin/sh"}
+  local deployment=${2:-"latest"}
+
+  if [[ -z "$command" ]]; then
+    echo "Usage: waypoint-exec <command> [deployment]"
+    echo "Example: waypoint-exec '/bin/sh' latest"
+    return 1
+  fi
+
+  echo "Executing command in deployment: $deployment"
+  waypoint exec "$command" -deployment="$deployment"
+}
+{{- end }}

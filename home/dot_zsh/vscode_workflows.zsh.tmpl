@@ -1,0 +1,1231 @@
+# VS Code Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if or (eq .preferences.enable_vscode true) (eq .enable_editors true) -}}
+# VS Code environment
+export VSCODE_EXTENSIONS="${XDG_DATA_HOME:-$HOME/.local/share}/code/extensions"
+
+# Aliases for VS Code
+{{ if eq .chezmoi.os "darwin" -}}
+alias code='open -a "Visual Studio Code"'
+{{- else -}}
+# Linux aliases are handled by VS Code installation
+{{- end }}
+
+alias c="code"
+alias cr="code -r"
+alias copen="code --wait ."
+
+# Open VS Code in current directory
+vs() {
+  code "${1:-.}"
+}
+
+# Open VS Code with a specific project or in current directory
+vsproj() {
+  local project_name=$1
+
+  if [[ -z "$project_name" ]]; then
+    # If no project name is provided, open VS Code in the current directory
+    echo "Opening VS Code in current directory"
+    code .
+    return 0
+  fi
+
+  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+
+  if [[ ! -d "$project_dir" ]]; then
+    echo "Project directory not found: $project_dir"
+    echo "Do you want to create it? (y/n)"
+    read -r answer
+
+    if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
+      mkdir -p "$project_dir"
+      echo "Created project directory: $project_dir"
+    else
+      return 1
+    fi
+  fi
+
+  echo "Opening VS Code with project: $project_name"
+  code "$project_dir"
+}
+
+# Export a list of installed VS Code extensions
+vscode-export-extensions() {
+  local output_file=${1:-"vscode-extensions.txt"}
+
+  if ! command -v code &>/dev/null; then
+    echo "Error: VS Code is not installed or not in PATH."
+    return 1
+  fi
+
+  echo "Exporting VS Code extensions to $output_file..."
+  code --list-extensions > "$output_file"
+
+  echo "Exported $(wc -l < "$output_file") extensions to $output_file."
+}
+
+# Install VS Code extensions from a list
+vscode-install-extensions() {
+  local input_file=${1:-"vscode-extensions.txt"}
+
+  if ! command -v code &>/dev/null; then
+    echo "Error: VS Code is not installed or not in PATH."
+    return 1
+  fi
+
+  if [[ ! -f "$input_file" ]]; then
+    echo "Error: Extensions list file not found: $input_file"
+    return 1
+  fi
+
+  echo "Installing VS Code extensions from $input_file..."
+
+  local count=0
+  while IFS= read -r extension || [[ -n "$extension" ]]; do
+    if [[ -n "$extension" && ! "$extension" =~ ^# ]]; then
+      echo "Installing extension: $extension"
+      code --install-extension "$extension"
+      ((count++))
+    fi
+  done < "$input_file"
+
+  echo "Installed $count VS Code extensions."
+}
+
+# Create a collection of recommended extensions for a project
+vscode-create-workspace() {
+  local workspace_name=$1
+  local extensions=("${@:2}")
+
+  if [[ -z "$workspace_name" ]]; then
+    echo "Usage: vscode-create-workspace <workspace-name> [extension1 extension2 ...]"
+    echo "Example: vscode-create-workspace my-web-project ms-vscode.vscode-typescript-next esbenp.prettier-vscode"
+    return 1
+  fi
+
+  # Create the .vscode directory if it doesn't exist
+  mkdir -p .vscode
+
+  # Create or update extensions.json
+  cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+EOF
+
+  # Add extensions to the list
+  local first=true
+  for extension in "${extensions[@]}"; do
+    if $first; then
+      echo "    \"$extension\"" >> .vscode/extensions.json
+      first=false
+    else
+      echo "    ,\"$extension\"" >> .vscode/extensions.json
+    fi
+  done
+
+  # If no extensions were provided, add some common ones
+  if $first; then
+    echo "    \"esbenp.prettier-vscode\"," >> .vscode/extensions.json
+    echo "    \"dbaeumer.vscode-eslint\"," >> .vscode/extensions.json
+    echo "    \"ms-vscode.vscode-typescript-next\"" >> .vscode/extensions.json
+  fi
+
+  # Close the JSON file
+  cat >> .vscode/extensions.json << EOF
+  ]
+}
+EOF
+
+  # Create settings.json with some basic settings
+  cat > .vscode/settings.json << EOF
+{
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.rulers": [80, 120],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true
+}
+EOF
+
+  # Create a workspace file
+  cat > "$workspace_name.code-workspace" << EOF
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {}
+}
+EOF
+
+  echo "VS Code workspace created:"
+  echo "- $workspace_name.code-workspace"
+  echo "- .vscode/extensions.json with ${#extensions[@]} recommended extensions"
+  echo "- .vscode/settings.json with basic editor settings"
+  echo ""
+  echo "Open the workspace with: code $workspace_name.code-workspace"
+}
+
+# Open VS Code with a specific workspace
+vsworkspace() {
+  local workspace=$1
+
+  if [[ -z "$workspace" ]]; then
+    echo "Usage: vsworkspace <workspace-file>"
+    echo "Example: vsworkspace my-project.code-workspace"
+    return 1
+  fi
+
+  # Check if the extension is already .code-workspace
+  if [[ "$workspace" != *".code-workspace" ]]; then
+    workspace="$workspace.code-workspace"
+  fi
+
+  # Check if workspace exists
+  if [[ ! -f "$workspace" ]]; then
+    echo "Workspace file not found: $workspace"
+    return 1
+  fi
+
+  echo "Opening VS Code workspace: $workspace"
+  code "$workspace"
+}
+
+# Create a collection of recommended settings for different project types
+vscode-setup() {
+  local project_type=$1
+
+  if [[ -z "$project_type" ]]; then
+    echo "Usage: vscode-setup <project-type>"
+    echo "Example project types: node, react, python, go, rust, java, ruby, rails, dotnet"
+    return 1
+  fi
+
+  # Create .vscode directory
+  mkdir -p .vscode
+
+  # Set up extensions and settings based on project type
+  case $project_type in
+    node|javascript)
+      cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next"
+  ]
+}
+EOF
+
+      cat > .vscode/settings.json << EOF
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "eslint.validate": ["javascript", "typescript"],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  },
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.updateImportsOnFileMove.enabled": "always"
+}
+EOF
+      ;;
+
+    react)
+      cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "dsznajder.es7-react-js-snippets",
+    "orta.vscode-jest"
+  ]
+}
+EOF
+
+      cat > .vscode/settings.json << EOF
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true
+  },
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+  "emmet.triggerExpansionOnTab": true
+}
+EOF
+      ;;
+
+    python)
+      cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "njpwerner.autodocstring",
+    "matangover.mypy"
+  ]
+}
+EOF
+
+      cat > .vscode/settings.json << EOF
+{
+  "editor.formatOnSave": true,
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.mypyEnabled": true,
+  "python.formatting.provider": "black",
+  "python.testing.pytestEnabled": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "search.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/venv": true,
+    "**/.venv": true
+  },
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": false,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  }
+}
+EOF
+      ;;
+
+    go)
+      cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+    "golang.go",
+    "766b.go-outliner",
+    "premparihar.gotestexplorer"
+  ]
+}
+EOF
+
+      cat > .vscode/settings.json << EOF
+{
+  "go.useLanguageServer": true,
+  "go.formatTool": "goimports",
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast"],
+  "editor.formatOnSave": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+  "[go]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
+  "go.testOnSave": false,
+  "go.coverOnSave": false,
+  "go.testFlags": ["-v"]
+}
+EOF
+      ;;
+
+    rust)
+      cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+    "rust-lang.rust-analyzer",
+    "serayuzgur.crates",
+    "tamasfe.even-better-toml",
+    "vadimcn.vscode-lldb"
+  ]
+}
+EOF
+
+      cat > .vscode/settings.json << EOF
+{
+  "editor.formatOnSave": true,
+  "rust-analyzer.checkOnSave.command": "clippy",
+  "rust-analyzer.inlayHints.enable": true,
+  "rust-analyzer.inlayHints.chainingHints": true,
+  "rust-analyzer.inlayHints.parameterHints": true,
+  "rust-analyzer.inlayHints.typeHints": true,
+  "rust-analyzer.cargo.allFeatures": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.rulers": [100],
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  }
+}
+EOF
+      ;;
+
+    java)
+      cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+    "vscjava.vscode-java-pack",
+    "redhat.java",
+    "vscjava.vscode-maven",
+    "vscjava.vscode-java-debug",
+    "vscjava.vscode-java-test"
+  ]
+}
+EOF
+
+      cat > .vscode/settings.json << EOF
+{
+  "editor.formatOnSave": true,
+  "java.format.enabled": true,
+  "java.format.settings.url": ".vscode/java-formatter.xml",
+  "java.completion.importOrder": [
+    "java",
+    "javax",
+    "com",
+    "org"
+  ],
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.rulers": [120]
+}
+EOF
+      ;;
+
+    ruby|rails)
+      cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+    "rebornix.ruby",
+    "castwide.solargraph",
+    "kaiwood.endwise",
+    "wingrunr21.vscode-ruby"
+  ]
+}
+EOF
+
+      cat > .vscode/settings.json << EOF
+{
+  "editor.formatOnSave": true,
+  "ruby.format": "rubocop",
+  "ruby.useBundler": true,
+  "ruby.useLanguageServer": true,
+  "ruby.lint": {
+    "rubocop": {
+      "useBundler": true
+    }
+  },
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.associations": {
+    "*.erb": "erb"
+  },
+  "emmet.includeLanguages": {
+    "erb": "html"
+  },
+  "[ruby]": {
+    "editor.tabSize": 2
+  }
+}
+EOF
+
+      if [[ "$project_type" == "rails" ]]; then
+        # Add Rails-specific settings
+        cat >> .vscode/settings.json << EOF
+,
+  "search.exclude": {
+    "**/tmp": true,
+    "**/log": true,
+    "**/vendor": true
+  },
+  "files.associations": {
+    "*.erb": "erb",
+    "*.jbuilder": "ruby"
+  }
+EOF
+      fi
+      ;;
+
+    dotnet|csharp)
+      cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+    "ms-dotnettools.csharp",
+    "formulahendry.dotnet-test-explorer",
+    "jmrog.vscode-nuget-package-manager",
+    "k--kato.docomment"
+  ]
+}
+EOF
+
+      cat > .vscode/settings.json << EOF
+{
+  "editor.formatOnSave": true,
+  "omnisharp.enableRoslynAnalyzers": true,
+  "omnisharp.enableEditorConfigSupport": true,
+  "omnisharp.enableImportCompletion": true,
+  "dotnet-test-explorer.testProjectPath": "**/*Tests.csproj",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.rulers": [120],
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.tabSize": 4
+  },
+  "csharp.suppressDotnetRestoreNotification": false,
+  "csharp.suppressBuildAssetsNotification": false
+}
+EOF
+      ;;
+
+    *)
+      echo "Unknown project type: $project_type"
+      echo "Setting up with generic configuration"
+
+      cat > .vscode/extensions.json << EOF
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "streetsidesoftware.code-spell-checker",
+    "yzhang.markdown-all-in-one"
+  ]
+}
+EOF
+
+      cat > .vscode/settings.json << EOF
+{
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.rulers": [80, 120],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true
+}
+EOF
+      ;;
+  esac
+
+  # Create a launch.json file for common debugging scenarios
+  mkdir -p .vscode
+
+  case $project_type in
+    node|javascript|react)
+      cat > .vscode/launch.json << EOF
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Program",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "\${workspaceFolder}/index.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Jest Current File",
+      "program": "\${workspaceFolder}/node_modules/.bin/jest",
+      "args": [
+        "\${fileBasename}",
+        "--config",
+        "jest.config.js"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}
+EOF
+      ;;
+
+    python)
+      cat > .vscode/launch.json << EOF
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "\${file}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Module",
+      "type": "python",
+      "request": "launch",
+      "module": "enter-your-module-name",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Django",
+      "type": "python",
+      "request": "launch",
+      "program": "\${workspaceFolder}/manage.py",
+      "args": [
+        "runserver"
+      ],
+      "django": true,
+      "console": "integratedTerminal"
+    }
+  ]
+}
+EOF
+      ;;
+
+    go)
+      cat > .vscode/launch.json << EOF
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Package",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "\${fileDirname}"
+    },
+    {
+      "name": "Launch Main",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "\${workspaceFolder}/main.go"
+    },
+    {
+      "name": "Debug Test",
+      "type": "go",
+      "request": "launch",
+      "mode": "test",
+      "program": "\${fileDirname}",
+      "args": [
+        "-test.v"
+      ]
+    }
+  ]
+}
+EOF
+      ;;
+
+    rust)
+      cat > .vscode/launch.json << EOF
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=main",
+          "--package=mypackage"
+        ],
+        "filter": {
+          "name": "main",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "\${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=main",
+          "--package=mypackage"
+        ],
+        "filter": {
+          "name": "main",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "\${workspaceFolder}"
+    }
+  ]
+}
+EOF
+      ;;
+
+    java)
+      cat > .vscode/launch.json << EOF
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Launch Current File",
+      "request": "launch",
+      "mainClass": "\${file}"
+    },
+    {
+      "type": "java",
+      "name": "Launch App",
+      "request": "launch",
+      "mainClass": "com.example.App",
+      "projectName": "app"
+    }
+  ]
+}
+EOF
+      ;;
+
+    ruby|rails)
+      cat > .vscode/launch.json << EOF
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Local File",
+      "type": "Ruby",
+      "request": "launch",
+      "program": "\${file}"
+    },
+    {
+      "name": "Rails server",
+      "type": "Ruby",
+      "request": "launch",
+      "program": "\${workspaceRoot}/bin/rails",
+      "args": [
+        "server"
+      ]
+    },
+    {
+      "name": "RSpec - all",
+      "type": "Ruby",
+      "request": "launch",
+      "program": "\${workspaceRoot}/bin/rspec",
+      "args": [
+        "-I",
+        "\${workspaceRoot}"
+      ]
+    },
+    {
+      "name": "RSpec - active spec file only",
+      "type": "Ruby",
+      "request": "launch",
+      "program": "\${workspaceRoot}/bin/rspec",
+      "args": [
+        "-I",
+        "\${workspaceRoot}",
+        "\${file}"
+      ]
+    }
+  ]
+}
+EOF
+      ;;
+
+    dotnet|csharp)
+      cat > .vscode/launch.json << EOF
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (console)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "\${workspaceFolder}/bin/Debug/net6.0/app.dll",
+      "args": [],
+      "cwd": "\${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": ".NET Core Launch (web)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "\${workspaceFolder}/bin/Debug/net6.0/app.dll",
+      "args": [],
+      "cwd": "\${workspaceFolder}",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sourceFileMap": {
+        "/Views": "\${workspaceFolder}/Views"
+      }
+    }
+  ]
+}
+EOF
+
+      # Create tasks.json for .NET Core
+      cat > .vscode/tasks.json << EOF
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "\${workspaceFolder}/app.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "\${workspaceFolder}/app.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "watch",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "watch",
+        "run",
+        "--project",
+        "\${workspaceFolder}/app.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}
+EOF
+      ;;
+  esac
+
+  echo "VS Code configuration for $project_type project created successfully."
+  echo "- .vscode/extensions.json with recommended extensions"
+  echo "- .vscode/settings.json with optimal settings for $project_type"
+  echo "- .vscode/launch.json with debug configurations"
+
+  if [[ "$project_type" == "dotnet" || "$project_type" == "csharp" ]]; then
+    echo "- .vscode/tasks.json with build tasks"
+  fi
+
+  echo ""
+  echo "Open this project with: code ."
+}
+
+# Set up VS Code with custom keybindings and settings
+vscode-customize() {
+  local keybinding_style=${1:-"default"}
+
+  if ! command -v code &>/dev/null; then
+    echo "Error: VS Code is not installed or not in PATH."
+    return 1
+  fi
+
+  local settings_dir
+
+  {{ if eq .chezmoi.os "darwin" }}
+  settings_dir="$HOME/Library/Application Support/Code/User"
+  {{ else }}
+  settings_dir="$HOME/.config/Code/User"
+  {{ end }}
+
+  # Create directory if it doesn't exist
+  mkdir -p "$settings_dir"
+
+  # Create settings.json if it doesn't exist or backup existing one
+  if [[ -f "$settings_dir/settings.json" ]]; then
+    cp "$settings_dir/settings.json" "$settings_dir/settings.json.backup"
+    echo "Backed up existing settings to settings.json.backup"
+  fi
+
+  # Create basic settings.json
+  cat > "$settings_dir/settings.json" << EOF
+{
+  "editor.fontFamily": "JetBrains Mono, Menlo, Monaco, 'Courier New', monospace",
+  "editor.fontSize": 14,
+  "editor.lineHeight": 22,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.formatOnSave": true,
+  "editor.rulers": [80, 120],
+  "editor.minimap.enabled": true,
+  "editor.wordWrap": "on",
+  "editor.linkedEditing": true,
+
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.eol": "\n",
+
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.lineHeight": 1.2,
+
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+
+  "workbench.startupEditor": "none",
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.colorTheme": "GitHub Dark Default",
+
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+
+  "window.zoomLevel": 0,
+  "telemetry.telemetryLevel": "off"
+}
+EOF
+
+  # Create keybindings.json based on selected style
+  if [[ -f "$settings_dir/keybindings.json" ]]; then
+    cp "$settings_dir/keybindings.json" "$settings_dir/keybindings.json.backup"
+    echo "Backed up existing keybindings to keybindings.json.backup"
+  fi
+
+  case $keybinding_style in
+    vim)
+      cat > "$settings_dir/keybindings.json" << EOF
+[
+  {
+    "key": "ctrl+j",
+    "command": "workbench.action.quickOpenNavigateNext",
+    "when": "inQuickOpen"
+  },
+  {
+    "key": "ctrl+k",
+    "command": "workbench.action.quickOpenNavigatePrevious",
+    "when": "inQuickOpen"
+  },
+  {
+    "key": "cmd+1",
+    "command": "workbench.action.openEditorAtIndex1"
+  },
+  {
+    "key": "cmd+2",
+    "command": "workbench.action.openEditorAtIndex2"
+  },
+  {
+    "key": "cmd+3",
+    "command": "workbench.action.openEditorAtIndex3"
+  },
+  {
+    "key": "cmd+4",
+    "command": "workbench.action.openEditorAtIndex4"
+  },
+  {
+    "key": "cmd+5",
+    "command": "workbench.action.openEditorAtIndex5"
+  },
+  {
+    "key": "cmd+6",
+    "command": "workbench.action.openEditorAtIndex6"
+  },
+  {
+    "key": "cmd+7",
+    "command": "workbench.action.openEditorAtIndex7"
+  },
+  {
+    "key": "cmd+8",
+    "command": "workbench.action.openEditorAtIndex8"
+  },
+  {
+    "key": "cmd+9",
+    "command": "workbench.action.openEditorAtIndex9"
+  }
+]
+EOF
+
+      # Update settings.json for vim mode
+      cat >> "$settings_dir/settings.json" << EOF
+,
+  "vim.easymotion": true,
+  "vim.incsearch": true,
+  "vim.useSystemClipboard": true,
+  "vim.useCtrlKeys": true,
+  "vim.hlsearch": true,
+  "vim.leader": "<space>",
+  "vim.insertModeKeyBindings": [
+    {
+      "before": ["j", "j"],
+      "after": ["<Esc>"]
+    }
+  ],
+  "vim.normalModeKeyBindingsNonRecursive": [
+    {
+      "before": ["<leader>", "f"],
+      "commands": ["workbench.action.quickOpen"]
+    },
+    {
+      "before": ["<leader>", "w"],
+      "commands": ["workbench.action.files.save"]
+    },
+    {
+      "before": ["<leader>", "q"],
+      "commands": ["workbench.action.closeActiveEditor"]
+    },
+    {
+      "before": ["<leader>", "e"],
+      "commands": ["workbench.view.explorer"]
+    }
+  ],
+  "vim.handleKeys": {
+    "<C-d>": true,
+    "<C-c>": false,
+    "<C-v>": false,
+    "<C-x>": false,
+    "<C-a>": false,
+    "<C-f>": false
+  }
+EOF
+      ;;
+
+    emacs)
+      cat > "$settings_dir/keybindings.json" << EOF
+[
+  {
+    "key": "ctrl+g",
+    "command": "workbench.action.closeQuickOpen",
+    "when": "inQuickOpen"
+  },
+  {
+    "key": "ctrl+x ctrl+f",
+    "command": "workbench.action.quickOpen"
+  },
+  {
+    "key": "ctrl+x ctrl+s",
+    "command": "workbench.action.files.save"
+  },
+  {
+    "key": "ctrl+x ctrl+c",
+    "command": "workbench.action.quit"
+  },
+  {
+    "key": "ctrl+x k",
+    "command": "workbench.action.closeActiveEditor"
+  },
+  {
+    "key": "ctrl+x ctrl+b",
+    "command": "workbench.action.showEditorsInActiveGroup"
+  },
+  {
+    "key": "ctrl+x b",
+    "command": "workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup"
+  },
+  {
+    "key": "alt+x",
+    "command": "workbench.action.showCommands"
+  },
+  {
+    "key": "ctrl+x 1",
+    "command": "workbench.action.closeEditorsInOtherGroups"
+  },
+  {
+    "key": "ctrl+x 2",
+    "command": "workbench.action.splitEditorDown"
+  },
+  {
+    "key": "ctrl+x 3",
+    "command": "workbench.action.splitEditorRight"
+  },
+  {
+    "key": "ctrl+x o",
+    "command": "workbench.action.navigateEditorGroups"
+  }
+]
+EOF
+      ;;
+
+    *)
+      # Default keybindings
+      cat > "$settings_dir/keybindings.json" << EOF
+[
+  {
+    "key": "ctrl+p",
+    "command": "workbench.action.quickOpen"
+  },
+  {
+    "key": "ctrl+shift+p",
+    "command": "workbench.action.showCommands"
+  },
+  {
+    "key": "cmd+b",
+    "command": "workbench.action.toggleSidebarVisibility"
+  },
+  {
+    "key": "cmd+j",
+    "command": "workbench.action.togglePanel"
+  },
+  {
+    "key": "cmd+k cmd+s",
+    "command": "workbench.action.files.saveAll"
+  },
+  {
+    "key": "alt+cmd+left",
+    "command": "workbench.action.navigateBack"
+  },
+  {
+    "key": "alt+cmd+right",
+    "command": "workbench.action.navigateForward"
+  }
+]
+EOF
+      ;;
+  esac
+
+  # Install recommended extensions
+  echo "Installing recommended extensions..."
+
+  # UI enhancements
+  code --install-extension PKief.material-icon-theme
+  code --install-extension GitHub.github-vscode-theme
+
+  # Editor enhancements
+  code --install-extension esbenp.prettier-vscode
+  code --install-extension streetsidesoftware.code-spell-checker
+  code --install-extension editorconfig.editorconfig
+
+  # Git integration
+  code --install-extension eamodio.gitlens
+
+  # Install vim extension if vim keybindings are selected
+  if [[ "$keybinding_style" == "vim" ]]; then
+    code --install-extension vscodevim.vim
+  fi
+
+  echo "VS Code settings customized with $keybinding_style keybindings."
+  echo "Settings saved to: $settings_dir/settings.json"
+  echo "Keybindings saved to: $settings_dir/keybindings.json"
+  echo ""
+  echo "Restart VS Code for all changes to take effect."
+}
+
+# Create a diff view for two files
+vsdiff() {
+  local file1=$1
+  local file2=$2
+
+  if [[ -z "$file1" || -z "$file2" ]]; then
+    echo "Usage: vsdiff <file1> <file2>"
+    echo "Example: vsdiff old.txt new.txt"
+    return 1
+  fi
+
+  # Check if both files exist
+  if [[ ! -f "$file1" || ! -f "$file2" ]]; then
+    echo "Error: One or both files do not exist."
+    echo "file1: $file1 ($(if [[ -f "$file1" ]]; then echo "exists"; else echo "not found"; fi))"
+    echo "file2: $file2 ($(if [[ -f "$file2" ]]; then echo "exists"; else echo "not found"; fi))"
+    return 1
+  fi
+
+  echo "Opening diff view for:"
+  echo "  $file1"
+  echo "  $file2"
+
+  code --diff "$file1" "$file2"
+}
+
+# Create a new code snippet
+vscode-snippet() {
+  local snippet_name=$1
+  local language=$2
+  local description=${3:-"Custom snippet"}
+
+  if [[ -z "$snippet_name" || -z "$language" ]]; then
+    echo "Usage: vscode-snippet <snippet-name> <language> [description]"
+    echo "Example: vscode-snippet react-component javascript \"React functional component\""
+    return 1
+  fi
+
+  local snippets_dir
+
+  {{ if eq .chezmoi.os "darwin" }}
+  snippets_dir="$HOME/Library/Application Support/Code/User/snippets"
+  {{ else }}
+  snippets_dir="$HOME/.config/Code/User/snippets"
+  {{ end }}
+
+  # Create directory if it doesn't exist
+  mkdir -p "$snippets_dir"
+
+  # Determine the snippet file name
+  local snippet_file="$snippets_dir/$language.json"
+
+  # Create a new snippet file if it doesn't exist
+  if [[ ! -f "$snippet_file" ]]; then
+    echo "{}" > "$snippet_file"
+  fi
+
+  # Create a temporary file for editing
+  local temp_file="$(mktemp)"
+
+  echo "Creating a new snippet for $language"
+  echo "Enter your snippet content (press Ctrl+D when done):"
+
+  # Read the snippet content from input
+  cat > "$temp_file"
+
+  # Process the snippet content for JSON format
+  local snippet_content
+  snippet_content=$(cat "$temp_file" | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n')
+
+  # Remove the last \n
+  snippet_content=${snippet_content%\\n}
+
+  # Create a new entry in the snippets file
+  local temp_json="$(mktemp)"
+
+  # Read the existing snippets
+  jq ".\"$snippet_name\" = {
+    \"prefix\": \"$snippet_name\",
+    \"body\": [\"$snippet_content\"],
+    \"description\": \"$description\"
+  }" "$snippet_file" > "$temp_json"
+
+  # Update the snippets file
+  mv "$temp_json" "$snippet_file"
+
+  # Clean up temporary files
+  rm -f "$temp_file"
+
+  echo "Snippet '$snippet_name' created successfully."
+  echo "You can use it in $language files by typing '$snippet_name' and pressing Tab."
+}
+{{- end }}
