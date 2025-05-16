@@ -39,6 +39,8 @@
     enable_puppet = true       # Enable Puppet development workflows
     enable_gtd = true          # Enable GTD workflows
     enable_macos_gtd = true    # Enable native macOS apps for GTD
+    enable_google_gtd = true   # Enable Google tools for GTD
+    enable_microsoft_gtd = true # Enable Microsoft 365 and Cloud for GTD
 
     # Work-specific settings (uncomment and set as needed)
     # work = true

@@ -24,7 +24,7 @@ My personal dotfiles optimized for macOS and Linux development, managed with che
 - **Development Workflows** - WordPress, Chef, Puppet, Ansible, Java, Groovy, Rails, Ruby, and Rust
 - **DevOps Toolchain** - HashiCorp suite (Terraform, Vault, Consul, Nomad, Packer, Boundary, Waypoint)
 - **Editor Integration** - VS Code workflows, settings, and extensions
-- **GTD Methodology** - Getting Things Done workflow support with OmniFocus integration and native macOS apps
+- **GTD Methodology** - Getting Things Done workflow support with OmniFocus, native macOS apps, Google tools, and Microsoft 365
 - **Chat Integration** - Slack and Microsoft Teams workflows
 - **Email & Calendar** - Gmail, Google Calendar, and Office365 integrations
 
@@ -87,6 +87,8 @@ make lint
   - **dev_workflows.zsh.tmpl** - WordPress, Chef, and Puppet development workflows
   - **app_workflows.zsh.tmpl** - Integration with productivity apps (GTD, Mail, Slack, Teams, etc.)
   - **macos_gtd_workflows.zsh.tmpl** - Native macOS apps integration for GTD (Notes, Reminders, Calendar, Mail)
+  - **google_gtd_workflows.zsh.tmpl** - Google tools integration for GTD (Keep, Tasks, Calendar, Gmail, Drive)
+  - **microsoft_gtd_workflows.zsh.tmpl** - Microsoft 365 and Cloud integration for GTD (To Do, OneNote, Outlook, Teams)
   - **ansible_workflows.zsh.tmpl** - Ansible development and automation workflows
   - **java_gradle_workflows.zsh.tmpl** - Java and Gradle development workflows
   - **groovy_workflows.zsh.tmpl** - Groovy scripting and development workflows
@@ -513,6 +515,78 @@ macOS specific:
 - `gtd-meeting <title> <date-time> [attendees] [location]` - Create a meeting note and calendar event
 - `gtd-focus <task-description> [duration-minutes]` - Set up a focused work session with notes and timer
 - `gtd-extract-actions [days]` - Extract action items from all meeting notes
+
+### Google Tools GTD Integration
+
+- `gkeep-open [search]` - Open Google Keep, optionally with search
+- `gkeep-capture <note-text>` - Create a new note in Google Keep
+- `gkeep-label <label>` - Open Google Keep filtered by label
+
+- `gtasks-open [list]` - Open Google Tasks
+- `gtasks-gmail` - Open Gmail with Google Tasks sidebar
+
+- `gcal-open [view] [date]` - Open Google Calendar in specified view
+- `gcal-new <title> <start> [end] [details] [location]` - Create a new Google Calendar event
+- `gcal-today` - Show today's Google Calendar events
+- `gcal-range <start-date> <end-date>` - Open Google Calendar for a specific date range
+
+- `gmail-open [label]` - Open Gmail, optionally with specified label
+- `gmail-search <search-query>` - Open Gmail with search
+- `gmail-compose <to> [subject] [body]` - Create a Gmail draft
+- `gmail-filter <filter>` - Open Gmail with predefined filters
+
+- `gdrive-open [folder]` - Open Google Drive, optionally with folder
+- `gdrive-search <search-term>` - Search Google Drive
+- `gdocs-new [title]` - Create a new Google Docs document
+- `gsheets-new [title]` - Create a new Google Sheets spreadsheet
+
+- `ggoog-gtd-open` - Open Google Drive GTD system
+- `ggoog-gtd-capture <note-text>` - Capture a note to Google Keep for GTD
+- `ggoog-gtd-project <project-name>` - Create a new GTD project in Google Docs
+- `ggoog-gtd-review` - Start a GTD weekly review in Google Docs
+- `ggoog-gtd-weekly-plan` - Create a weekly planning doc with calendar integration
+- `ggoog-gtd-meeting <title> <date> [attendees]` - Create a meeting note with calendar event
+- `ggoog-gtd-focus <task> [duration]` - Set up a focused work session with Google Keep
+- `ggoog-gtd-next` - Show next actions from various Google sources
+- `ggoog-gtd-dashboard` - Open all GTD components in browser tabs
+
+### Microsoft 365 and Cloud GTD Integration
+
+- `mstodo-open [list]` - Open Microsoft To Do, optionally with list
+- `mstodo-myday` - Open the My Day view in Microsoft To Do
+- `mstodo-important` - Open the Important list in Microsoft To Do
+- `mstodo-planned` - Open the Planned list in Microsoft To Do
+
+- `msonenote-open` - Open Microsoft OneNote
+- `msonenote-new-notebook <name>` - Open OneNote to create a new notebook
+
+- `msoutlook-open [folder]` - Open Microsoft Outlook
+- `msoutlook-search <query>` - Search Outlook emails
+- `msoutlook-compose <to> [subject] [body]` - Compose a new email in Outlook
+
+- `mscalendar-open [view]` - Open Microsoft Calendar in specified view
+- `mscalendar-new <title> <start> [end] [location]` - Create a new calendar event
+- `mscalendar-today` - Show today's events
+
+- `msonedrive-open [folder]` - Open Microsoft OneDrive
+- `msonedrive-docs` - Open OneDrive Documents folder
+
+- `msteams-open` - Open Microsoft Teams
+- `msteams-chat <person>` - Open Teams chat with a person
+
+- `msplanner-open` - Open Microsoft Planner
+- `mssharepoint-open [site]` - Open SharePoint, optionally with site path
+- `msazure-open [resource]` - Open Azure Portal, optionally with resource
+
+- `ms-gtd-open` - Open Microsoft GTD system components
+- `ms-gtd-capture <task>` - Open Microsoft To Do for task capture
+- `ms-gtd-project <project>` - Create a project in OneNote
+- `ms-gtd-review` - Start a GTD weekly review with Microsoft tools
+- `ms-gtd-meeting <title> <date> [attendees]` - Create a meeting note with calendar
+- `ms-gtd-focus <task> [duration]` - Set up a focused work session
+- `ms-gtd-next` - Show next actions in Microsoft To Do
+- `ms-gtd-dashboard` - Open all GTD dashboard components
+- `ms-cloud-project <project>` - Open Microsoft cloud tools for a project
 
 ### Mail App Workflows (macOS)
 
