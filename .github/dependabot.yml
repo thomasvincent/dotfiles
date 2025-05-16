@@ -1,0 +1,43 @@
+---
+version: 2
+updates:
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Increase pull request limit for GitHub Actions
+    open-pull-requests-limit: 10
+    # Add labels for easier identification
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Maintain dependencies for npm if used
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Use a lower pull request limit for npm
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+
+  # Maintain dependencies for submodules if used
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "submodules"
+
+  # Maintain dependencies for pip (Python) if used
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "python"
