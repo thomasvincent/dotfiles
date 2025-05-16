@@ -99,6 +99,11 @@ source "$HOME/.zsh/vscode_workflows.zsh"
 source "$HOME/.zsh/github_workflows.zsh"
 {{- end }}
 
+# macOS GTD workflows with native apps
+{{- if or .enable_macos_gtd .enable_gtd }}
+source "$HOME/.zsh/macos_gtd_workflows.zsh"
+{{- end }}
+
 # Local customizations
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 

@@ -24,7 +24,7 @@ My personal dotfiles optimized for macOS and Linux development, managed with che
 - **Development Workflows** - WordPress, Chef, Puppet, Ansible, Java, Groovy, Rails, Ruby, and Rust
 - **DevOps Toolchain** - HashiCorp suite (Terraform, Vault, Consul, Nomad, Packer, Boundary, Waypoint)
 - **Editor Integration** - VS Code workflows, settings, and extensions
-- **GTD Methodology** - Getting Things Done workflow support with OmniFocus integration
+- **GTD Methodology** - Getting Things Done workflow support with OmniFocus integration and native macOS apps
 - **Chat Integration** - Slack and Microsoft Teams workflows
 - **Email & Calendar** - Gmail, Google Calendar, and Office365 integrations
 
@@ -86,6 +86,7 @@ make lint
   - **cicd.zsh.tmpl** - CI/CD workflows for Jenkins and GitHub Actions
   - **dev_workflows.zsh.tmpl** - WordPress, Chef, and Puppet development workflows
   - **app_workflows.zsh.tmpl** - Integration with productivity apps (GTD, Mail, Slack, Teams, etc.)
+  - **macos_gtd_workflows.zsh.tmpl** - Native macOS apps integration for GTD (Notes, Reminders, Calendar, Mail)
   - **ansible_workflows.zsh.tmpl** - Ansible development and automation workflows
   - **java_gradle_workflows.zsh.tmpl** - Java and Gradle development workflows
   - **groovy_workflows.zsh.tmpl** - Groovy scripting and development workflows
@@ -485,6 +486,33 @@ macOS specific:
 - `gtd-review` - Start a GTD weekly review with a template
 - `gtd-new-project <project-name>` - Create a new GTD project template
 - `gtd-next [context]` - List GTD next actions, optionally by context
+
+### macOS Native GTD Apps Integration
+
+- `reminders-new-list <list-name>` - Create a new list in Reminders
+- `reminders-lists` - Show all lists in Reminders
+- `reminders-add <task> [list] [due-date] [priority]` - Add a task to Reminders
+- `reminders-list [list] [filter]` - List tasks in a specified list
+- `reminders-complete <task-number> [list]` - Complete a task
+- `reminders-review` - Weekly review of all tasks
+
+- `notes-new-folder <folder-name>` - Create a new folder in Notes
+- `notes-folders` - List all folders in Notes
+- `notes-new <title> [folder] [content]` - Create a new note
+- `notes-new-project <project-name> [folder]` - Create a new project note with template
+- `notes-list [folder] [filter]` - List notes in a folder
+- `notes-open <title> [folder]` - Open a specific note
+
+- `calendar-create <title> <start-date-time> [end-date-time] [location] [calendar] [all-day]` - Create a new calendar event
+- `calendar-list` - List available calendars
+- `calendar-today` - List today's events
+
+- `gtd-status` - Show current GTD system status
+- `gtd-new-context <context-name>` - Create new context list for next actions
+- `gtd-process-email` - Process email and create actions
+- `gtd-meeting <title> <date-time> [attendees] [location]` - Create a meeting note and calendar event
+- `gtd-focus <task-description> [duration-minutes]` - Set up a focused work session with notes and timer
+- `gtd-extract-actions [days]` - Extract action items from all meeting notes
 
 ### Mail App Workflows (macOS)
 

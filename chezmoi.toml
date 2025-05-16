@@ -38,6 +38,7 @@
     enable_chef = true         # Enable Chef development workflows
     enable_puppet = true       # Enable Puppet development workflows
     enable_gtd = true          # Enable GTD workflows
+    enable_macos_gtd = true    # Enable native macOS apps for GTD
 
     # Work-specific settings (uncomment and set as needed)
     # work = true
