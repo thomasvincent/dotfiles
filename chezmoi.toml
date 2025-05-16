@@ -90,6 +90,11 @@
         enable_wordpress = true    # Enable WordPress development workflows
         enable_chef = true         # Enable Chef development workflows
         enable_puppet = true       # Enable Puppet development workflows
+        enable_ansible = true      # Enable Ansible development workflows
+        enable_java = true         # Enable Java development workflows
+        enable_groovy = true       # Enable Groovy development workflows
+        enable_rails = true        # Enable Rails development workflows
+        enable_omnifocus = true    # Enable OmniFocus integration
         
         # Pomodoro timer settings
         pomodoro_work = 25  # Work period in minutes

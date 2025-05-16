@@ -1,0 +1,1094 @@
+# Java/Gradle Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# ==================================
+# Java/Gradle Development Workflows
+# ==================================
+
+{{ if or (eq .preferences.enable_java true) (eq .enable_dev_tools true) -}}
+# Initialize a new Java project with Gradle
+java-init-gradle() {
+  local project_name=$1
+  local package_name=${2:-"com.example.$project_name"}
+  local directory=${3:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
+  
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: java-init-gradle <project-name> [package-name] [directory]"
+    echo "Example: java-init-gradle my-app com.example.myapp ~/Projects/my-app"
+    return 1
+  fi
+  
+  # Check if Gradle is installed
+  if ! command -v gradle >/dev/null 2>&1; then
+    echo "Error: Gradle is not installed."
+    echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
+    return 1
+  fi
+  
+  # Create project directory if it doesn't exist
+  mkdir -p "$directory"
+  cd "$directory" || return 1
+  
+  # Create gradle project with init task
+  gradle init --type java-application --dsl groovy --test-framework junit-jupiter --package "$package_name" --project-name "$project_name"
+  
+  # Enhance the build.gradle file with common plugins and dependencies
+  cat > build.gradle << EOF
+plugins {
+    id 'java'
+    id 'application'
+    id 'checkstyle'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'com.diffplug.spotless' version '6.12.0'
+}
+
+group = '$package_name'
+version = '0.1.0-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.5'
+    implementation 'ch.qos.logback:logback-classic:1.4.6'
+    
+    // Utils
+    implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
+    testImplementation 'org.mockito:mockito-core:5.1.1'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.1.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+}
+
+application {
+    mainClass = '${package_name}.App'
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': '${package_name}.App',
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version
+        )
+    }
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    mergeServiceFiles()
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
+checkstyle {
+    toolVersion = '10.7.0'
+    configFile = file("\${rootDir}/config/checkstyle/checkstyle.xml")
+}
+
+spotless {
+    java {
+        googleJavaFormat()
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '7.6'
+}
+EOF
+
+  # Create a simple logback configuration
+  mkdir -p src/main/resources
+  cat > src/main/resources/logback.xml << 'EOF'
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
+EOF
+
+  # Create checkstyle configuration
+  mkdir -p config/checkstyle
+  cat > config/checkstyle/checkstyle.xml << 'EOF'
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+          "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+          "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="warning"/>
+    <property name="fileExtensions" value="java, properties, xml"/>
+
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+    </module>
+
+    <module name="TreeWalker">
+        <module name="OuterTypeFilename"/>
+        <module name="IllegalTokenText">
+            <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
+            <property name="format"
+                      value="\\u00(09|0(a|A)|0(c|C)|0(d|D)|22|27|5(C|c))|\\(0(10|11|12|14|15|42|47)|134)"/>
+            <property name="message"
+                      value="Consider using special escape sequence instead of octal value or Unicode escaped value."/>
+        </module>
+        <module name="AvoidEscapedUnicodeCharacters">
+            <property name="allowEscapesForControlCharacters" value="true"/>
+            <property name="allowByTailComment" value="true"/>
+            <property name="allowNonPrintableEscapes" value="true"/>
+        </module>
+        <module name="AvoidStarImport"/>
+        <module name="OneTopLevelClass"/>
+        <module name="NoLineWrap">
+            <property name="tokens" value="PACKAGE_DEF, IMPORT, STATIC_IMPORT"/>
+        </module>
+        <module name="EmptyBlock">
+            <property name="option" value="TEXT"/>
+            <property name="tokens"
+                      value="LITERAL_TRY, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_SWITCH"/>
+        </module>
+        <module name="NeedBraces">
+            <property name="tokens"
+                      value="LITERAL_DO, LITERAL_ELSE, LITERAL_FOR, LITERAL_IF, LITERAL_WHILE"/>
+        </module>
+        <module name="LeftCurly">
+            <property name="tokens"
+                      value="ANNOTATION_DEF, CLASS_DEF, CTOR_DEF, ENUM_CONSTANT_DEF, ENUM_DEF,
+                    INTERFACE_DEF, LAMBDA, LITERAL_CASE, LITERAL_CATCH, LITERAL_DEFAULT,
+                    LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_FOR, LITERAL_IF,
+                    LITERAL_SWITCH, LITERAL_SYNCHRONIZED, LITERAL_TRY, LITERAL_WHILE, METHOD_DEF,
+                    OBJBLOCK, STATIC_INIT, RECORD_DEF, COMPACT_CTOR_DEF"/>
+        </module>
+        <module name="RightCurly">
+            <property name="id" value="RightCurlySame"/>
+            <property name="tokens"
+                      value="LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE,
+                    LITERAL_DO"/>
+        </module>
+        <module name="RightCurly">
+            <property name="id" value="RightCurlyAlone"/>
+            <property name="option" value="alone"/>
+            <property name="tokens"
+                      value="CLASS_DEF, METHOD_DEF, CTOR_DEF, LITERAL_FOR, LITERAL_WHILE, STATIC_INIT,
+                    INSTANCE_INIT, ANNOTATION_DEF, ENUM_DEF, INTERFACE_DEF, RECORD_DEF,
+                    COMPACT_CTOR_DEF"/>
+        </module>
+    </module>
+</module>
+EOF
+
+  # Create a README file
+  cat > README.md << EOF
+# $project_name
+
+## Overview
+This is a Java application created with Gradle.
+
+## Prerequisites
+- Java 17 or higher
+- Gradle 7.6 or higher
+
+## Building
+To build the project:
+\`\`\`
+./gradlew build
+\`\`\`
+
+## Running
+To run the application:
+\`\`\`
+./gradlew run
+\`\`\`
+
+## Creating a distributable package
+To create a distributable package:
+\`\`\`
+./gradlew shadowJar
+\`\`\`
+This will create a fat JAR with all dependencies in \`build/libs/\`.
+
+## Testing
+To run tests:
+\`\`\`
+./gradlew test
+\`\`\`
+
+## Code Quality
+This project uses checkstyle and spotless for code quality checks:
+\`\`\`
+./gradlew checkstyleMain checkstyleTest
+./gradlew spotlessCheck
+\`\`\`
+
+To automatically format code:
+\`\`\`
+./gradlew spotlessApply
+\`\`\`
+EOF
+
+  # Create .gitignore
+  cat > .gitignore << 'EOF'
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse
+.settings/
+.classpath
+.project
+.factorypath
+bin/
+
+# VS Code
+.vscode/
+
+# Mac OS
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# JVM crash logs
+hs_err_pid*
+replay_pid*
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+EOF
+
+  # Initialize git repository
+  git init
+  git add .
+  git commit -m "Initial Java/Gradle project setup"
+  
+  echo "Java/Gradle project '$project_name' initialized successfully at $directory"
+  echo "Next steps:"
+  echo "1. Open the project in your IDE (IntelliJ IDEA, Eclipse, VS Code)"
+  echo "2. Run './gradlew build' to build the project"
+  echo "3. Customize src/main/java/${package_name//./\/}/App.java"
+}
+
+# Create a Java Spring Boot project
+java-init-spring() {
+  local project_name=$1
+  local package_name=${2:-"com.example.$project_name"}
+  local directory=${3:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
+  
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: java-init-spring <project-name> [package-name] [directory]"
+    echo "Example: java-init-spring my-service com.example.myservice ~/Projects/my-service"
+    return 1
+  fi
+  
+  # Check if Spring Boot CLI is installed
+  if command -v spring >/dev/null 2>&1; then
+    # Use spring cli to initialize the project
+    mkdir -p "$directory"
+    cd "$directory" || return 1
+    
+    spring init \
+      --build=gradle \
+      --java-version=17 \
+      --dependencies=web,actuator,data-jpa,h2,lombok,validation \
+      --packaging=jar \
+      --type=gradle-project \
+      --group-id="$package_name" \
+      --artifact-id="$project_name" \
+      --name="$project_name" \
+      --description="Spring Boot application" \
+      --package-name="$package_name" \
+      .
+      
+  else
+    # Use curl to download from start.spring.io
+    echo "Spring Boot CLI not found, using start.spring.io API..."
+    
+    # Create temp directory
+    local temp_dir=$(mktemp -d)
+    local zip_file="$temp_dir/project.zip"
+    
+    # Download from Spring Initializr
+    curl -s https://start.spring.io/starter.zip \
+      -d type=gradle-project \
+      -d language=java \
+      -d bootVersion=3.0.5 \
+      -d baseDir=$project_name \
+      -d groupId=$package_name \
+      -d artifactId=$project_name \
+      -d name=$project_name \
+      -d description="Spring Boot application" \
+      -d packageName=$package_name \
+      -d packaging=jar \
+      -d javaVersion=17 \
+      -d dependencies=web,actuator,data-jpa,h2,lombok,validation \
+      -o "$zip_file"
+    
+    # Extract and move to destination
+    mkdir -p "$directory"
+    unzip -q "$zip_file" -d "$(dirname "$directory")"
+    
+    # Clean up temp directory
+    rm -rf "$temp_dir"
+    
+    # Move to the project directory
+    cd "$directory" || return 1
+  fi
+  
+  # Create additional directories for a typical Spring Boot project
+  mkdir -p src/main/java/${package_name//./\/}/{config,controller,dto,exception,model,repository,service,util}
+  mkdir -p src/main/resources/{static,templates,db/migration}
+  
+  # Create sample controller
+  cat > src/main/java/${package_name//./\/}/controller/HomeController.java << EOF
+package $package_name.controller;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+public class HomeController {
+
+    @GetMapping("/")
+    public Map<String, Object> home() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "UP");
+        response.put("message", "Welcome to $project_name application");
+        return response;
+    }
+}
+EOF
+
+  # Create application.yml with common configurations
+  cat > src/main/resources/application.yml << 'EOF'
+spring:
+  application:
+    name: ${project_name}
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  info:
+    git:
+      mode: full
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.hibernate: INFO
+    com.example: DEBUG
+EOF
+
+  # Create Docker files
+  cat > Dockerfile << 'EOF'
+FROM eclipse-temurin:17-jdk-alpine as build
+WORKDIR /workspace/app
+
+COPY gradle gradle
+COPY build.gradle settings.gradle gradlew ./
+COPY src src
+
+RUN ./gradlew bootJar -x test
+RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*.jar)
+
+FROM eclipse-temurin:17-jre-alpine
+VOLUME /tmp
+ARG DEPENDENCY=/workspace/app/build/dependency
+COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
+COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
+COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
+ENTRYPOINT ["java","-cp","app:app/lib/*","com.example.Application"]
+EOF
+
+  # Create docker-compose.yml
+  cat > docker-compose.yml << 'EOF'
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - JAVA_OPTS=-Xms256m -Xmx512m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+EOF
+
+  # Enhance README
+  cat > README.md << EOF
+# $project_name
+
+Spring Boot application.
+
+## Development
+
+### Prerequisites
+- JDK 17+
+- Gradle 7.6+
+- Docker and Docker Compose (optional, for containerization)
+
+### Running locally
+```
+./gradlew bootRun
+```
+
+The application will be available at: http://localhost:8080
+
+H2 Console: http://localhost:8080/h2-console
+- JDBC URL: jdbc:h2:mem:testdb
+- Username: sa
+- Password: password
+
+### API Endpoints
+- Home: http://localhost:8080/
+- Health Check: http://localhost:8080/actuator/health
+
+### Testing
+```
+./gradlew test
+```
+
+### Building
+```
+./gradlew build
+```
+
+### Docker
+Build and run with Docker:
+```
+docker build -t $project_name .
+docker run -p 8080:8080 $project_name
+```
+
+Or using Docker Compose:
+```
+docker-compose up -d
+```
+
+## Project Structure
+- `/src/main/java/$package_name`: Java source files
+  - `/config`: Configuration classes
+  - `/controller`: REST controllers
+  - `/dto`: Data Transfer Objects
+  - `/exception`: Custom exceptions
+  - `/model`: Entity classes
+  - `/repository`: Data repositories
+  - `/service`: Business logic
+  - `/util`: Utility classes
+- `/src/main/resources`: Configuration files
+  - `/static`: Static resources
+  - `/templates`: Template files
+  - `/db/migration`: Database migration scripts
+EOF
+
+  # Initialize git repository
+  git init
+  git add .
+  git commit -m "Initial Spring Boot project setup"
+  
+  echo "Spring Boot project '$project_name' initialized successfully at $directory"
+  echo "Next steps:"
+  echo "1. Run './gradlew bootRun' to start the application"
+  echo "2. Open http://localhost:8080 in your browser"
+  echo "3. Customize the controllers and services"
+}
+
+# List all available versions of Java via SDKMAN
+java-versions() {
+  # Check if SDKMAN is installed
+  if [[ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
+    echo "SDKMAN is not installed. Do you want to install it now? (y/n)"
+    read -r install_sdkman
+    
+    if [[ "$install_sdkman" =~ ^[Yy]$ ]]; then
+      curl -s "https://get.sdkman.io" | bash
+      source "$HOME/.sdkman/bin/sdkman-init.sh"
+    else
+      echo "SDKMAN is required for this command."
+      return 1
+    fi
+  fi
+  
+  # Source SDKMAN
+  source "$HOME/.sdkman/bin/sdkman-init.sh"
+  
+  # List available Java versions
+  sdk list java
+}
+
+# Install and set a specific version of Java via SDKMAN
+java-install() {
+  local version=$1
+  
+  if [[ -z "$version" ]]; then
+    echo "Usage: java-install <version>"
+    echo "Example: java-install 17.0.6-tem"
+    echo "To see available versions, run: java-versions"
+    return 1
+  fi
+  
+  # Check if SDKMAN is installed
+  if [[ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
+    echo "SDKMAN is not installed. Do you want to install it now? (y/n)"
+    read -r install_sdkman
+    
+    if [[ "$install_sdkman" =~ ^[Yy]$ ]]; then
+      curl -s "https://get.sdkman.io" | bash
+      source "$HOME/.sdkman/bin/sdkman-init.sh"
+    else
+      echo "SDKMAN is required for this command."
+      return 1
+    fi
+  fi
+  
+  # Source SDKMAN
+  source "$HOME/.sdkman/bin/sdkman-init.sh"
+  
+  # Install the specified Java version
+  sdk install java "$version"
+}
+
+# Generate a new Java class with boilerplate
+java-gen-class() {
+  local class_name=$1
+  local package_name=${2:-"com.example"}
+  
+  if [[ -z "$class_name" ]]; then
+    echo "Usage: java-gen-class <class-name> [package-name]"
+    echo "Example: java-gen-class User com.example.model"
+    return 1
+  fi
+  
+  # Create the package directory structure
+  local package_dir="src/main/java/${package_name//./\/}"
+  mkdir -p "$package_dir"
+  
+  # Define the class file path
+  local class_file="$package_dir/$class_name.java"
+  
+  # Create the class file
+  cat > "$class_file" << EOF
+package $package_name;
+
+/**
+ * $class_name class.
+ */
+public class $class_name {
+    
+    // Fields
+    
+    /**
+     * Default constructor.
+     */
+    public $class_name() {
+        // Initialize
+    }
+    
+    // Methods
+    
+    /**
+     * String representation of this object.
+     */
+    @Override
+    public String toString() {
+        return "$class_name[]";
+    }
+}
+EOF
+  
+  # Create a corresponding test class
+  local test_dir="src/test/java/${package_name//./\/}"
+  mkdir -p "$test_dir"
+  
+  local test_file="$test_dir/${class_name}Test.java"
+  
+  cat > "$test_file" << EOF
+package $package_name;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Tests for the $class_name class.
+ */
+class ${class_name}Test {
+    
+    private $class_name ${class_name,}; // lowercase first letter
+    
+    @BeforeEach
+    void setUp() {
+        ${class_name,} = new $class_name();
+    }
+    
+    @Test
+    void testToString() {
+        assertNotNull(${class_name,}.toString());
+    }
+}
+EOF
+  
+  echo "Generated class $class_name in package $package_name"
+  echo "Class file created at: $class_file"
+  echo "Test file created at: $test_file"
+}
+
+# Generate a POJO with getters/setters/builders
+java-gen-pojo() {
+  local class_name=$1
+  local package_name=${2:-"com.example.model"}
+  local fields=$3
+  
+  if [[ -z "$class_name" || -z "$fields" ]]; then
+    echo "Usage: java-gen-pojo <class-name> [package-name] <fields>"
+    echo "Example: java-gen-pojo User com.example.model \"String name, Integer age, Boolean active\""
+    return 1
+  fi
+  
+  # Create the package directory structure
+  local package_dir="src/main/java/${package_name//./\/}"
+  mkdir -p "$package_dir"
+  
+  # Define the class file path
+  local class_file="$package_dir/$class_name.java"
+  
+  # Parse fields and create class content
+  IFS=',' read -ra FIELD_ARRAY <<< "$fields"
+  
+  # Create field declarations
+  local field_declarations=""
+  local getters_setters=""
+  local builder_methods=""
+  local constructor_params=""
+  local constructor_assignments=""
+  local to_string_fields=""
+  local equals_hash_fields=""
+  
+  for field in "${FIELD_ARRAY[@]}"; do
+    # Trim whitespace
+    field=$(echo "$field" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    
+    # Extract type and name
+    local field_type=$(echo "$field" | cut -d' ' -f1)
+    local field_name=$(echo "$field" | cut -d' ' -f2)
+    
+    # Add field declaration
+    field_declarations+="    private $field_type $field_name;\n"
+    
+    # Capitalize first letter for getter/setter
+    local field_name_cap="${field_name^}"
+    
+    # Add getter and setter
+    getters_setters+="    /**\n"
+    getters_setters+="     * Get $field_name.\n"
+    getters_setters+="     * @return $field_type\n"
+    getters_setters+="     */\n"
+    getters_setters+="    public $field_type get$field_name_cap() {\n"
+    getters_setters+="        return $field_name;\n"
+    getters_setters+="    }\n\n"
+    getters_setters+="    /**\n"
+    getters_setters+="     * Set $field_name.\n"
+    getters_setters+="     * @param $field_name the $field_name\n"
+    getters_setters+="     * @return this instance\n"
+    getters_setters+="     */\n"
+    getters_setters+="    public $class_name set$field_name_cap($field_type $field_name) {\n"
+    getters_setters+="        this.$field_name = $field_name;\n"
+    getters_setters+="        return this;\n"
+    getters_setters+="    }\n\n"
+    
+    # Add builder method
+    builder_methods+="        /**\n"
+    builder_methods+="         * Set $field_name.\n"
+    builder_methods+="         * @param $field_name the $field_name\n"
+    builder_methods+="         * @return Builder\n"
+    builder_methods+="         */\n"
+    builder_methods+="        public Builder $field_name($field_type $field_name) {\n"
+    builder_methods+="            this.$field_name = $field_name;\n"
+    builder_methods+="            return this;\n"
+    builder_methods+="        }\n\n"
+    
+    # Add to constructor params and assignments
+    if [[ -n "$constructor_params" ]]; then
+      constructor_params+=", "
+      constructor_assignments+="\n"
+    fi
+    constructor_params+="$field_type $field_name"
+    constructor_assignments+="        this.$field_name = $field_name;"
+    
+    # Add to toString
+    if [[ -n "$to_string_fields" ]]; then
+      to_string_fields+=", "
+    fi
+    to_string_fields+="$field_name=" + "$field_name"
+    
+    # Add to equals and hashCode
+    if [[ -n "$equals_hash_fields" ]]; then
+      equals_hash_fields+=", "
+    fi
+    equals_hash_fields+="$field_name"
+  done
+  
+  # Create the class file
+  cat > "$class_file" << EOF
+package $package_name;
+
+import java.util.Objects;
+
+/**
+ * $class_name POJO.
+ */
+public class $class_name {
+    
+    // Fields
+$(echo -e "$field_declarations")
+    /**
+     * Default constructor.
+     */
+    public $class_name() {
+        // Default constructor
+    }
+    
+    /**
+     * All args constructor.
+     */
+    public $class_name($constructor_params) {
+$constructor_assignments
+    }
+    
+$(echo -e "$getters_setters")
+    /**
+     * Create a new Builder for $class_name.
+     * @return new Builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+    
+    /**
+     * Builder for $class_name.
+     */
+    public static class Builder {
+        private $class_name instance = new $class_name();
+$(echo -e "$field_declarations")
+$(echo -e "$builder_methods")
+        /**
+         * Build the $class_name instance.
+         * @return $class_name
+         */
+        public $class_name build() {
+$(echo -e "$constructor_assignments" | sed 's/this\./instance\./g')
+            return instance;
+        }
+    }
+    
+    /**
+     * String representation of this object.
+     */
+    @Override
+    public String toString() {
+        return "$class_name[" + "$to_string_fields" + "]";
+    }
+    
+    /**
+     * Equals implementation.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        $class_name that = ($class_name) o;
+        return Objects.equals($equals_hash_fields);
+    }
+    
+    /**
+     * HashCode implementation.
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash($equals_hash_fields);
+    }
+}
+EOF
+  
+  echo "Generated POJO $class_name in package $package_name"
+  echo "Class file created at: $class_file"
+}
+
+# Create Gradle wrapper for a project
+java-gradle-wrapper() {
+  # Check if this is a Gradle project
+  if [[ ! -f "build.gradle" && ! -f "build.gradle.kts" ]]; then
+    echo "Not a Gradle project. No build.gradle or build.gradle.kts found."
+    return 1
+  fi
+  
+  # Check if Gradle is installed
+  if ! command -v gradle >/dev/null 2>&1; then
+    echo "Error: Gradle is not installed."
+    echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
+    return 1
+  }
+  
+  # Create Gradle wrapper
+  gradle wrapper
+  
+  echo "Gradle wrapper created successfully."
+  echo "You can now use './gradlew' instead of 'gradle' to run Gradle commands."
+}
+
+# Run common Gradle tasks with provided options
+java-gradle() {
+  local task=$1
+  local options=${@:2}
+  
+  # Check if this is a Gradle project
+  if [[ ! -f "build.gradle" && ! -f "build.gradle.kts" && ! -f "gradlew" ]]; then
+    echo "Not a Gradle project. No build.gradle, build.gradle.kts, or gradlew found."
+    return 1
+  }
+  
+  # Check if a wrapper exists
+  local gradle_cmd="gradle"
+  if [[ -f "gradlew" ]]; then
+    gradle_cmd="./gradlew"
+  fi
+  
+  # Common tasks
+  case "$task" in
+    build)
+      $gradle_cmd build $options
+      ;;
+    run)
+      $gradle_cmd run $options
+      ;;
+    test)
+      $gradle_cmd test $options
+      ;;
+    clean)
+      $gradle_cmd clean $options
+      ;;
+    jar)
+      $gradle_cmd jar $options
+      ;;
+    fatjar|shadowJar)
+      $gradle_cmd shadowJar $options
+      ;;
+    bootRun)
+      $gradle_cmd bootRun $options
+      ;;
+    bootJar)
+      $gradle_cmd bootJar $options
+      ;;
+    dependencies)
+      $gradle_cmd dependencies $options
+      ;;
+    check)
+      $gradle_cmd check $options
+      ;;
+    format)
+      # Try common formatting plugins
+      if grep -q "spotless" build.gradle* 2>/dev/null; then
+        $gradle_cmd spotlessApply $options
+      elif grep -q "prettier" build.gradle* 2>/dev/null; then
+        $gradle_cmd prettier $options
+      else
+        echo "No formatting plugin found. Add spotless or prettier to your build."
+        return 1
+      fi
+      ;;
+    lint)
+      # Try common linting tasks
+      if grep -q "checkstyle" build.gradle* 2>/dev/null; then
+        $gradle_cmd checkstyleMain checkstyleTest $options
+      elif grep -q "lint" build.gradle* 2>/dev/null; then
+        $gradle_cmd lint $options
+      else
+        echo "No linting plugin found. Add checkstyle to your build."
+        return 1
+      fi
+      ;;
+    tasks)
+      $gradle_cmd tasks $options
+      ;;
+    *)
+      echo "Usage: java-gradle <task> [options]"
+      echo "Common tasks:"
+      echo "  build       - Build the project"
+      echo "  run         - Run the main class"
+      echo "  test        - Run tests"
+      echo "  clean       - Clean build directories"
+      echo "  jar         - Create JAR file"
+      echo "  fatjar      - Create fat JAR with dependencies"
+      echo "  bootRun     - Run Spring Boot application"
+      echo "  bootJar     - Create executable Spring Boot JAR"
+      echo "  dependencies - Show dependencies"
+      echo "  check       - Run all checks"
+      echo "  format      - Format code (if plugin available)"
+      echo "  lint        - Run linters (if plugin available)"
+      echo "  tasks       - List available tasks"
+      echo "You can also run any other Gradle task by name"
+      return 1
+      ;;
+  esac
+}
+
+# Create a Java/JUnit test file
+java-gen-test() {
+  local class_name=$1
+  local package_name=${2:-"com.example"}
+  
+  if [[ -z "$class_name" ]]; then
+    echo "Usage: java-gen-test <class-name> [package-name]"
+    echo "Example: java-gen-test UserService com.example.service"
+    return 1
+  fi
+  
+  # Create the test directory structure
+  local test_dir="src/test/java/${package_name//./\/}"
+  mkdir -p "$test_dir"
+  
+  # Add Test suffix if not already there
+  if [[ ! "$class_name" =~ Test$ ]]; then
+    test_class_name="${class_name}Test"
+  else
+    test_class_name="$class_name"
+    # Remove Test suffix from the class being tested
+    class_name="${class_name%Test}"
+  fi
+  
+  # Define the test file path
+  local test_file="$test_dir/$test_class_name.java"
+  
+  # Create the test file
+  cat > "$test_file" << EOF
+package $package_name;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Tests for the $class_name class.
+ */
+@ExtendWith(MockitoExtension.class)
+class $test_class_name {
+    
+    @InjectMocks
+    private $class_name ${class_name,}; // lowercase first letter
+    
+    // Define mocks with @Mock annotation
+    // @Mock
+    // private DependencyClass dependency;
+    
+    @BeforeEach
+    void setUp() {
+        // Initialize if needed
+    }
+    
+    @Test
+    void testSomeMethod() {
+        // Given
+        
+        // When
+        
+        // Then
+        assertTrue(true); // Replace with actual assertions
+    }
+    
+    @Test
+    void testAnotherMethod() {
+        // Given
+        
+        // When
+        
+        // Then
+        assertTrue(true); // Replace with actual assertions
+    }
+}
+EOF
+  
+  echo "Generated test class $test_class_name in package $package_name"
+  echo "Test file created at: $test_file"
+}
+{{- end }}

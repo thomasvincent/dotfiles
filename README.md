@@ -21,8 +21,8 @@ My personal dotfiles optimized for macOS and Linux development, managed with che
 - **Workflow Automation** - Project management, Git, and Docker workflows
 - **Productivity Tools** - Task management, note-taking, and time tracking
 - **macOS Integration** - Native Notes, Reminders, Mail, and Calendar apps integration
-- **Development Workflows** - WordPress, Chef, and Puppet development environments
-- **GTD Methodology** - Getting Things Done workflow support
+- **Development Workflows** - WordPress, Chef, Puppet, Ansible, Java, Groovy, and Rails development environments
+- **GTD Methodology** - Getting Things Done workflow support with OmniFocus integration
 - **Chat Integration** - Slack and Microsoft Teams workflows
 - **Email & Calendar** - Gmail, Google Calendar, and Office365 integrations
 
@@ -79,6 +79,11 @@ make lint
   - **cicd.zsh.tmpl** - CI/CD workflows for Jenkins and GitHub Actions
   - **dev_workflows.zsh.tmpl** - WordPress, Chef, and Puppet development workflows
   - **app_workflows.zsh.tmpl** - Integration with productivity apps (GTD, Mail, Slack, Teams, etc.)
+  - **ansible_workflows.zsh.tmpl** - Ansible development and automation workflows
+  - **java_gradle_workflows.zsh.tmpl** - Java and Gradle development workflows
+  - **groovy_workflows.zsh.tmpl** - Groovy scripting and development workflows
+  - **rails_workflows.zsh.tmpl** - Ruby on Rails development workflows
+  - **omnifocus_workflows.zsh.tmpl** - OmniFocus task management integration
 - **.config/** - XDG configuration files
 - **bin/** - Executable scripts
 - **lib/** - Shared functions and utilities
@@ -189,6 +194,64 @@ Various workflow automation functions are provided to streamline your developmen
 - `puppet-lint [path]` - Run Puppet lint on a module
 - `puppet-test` - Run Puppet Tests with PDK
 - `puppet-build` - Build a Puppet module package
+
+### Ansible Development Workflows
+- `ansible-init-project <project-name> [directory]` - Initialize a new Ansible project
+- `ansible-new-role <role-name> [directory]` - Create a new Ansible role
+- `ansible-run <playbook-path> [inventory-path] [options]` - Run Ansible playbook with common options
+- `ansible-new-vault <vault-name> [vault-directory]` - Create an encrypted Ansible vault file
+- `ansible-generate-inventory <output-file> [source]` - Generate Ansible inventory file
+- `ansible-adhoc <hosts> [module] [args] [inventory]` - Run Ansible adhoc command
+- `ansible-scan-network <network-cidr> [output-file]` - Generate inventory from network scan
+- `ansible-playbook-wizard <playbook-name>` - Interactively create a playbook
+
+### Java/Gradle Development Workflows
+- `java-init-gradle <project-name> [package-name] [directory]` - Initialize a new Java project with Gradle
+- `java-init-spring <project-name> [package-name] [directory]` - Create a Java Spring Boot project
+- `java-versions` - List all available versions of Java via SDKMAN
+- `java-install <version>` - Install and set a specific version of Java via SDKMAN
+- `java-gen-class <class-name> [package-name]` - Generate a new Java class with boilerplate
+- `java-gen-pojo <class-name> [package-name] <fields>` - Generate a POJO with getters/setters/builders
+- `java-gradle-wrapper` - Create Gradle wrapper for a project
+- `java-gradle <task> [options]` - Run common Gradle tasks with provided options
+- `java-gen-test <class-name> [package-name]` - Create a Java/JUnit test file
+
+### Groovy Development Workflows
+- `groovy-init-project <project-name> [package-name] [directory]` - Initialize a new Groovy project with Gradle
+- `groovy-new-script <script-name> [description]` - Create a new Groovy script
+- `groovy-gen-class <class-name> [package-name]` - Generate Groovy class with Spock test
+- `groovy-run <script-path> [args]` - Compile and run a standalone Groovy script
+- `groovy-convert-java <java-file> [output-directory]` - Convert a Java class to Groovy
+- `groovy-gen-dsl <dsl-name> [package-name]` - Generate a Groovy DSL builder
+- `groovy-install <version>` - Install Groovy using SDKMAN
+- `groovy-grape-script <script-name> [description]` - Create a Groovy Grape dependency script
+
+### Rails Development Workflows
+- `rails-init-project <project-name> [db-type] [options] [directory]` - Initialize a new Rails project
+- `rails-gen-model <model-name> [fields]` - Generate a Rails model with boilerplate and specs
+- `rails-gen-controller <controller-name> [actions]` - Generate a Rails controller with views and specs
+- `rails-init-api <project-name> [db-type] [options] [directory]` - Setup a new Rails API project
+- `rails-gen-api-resource <resource-name> [fields]` - Generate a Rails API resource with CRUD endpoints
+- `rails-gen-service <service-name> [method-name]` - Generate a Rails service object
+- `rails-db-migrate [environment]` - Run a Rails database migration
+- `rails-db <operation> [environment]` - Rails database operations
+
+### OmniFocus Integration
+- `of-add <task-name> [note] [due-date]` - Add a task to OmniFocus inbox
+- `of-add-to-project <project-name> <task-name> [note] [due-date]` - Add a task to a specific OmniFocus project
+- `of-projects [filter]` - List all OmniFocus projects
+- `of-tasks <project-name> [include-completed]` - List all tasks in a specific OmniFocus project
+- `of-complete <task-name>` - Mark an OmniFocus task as completed
+- `of-search <search-term> [context]` - Search for tasks in OmniFocus
+- `of-new-project <project-name> [folder-name]` - Create a new OmniFocus project
+- `of-folders` - List all OmniFocus folders
+- `of-today` - Show tasks due today in OmniFocus
+- `of-process-inbox` - Process OmniFocus inbox items to projects
+- `of-template <template-name>` - Create a new project template in OmniFocus
+- `of-apply-template <template-name> <project-name> [folder-name]` - Apply a template to create a new project
+- `of-templates` - List all OmniFocus templates
+- `of-quick-entry` - Create a quick OmniFocus entry with project and context
+- `of-weekly-review` - Create a GTD weekly review workflow in OmniFocus
 
 ## Productivity Tools
 
