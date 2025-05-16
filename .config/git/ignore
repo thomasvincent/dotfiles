@@ -80,7 +80,7 @@ env/
 .ruby-version
 .ruby-gemset
 
-# Java 
+# Java
 *.class
 *.jar
 *.war
@@ -137,3 +137,34 @@ credentials.json
 *.bak
 *~back
 *~lock.*
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json

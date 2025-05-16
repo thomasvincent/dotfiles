@@ -1,6 +1,10 @@
 #!/usr/bin/env zsh
 # Cross-platform compatibility settings and functions
 
+# Source lib files
+[[ -f "${ZDOTDIR:-$HOME}/.zsh/lib/colors.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zsh/lib/colors.zsh"
+[[ -f "${ZDOTDIR:-$HOME}/.zsh/lib/utils.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zsh/lib/utils.zsh"
+
 # ====================================
 # Platform Detection
 # ====================================
@@ -17,7 +21,7 @@ elif [[ "$(uname)" == "Linux" ]]; then
   export PLATFORM_MAC=0
   export PLATFORM_LINUX=1
   export PLATFORM_BSD=0
-  
+
   # Check for WSL
   if grep -q -i microsoft /proc/version 2>/dev/null; then
     export PLATFORM="wsl"
@@ -84,7 +88,7 @@ if (( ${+commands[defaults]} )); then
   # Show/hide hidden files
   alias showfiles="defaults write com.apple.finder AppleShowAllFiles YES; killall Finder"
   alias hidefiles="defaults write com.apple.finder AppleShowAllFiles NO; killall Finder"
-  
+
   # Show/hide desktop icons
   alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
   alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
@@ -182,12 +186,12 @@ export WINDOWNLOADS="$WINHOME/Downloads"
 # Open Windows applications
 wslopen() {
   local file="$1"
-  
+
   if [[ -z "$file" ]]; then
     echo "Usage: wslopen <file|url>"
     return 1
   fi
-  
+
   # Convert path to Windows format if it's a file
   if [[ -f "$file" ]]; then
     # Convert /mnt/c/... to C:\...
@@ -252,12 +256,12 @@ fi
 # Cross-platform open command
 xopen() {
   local file="$1"
-  
+
   if [[ -z "$file" ]]; then
     echo "Usage: xopen <file|url>"
     return 1
   fi
-  
+
   case "$PLATFORM" in
     mac)
       open "$file"
@@ -343,13 +347,13 @@ xpaste() {
 xpm() {
   local action="$1"
   shift
-  
+
   if [[ -z "$action" ]]; then
     echo "Usage: xpm <action> [packages]"
     echo "Actions: search, install, remove, update, clean"
     return 1
   fi
-  
+
   case "$PLATFORM" in
     mac)
       if (( ${+commands[brew]} )); then
@@ -491,7 +495,7 @@ xsysinfo() {
   echo "System Information:"
   echo "-------------------"
   echo "Platform: $PLATFORM"
-  
+
   case "$PLATFORM" in
     mac)
       system_profiler SPSoftwareDataType SPHardwareDataType | grep -v "Serial\|UUID"
@@ -531,14 +535,14 @@ xps() {
 # Cross-platform kill process
 xkill() {
   local pattern="$1"
-  
+
   if [[ -z "$pattern" ]]; then
     echo "Usage: xkill <process_pattern>"
     return 1
   fi
-  
+
   local pids
-  
+
   case "$PLATFORM" in
     mac)
       pids=$(ps -ax | grep -i "$pattern" | grep -v grep | awk '{print $1}')
@@ -550,14 +554,14 @@ xkill() {
       pids=$(ps | grep -i "$pattern" | grep -v grep | awk '{print $1}')
       ;;
   esac
-  
+
   if [[ -z "$pids" ]]; then
     echo "No processes found matching '$pattern'"
     return 1
   fi
-  
+
   echo "Found processes:"
-  
+
   for pid in $pids; do
     if [[ "$PLATFORM" == "mac" ]]; then
       ps -p "$pid" -o pid,command
@@ -565,11 +569,11 @@ xkill() {
       ps -p "$pid" -o pid,comm,args
     fi
   done
-  
+
   echo -n "Kill these processes? (y/n) "
   read -q response
   echo
-  
+
   if [[ "$response" =~ ^[Yy]$ ]]; then
     echo "$pids" | xargs kill -9
     echo "Processes killed"

@@ -8,7 +8,7 @@
 drun() {
   local image="${1:-ubuntu}"
   local cmd="${2:-bash}"
-  
+
   echo "Starting interactive container from $image..."
   docker run --rm -it "$image" "$cmd"
 }
@@ -34,10 +34,10 @@ function docker_logs() {
     echo "Usage: docker_logs <container_name> [--follow]"
     return 1
   fi
-  
+
   local container="$1"
   local follow="${2:---follow}"
-  
+
   if [[ "$follow" == "--follow" ]] || [[ "$follow" == "-f" ]]; then
     docker logs --follow "$container"
   else
@@ -70,10 +70,10 @@ function docker_exec() {
     echo "Usage: docker_exec <container_name> [command]"
     return 1
   fi
-  
+
   local container="$1"
   local cmd="${2:-bash}"
-  
+
   docker exec -it "$container" "$cmd"
 }
 alias dexec='docker_exec'
@@ -86,23 +86,23 @@ dstats() {
 # Pull and update all images
 dupdate() {
   echo "Updating all Docker images..."
-  
+
   # Get all unique images
   local images=$(docker image ls --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>")
-  
+
   if [[ -z "$images" ]]; then
     echo "No images found"
     return 0
   fi
-  
+
   echo "Found the following images:"
   echo "$images"
   echo
-  
+
   echo -n "Pull updates for all images? [y/N] "
   read -q response
   echo
-  
+
   if [[ "$response" =~ ^[Yy]$ ]]; then
     echo "$images" | while read -r image; do
       echo "Updating $image..."
@@ -117,7 +117,7 @@ dkill() {
   echo -n "Kill and remove all running containers? [y/N] "
   read -q response
   echo
-  
+
   if [[ "$response" =~ ^[Yy]$ ]]; then
     echo "Killing all running containers..."
     docker kill $(docker ps -q) 2>/dev/null || true
@@ -130,17 +130,17 @@ dkill() {
 # Create a new Dockerfile
 dcreate() {
   local filename="${1:-Dockerfile}"
-  
+
   if [[ -f "$filename" ]]; then
     echo "File $filename already exists. Overwrite? [y/N] "
     read -q response
     echo
-    
+
     if [[ ! "$response" =~ ^[Yy]$ ]]; then
       return 1
     fi
   fi
-  
+
   cat > "$filename" << 'EOF'
 FROM ubuntu:latest
 
@@ -171,17 +171,17 @@ EOF
 # Create a new docker-compose.yml
 dccompose() {
   local filename="${1:-docker-compose.yml}"
-  
+
   if [[ -f "$filename" ]]; then
     echo "File $filename already exists. Overwrite? [y/N] "
     read -q response
     echo
-    
+
     if [[ ! "$response" =~ ^[Yy]$ ]]; then
       return 1
     fi
   fi
-  
+
   cat > "$filename" << 'EOF'
 version: '3.8'
 
@@ -228,7 +228,7 @@ dinspect() {
     echo "Usage: dinspect <container_or_image>"
     return 1
   fi
-  
+
   docker inspect "$1" | jq
 }
 
@@ -238,14 +238,14 @@ dcompose2kube() {
     echo "kompose not found. Install it first."
     return 1
   fi
-  
+
   local compose_file="${1:-docker-compose.yml}"
-  
+
   if [[ ! -f "$compose_file" ]]; then
     echo "Compose file $compose_file not found"
     return 1
   fi
-  
+
   echo "Converting $compose_file to Kubernetes manifests..."
   kompose convert -f "$compose_file"
 }
@@ -256,6 +256,6 @@ dbuildx() {
     echo "Docker Buildx not available"
     return 1
   fi
-  
+
   docker buildx "$@"
 }

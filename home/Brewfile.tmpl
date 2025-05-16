@@ -1,0 +1,52 @@
+# Brewfile - Homebrew packages
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Taps
+tap "homebrew/bundle"
+tap "homebrew/cask"
+tap "homebrew/core"
+tap "homebrew/services"
+
+# CLI Tools
+brew "git"
+brew "zsh"
+brew "wget"
+brew "curl"
+brew "ripgrep"
+brew "fzf"
+brew "bat"
+brew "eza"
+brew "jq"
+brew "yq"
+brew "chezmoi"
+brew "tmux"
+brew "neovim"
+
+{{ if not .minimal -}}
+# Development Tools
+brew "node"
+brew "python"
+brew "go"
+brew "rust"
+brew "shellcheck"
+brew "pre-commit"
+brew "asdf"
+brew "gh"
+brew "httpie"
+brew "awscli"
+{{ end -}}
+
+{{ if eq .chezmoi.os "darwin" -}}
+# macOS Applications
+cask "visual-studio-code"
+cask "iterm2"
+cask "alfred"
+cask "rectangle"
+cask "1password"
+{{ if not .minimal -}}
+cask "docker"
+cask "postman"
+cask "slack"
+cask "zoom"
+{{ end -}}
+{{ end -}}

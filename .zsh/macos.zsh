@@ -160,7 +160,7 @@ convertimg() {
   local input="$1"
   local output="$2"
   local format="${output##*.}"
-  
+
   if command -v sips >/dev/null; then
     sips -s format "$format" "$input" --out "$output"
     echo "Converted $input to $output"

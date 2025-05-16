@@ -1,0 +1,88 @@
+# Development-focused Brewfile for macOS
+# Run with: brew bundle install --file=~/dotfiles/Brewfile.dev
+
+# Taps
+tap "homebrew/bundle"
+tap "homebrew/cask"
+tap "homebrew/cask-fonts"
+tap "homebrew/core"
+tap "homebrew/services"
+
+# Core dev tools
+brew "asdf"         # Extendable version manager
+brew "bat"          # Better cat
+brew "direnv"       # Environment switcher
+brew "eza"          # Better ls replacement
+brew "fd"           # Better find
+brew "fzf"          # Fuzzy finder
+brew "gh"           # GitHub CLI
+brew "git"          # Version control
+brew "git-lfs"      # Git large file storage
+brew "jq"           # JSON processor
+brew "mise"         # Enhanced asdf alternative
+brew "ripgrep"      # Better grep
+brew "zoxide"       # Smart cd command
+
+# PHP Development
+brew "php"
+brew "composer"
+
+# Java Development (prefer asdf for Java)
+brew "gradle"       # Build tool for Java
+brew "maven"        # Build tool for Java
+
+# Rust tools
+brew "rustup-init"  # Rust installer
+
+# Python tools
+brew "pyenv"        # Python version management
+brew "pipx"         # Install Python apps in isolated environments
+
+# Ruby tools
+brew "ruby-build"   # Ruby installer
+
+# Node.js tools
+brew "yarn"         # Package manager
+
+# Cloud tools
+brew "awscli"       # AWS CLI
+brew "azure-cli"    # Azure CLI
+brew "doctl"        # DigitalOcean CLI
+brew "terraform"    # Infrastructure as code
+
+# Container tools
+brew "docker"       # Container management
+brew "docker-compose" # Multi-container management
+
+# Database tools
+brew "postgresql@14"  # PostgreSQL database
+brew "mysql"          # MySQL database
+brew "redis"          # Redis database
+
+# Productivity
+brew "tmux"         # Terminal multiplexer
+brew "neovim"       # Text editor
+
+# Code quality tools
+brew "shellcheck"   # Shell script linter
+brew "yamllint"     # YAML linter
+
+# GUI Applications
+cask "iterm2"           # Terminal emulator
+cask "visual-studio-code" # Code editor
+cask "docker"           # Docker Desktop
+cask "tableplus"        # Database GUI
+cask "postman"          # API testing
+
+# Programming fonts
+cask "font-jetbrains-mono-nerd-font"       # JetBrains Mono with Nerd Font
+cask "font-fira-code-nerd-font"            # Fira Code with Nerd Font
+cask "font-cascadia-code-pl"               # Cascadia Code with programming ligatures
+
+# IDEs for specific languages
+cask "intellij-idea"    # Java IDE
+cask "phpstorm"         # PHP IDE
+cask "pycharm"          # Python IDE
+cask "rubymine"         # Ruby IDE
+cask "webstorm"         # JavaScript IDE
+cask "android-studio"   # Android development

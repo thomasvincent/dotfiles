@@ -49,23 +49,24 @@ sysinfo() {
 }
 
 # Flush DNS cache
-flushdns() {
+function flush_dns_cache() {
   sudo dscacheutil -flushcache
   sudo killall -HUP mDNSResponder
   echo "DNS cache flushed"
 }
+alias flushdns='flush_dns_cache'
 
 # Show current network information
 netinfo() {
   echo "Network Interfaces:"
   ifconfig | grep -e "^[a-z]" -e "inet "
-  
+
   echo -e "\nIP Addresses:"
   ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}'
-  
+
   echo -e "\nDNS Servers:"
   scutil --dns | grep 'nameserver\[[0-9]*\]' | sort -u
-  
+
   echo -e "\nExternal IP:"
   curl -s https://api.ipify.org
 }
@@ -77,12 +78,12 @@ convertimg() {
     echo "Usage: convertimg input.png output.jpg"
     return 1
   fi
-  
+
   if ! command -v sips &> /dev/null; then
     echo "sips command not found, cannot convert image"
     return 1
   fi
-  
+
   sips -s format "${2##*.}" "$1" --out "$2"
 }
 
@@ -93,19 +94,20 @@ screenshot() {
     echo "Usage: screenshot filename.png"
     return 1
   fi
-  
+
   local output="$HOME/Desktop/$1"
   screencapture -i "$output"
   echo "Screenshot saved to $output"
 }
 
 # Start a simple HTTP server
-# Usage: serve [port]
-serve() {
+# Usage: serve_http [port]
+function serve_http() {
   local port=${1:-8000}
   echo "Starting HTTP server at http://localhost:$port/"
   python3 -m http.server "$port"
 }
+alias serve='serve_http'
 
 # Homebrew update, upgrade, and cleanup
 brewup() {

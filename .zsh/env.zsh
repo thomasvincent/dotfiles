@@ -108,10 +108,33 @@ export GPG_TTY=$(tty)                 # Required for GPG
 # 6. APPLICATION SPECIFIC
 # ====================================
 # FZF Configuration
-export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
-export FZF_DEFAULT_OPTS="--height 40% --reverse --border --inline-info --preview 'bat --style=numbers --color=always --line-range :500 {}'"
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
+# Use fd command only if it's available, otherwise use find
+if command -v fd &>/dev/null; then
+  # Check fd version capability for argument format
+  if fd --help 2>/dev/null | grep -q -- "--type=file"; then
+    # Newer fd version uses --type=file format
+    export FZF_DEFAULT_COMMAND="fd -t f --hidden --follow --exclude .git"
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+    export FZF_ALT_C_COMMAND="fd -t d --hidden --follow --exclude .git"
+  else
+    # Older fd version uses -t f format
+    export FZF_DEFAULT_COMMAND="fd -t f --hidden --follow --exclude .git"
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+    export FZF_ALT_C_COMMAND="fd -t d --hidden --follow --exclude .git"
+  fi
+else
+  # Fallback to find
+  export FZF_DEFAULT_COMMAND="find . -type f -not -path '*/\.git/*' -not -path '*/node_modules/*'"
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  export FZF_ALT_C_COMMAND="find . -type d -not -path '*/\.git/*' -not -path '*/node_modules/*'"
+fi
+
+# Preview with bat if available, otherwise fall back to cat
+if command -v bat &>/dev/null; then
+  export FZF_DEFAULT_OPTS="--height 40% --reverse --border --inline-info --preview 'bat --style=numbers --color=always --line-range :500 {}'"
+else
+  export FZF_DEFAULT_OPTS="--height 40% --reverse --border --inline-info --preview 'cat {}'"
+fi
 
 # Bat (cat alternative)
 export BAT_THEME="ansi" # Use simple theme that's always available

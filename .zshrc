@@ -18,6 +18,9 @@
 ZSHRC_START_TIME=$EPOCHREALTIME
 EPOCHREALTIME_AT_STARTUP=$EPOCHREALTIME
 
+# Load compatibility layer first to prevent errors
+[[ -f "${ZDOTDIR:-$HOME}/.zsh/compatibility.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zsh/compatibility.zsh"
+
 # Load performance optimization tools early
 [[ -f "${ZDOTDIR:-$HOME}/.zsh/performance.zsh" ]] && source "${ZDOTDIR:-$HOME}/.zsh/performance.zsh"
 
@@ -34,56 +37,24 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # ====================================
-# 3. ZSH OPTIONS
-# ====================================
-# History
-HISTSIZE=50000
-SAVEHIST=50000
-HISTFILE=${ZDOTDIR:-$HOME}/.zsh_history
-
-setopt EXTENDED_HISTORY       # Record timestamp
-setopt HIST_EXPIRE_DUPS_FIRST # Delete duplicates first
-setopt HIST_IGNORE_DUPS       # Don't record duplicate commands
-setopt HIST_IGNORE_SPACE      # Don't record commands starting with space
-setopt HIST_VERIFY            # Don't execute history expansion immediately
-setopt SHARE_HISTORY          # Share history between sessions
-setopt INC_APPEND_HISTORY     # Append as commands are executed
-
-# Directory
-setopt AUTO_CD              # cd by typing directory name
-setopt AUTO_PUSHD           # Push dir to stack on cd
-setopt PUSHD_IGNORE_DUPS    # No duplicate dirs in stack
-setopt PUSHD_SILENT         # Don't print dir stack after push/pop
-
-# Completion
-setopt COMPLETE_IN_WORD     # Complete from cursor position
-setopt ALWAYS_TO_END        # Move cursor to end after completion
-
-# Globbing
-setopt EXTENDED_GLOB        # Extended globbing syntax
-
-# Job control
-setopt LONG_LIST_JOBS       # List jobs in long format by default
-setopt NOTIFY               # Report status of background jobs immediately
-
-# General
-setopt INTERACTIVE_COMMENTS # Allow comments in interactive shells
-setopt PROMPT_SUBST         # Parameter expansion in prompts
-setopt NO_BEEP              # No beep on error
-
-# ====================================
 # 3. CONFIGURATION DIRECTORIES
 # ====================================
 ZSH_CONFIG_DIR="${ZDOTDIR:-$HOME}/.zsh"
 
 # ====================================
-# 4. PLUGIN MANAGEMENT
+# 4. ZSH OPTIONS
+# ====================================
+# Load core ZSH settings and options
+[[ -f "$ZSH_CONFIG_DIR/core.zsh" ]] && source "$ZSH_CONFIG_DIR/core.zsh"
+
+# ====================================
+# 5. PLUGIN MANAGEMENT
 # ====================================
 # Load enhanced plugin management
 [[ -f "$ZSH_CONFIG_DIR/plugins.zsh" ]] && source "$ZSH_CONFIG_DIR/plugins.zsh"
 
 # ====================================
-# 5. LOAD CONFIGURATION FILES
+# 6. LOAD CONFIGURATION FILES
 # ====================================
 
 # Create directory structure if it doesn't exist
@@ -111,82 +82,44 @@ done
 if [[ -d "$ZSH_CONFIG_DIR/functions.d" ]]; then
   # Add to fpath
   fpath=("$ZSH_CONFIG_DIR/functions.d" $fpath)
-  
-  # Load functions with numeric prefix first, then others
-  for func_file in "$ZSH_CONFIG_DIR"/functions.d/[0-9]*.zsh(N); do
-    source "$func_file"
+
+  # Load all function files from our dotfiles repo
+  for func_file in "/Users/thomasvincent/dotfiles/.zsh/functions.d/"*.zsh(N); do
+    # Skip loading function files that might cause errors during startup
+    if [[ -r "$func_file" ]]; then
+      source "$func_file"
+    fi
   done
-  
-  # Then load other function files (without numeric prefix)
-  for func_file in "$ZSH_CONFIG_DIR"/functions.d/^[0-9]*.zsh(N); do
-    source "$func_file"
-  done
+
+  # Skip loading any function files that aren't managed by our dotfiles repo
+  # This prevents errors from legacy or system-installed function files
 fi
 
 # ====================================
-# 6. POWERLEVEL10K CONFIGURATION
+# 7. POWERLEVEL10K CONFIGURATION
 # ====================================
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh
 [[ -f "${ZDOTDIR:-$HOME}/.p10k.zsh" ]] && source "${ZDOTDIR:-$HOME}/.p10k.zsh"
 
 # ====================================
-# 7. COMPLETION SYSTEM
+# 8. COMPLETION SYSTEM
 # ====================================
-# Load completion system if not already loaded
-if ! whence -w compdef >/dev/null; then
-  # Load zsh completions
-  autoload -Uz compinit
-  
-  # Optimize compinit for faster startup
-  # Only rebuild completion dump file once a day
-  local zcompdump="${ZDOTDIR:-$HOME}/.zcompdump"
-  if [[ -n ${ZDOTDIR} ]]; then
-    zcompdump="${ZDOTDIR}/.zcompdump"
-  fi
-  
-  if [[ -f "$zcompdump" && $(find "$zcompdump" -mtime +1) ]]; then
-    compinit -d "$zcompdump"
-    touch "$zcompdump"
-  else
-    compinit -C -d "$zcompdump"
-  fi
-  
-  # Configure completion styles
-  # Use caching for slow functions
-  zstyle ':completion:*' use-cache on
-  zstyle ':completion:*' cache-path "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompcache"
-  
-  # Settings for completion menu
-  zstyle ':completion:*' menu select
-  zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
-  zstyle ':completion:*' completer _expand _complete _ignored _approximate
-  
-  # Grouping and descriptions
-  zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
-  zstyle ':completion:*:messages' format '%F{purple} -- %d --%f'
-  zstyle ':completion:*:warnings' format '%F{red}No matches for: %d%f'
-  
-  # Colors for file types and process listing
-  zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
-  zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
-fi
+# Completion system is now loaded in core.zsh
 
 # ====================================
-# 8. KEY BINDINGS
-# ====================================
-# Emacs key bindings
-bindkey -e
+# Load FZF configuration
+[[ -f "$ZSH_CONFIG_DIR/fzf.zsh" ]] && source "$ZSH_CONFIG_DIR/fzf.zsh"
 
-# Fix home/end keys
-bindkey '^[[H' beginning-of-line
-bindkey '^[[F' end-of-line
+# 9. KEY BINDINGS
+# ====================================
+# Key bindings are now configured in core.zsh
 
 # FZF key bindings if installed
 [[ -f "/opt/homebrew/opt/fzf/shell/key-bindings.zsh" ]] && source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
 [[ -f "/usr/local/opt/fzf/shell/key-bindings.zsh" ]] && source "/usr/local/opt/fzf/shell/key-bindings.zsh"
 
 # ====================================
-# 9. TOOL INTEGRATIONS
+# 10. TOOL INTEGRATIONS
 # ====================================
 # direnv - directory environment manager
 if command -v direnv >/dev/null; then
@@ -209,21 +142,18 @@ fi
 [[ -e "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
 
 # ====================================
-# 10. LOCAL CUSTOMIZATIONS
+# 11. LOCAL CUSTOMIZATIONS
 # ====================================
 # Load local settings that should not be committed to source control
 [[ -f "$ZSH_CONFIG_DIR/local.zsh" ]] && source "$ZSH_CONFIG_DIR/local.zsh"
 
 # ====================================
-# 11. FINISHING TOUCHES
+# 12. FINISHING TOUCHES
 # ====================================
 # Ensure path arrays don't contain duplicates
 typeset -U PATH path fpath
 
-# Fix for Terraform completion
-if command -v terraform &>/dev/null; then
-  complete -o nospace -C $(which terraform) terraform 2>/dev/null || true
-fi
+# Terraform completion will be handled at the end of the file
 
 # Build BAT cache if needed
 if command -v bat &>/dev/null && [[ ! -f "$HOME/.cache/bat/themes.bin" ]]; then
@@ -240,5 +170,25 @@ fi
 
 # Welcome message only (no error-prone reporting functions)
 echo "👋 Welcome back, ${USER}! Running on $(uname) - Platform: ${PLATFORM:=unknown}"
+
+# Bash completions and Terraform integration
+# ==============================================
+# Load bash completion system (only once)
+(( ${+functions[bashcompinit]} )) && unfunction bashcompinit
+autoload -U +X bashcompinit && bashcompinit 2>/dev/null
+
+# Add Terraform completion if available
+if command -v terraform >/dev/null 2>&1; then
+  terraform_bin=$(which terraform 2>/dev/null)
+  if [[ -n "$terraform_bin" && -x "$terraform_bin" ]]; then
+    complete -o nospace -C "$terraform_bin" terraform 2>/dev/null || true
+  fi
+fi
+eval "$(pyenv init -)"
+export PATH="$HOME/.npm/bin:$PATH"
+alias claude="/Users/thomasvincent/.npm/bin/claude"
+
+# Clean up any additional completions to prevent duplicates
+
 autoload -U +X bashcompinit && bashcompinit
 complete -o nospace -C /opt/homebrew/bin/terraform terraform

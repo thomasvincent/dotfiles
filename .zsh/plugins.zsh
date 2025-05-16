@@ -3,6 +3,17 @@
 
 # Initialize plugin system
 # =======================
+# Set diagnostic variables for troubleshooting
+export GITSTATUS_LOG_LEVEL=DEBUG
+
+# Make sure environment is properly set up for plugins
+if [[ ! -o interactive ]]; then
+  return 0
+fi
+
+# Compatibility fix for zle
+zmodload zsh/zle 2>/dev/null || true
+
 # Set up Zinit if not already installed
 ZINIT_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
 ZINIT_BIN_DIR="${ZINIT_HOME}/zinit.zsh"
@@ -19,112 +30,159 @@ if [[ ! -f "$ZINIT_BIN_DIR" ]]; then
   fi
 fi
 
+# Function to safely load plugins avoiding 404 errors
+_load_plugin_safely() {
+  local name=$1
+  local direct_url=$2
+  local fallback_url=$3
+
+  # Try primary URL first
+  if curl --output /dev/null --silent --head --fail "$direct_url"; then
+    zinit snippet "$direct_url" 2>/dev/null || true
+  # Try fallback if provided
+  elif [[ -n "$fallback_url" ]] && curl --output /dev/null --silent --head --fail "$fallback_url"; then
+    zinit snippet "$fallback_url" 2>/dev/null || true
+  else
+    print -P "%F{yellow}⚠ Plugin $name not loaded - URLs unreachable%f" >&2
+  fi
+}
+
 # Load zinit if installed
 if [[ -f "$ZINIT_BIN_DIR" ]]; then
   source "$ZINIT_BIN_DIR"
-  
+
   # ======================
   # Plugin Configurations
   # ======================
-  
+
   # Completion enhancements
   # =======================
   # Fast tab completion
   zinit ice wait'0a' lucid atload'_zsh_autosuggest_start'
   zinit light zsh-users/zsh-autosuggestions
-  
+
   # Syntax highlighting - load close to end to ensure proper priority
   zinit ice wait'0b' lucid atinit'zicompinit; zicdreplay'
   zinit light zdharma-continuum/fast-syntax-highlighting
-  
+
   # History substring searching
   zinit ice wait'0c' lucid
   zinit light zsh-users/zsh-history-substring-search
-  
+
   # Enhanced 'cd' with frecency
   zinit ice wait'1' lucid
   zinit light agkozak/zsh-z
-  
+
   # ======================
   # Additional Plugins
   # ======================
-  
+
   # Utility plugins
   # ==============
-  
-  # Git aliases and completions 
+
+  # Git aliases and completions
   zinit ice wait'1' lucid
-  zinit light zdharma-continuum/zinit-annex-meta-plugins
-  
-  # Utility functions - use built-in functions instead
-  # zinit ice wait'1' lucid
-  # zinit snippet OMZP::utility
-  
-  # Extract functionality handled by our custom extract function
-  # zinit ice wait'1' lucid
-  # zinit snippet OMZP::extract
-  
+  zinit snippet OMZP::git
+
+  # Better Git integration with additional aliases and functions
+  zinit ice wait'1' lucid
+  zinit light wfxr/forgit
+
+  # Utility functions - use direct URLs instead of OMZP to avoid 404s
+  zinit ice wait'1' lucid silent
+  zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/common-aliases/common-aliases.plugin.zsh 2>/dev/null || true
+
+  # Extract functionality - direct URL
+  zinit ice wait'1' lucid silent
+  zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/extract/extract.plugin.zsh 2>/dev/null || true
+
   # Enhanced directory navigation
   zinit ice wait'1' lucid
   zinit light agkozak/zsh-z
-  
+
+  # Directory marks/bookmarks
+  zinit ice wait'1' lucid
+  zinit light jocelynmallon/zshmarks
+
+  # Auto jump to parent directories
+  zinit ice wait'1' lucid
+  zinit light peterhurford/up.zsh
+
   # ======================
   # Completions
   # ======================
   # Load completion system if not already loaded
   zinit ice wait'0' lucid blockf atpull'zinit creinstall -q .'
   zinit light zsh-users/zsh-completions
-  
+
   # Docker completions
   if (( $+commands[docker] )); then
     # Skip Docker completion for now
     # zinit ice wait'1' lucid as'completion'
     # zinit snippet <(docker completion zsh 2>/dev/null)
+
+    # Add docker-compose completion safely - direct URL
+    if (( $+commands[docker-compose] )); then
+      zinit ice wait'1' lucid as'completion'
+      zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/docker-compose/_docker-compose 2>/dev/null || true
+    fi
   fi
-  
+
   # Kubectl completions
   if (( $+commands[kubectl] )); then
     # Skip Kubectl completion for now
     # zinit ice wait'1' lucid as'completion'
     # zinit snippet <(kubectl completion zsh 2>/dev/null)
-    
+
   fi
-  
-  # NPM completions
+
+  # NPM completions - direct URL
   if (( $+commands[npm] )); then
     zinit ice wait'1' lucid as'completion'
-    zinit snippet OMZP::npm
+    zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/npm/npm.plugin.zsh
   fi
-  
+
   # ======================
   # Developer Tools
   # ======================
-  
-  # FZF integration
+
+  # FZF integration - direct URL
   zinit ice wait'1' lucid
-  zinit snippet OMZP::fzf
-  
-  # Python utilities
+  zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/fzf/fzf.plugin.zsh 2>/dev/null || true
+
+  # Python utilities - direct URL
   zinit ice wait'1' lucid
-  zinit snippet OMZP::python
-  
-  # Node.js utilities
+  zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/python/python.plugin.zsh 2>/dev/null || true
+
+  # Node.js utilities - direct URL
   zinit ice wait'1' lucid
-  zinit snippet OMZP::node
-  
+  zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/node/node.plugin.zsh 2>/dev/null || true
+
+  # terraform utilities - direct URL
+  zinit ice wait'1' lucid silent
+  zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/terraform/terraform.plugin.zsh 2>/dev/null || true
+
+  # direnv integration - direct URL
+  zinit ice wait'1' lucid silent
+  zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/direnv/direnv.plugin.zsh 2>/dev/null || true
+
+  # asdf version manager integration - direct URL
+  zinit ice wait'1' lucid silent
+  zinit snippet https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/asdf/asdf.plugin.zsh 2>/dev/null || true
+
   # ======================
   # Theme Configuration
   # ======================
-  
+
   # Powerlevel10k - Fast, customizable prompt
   # Load configuration from ~/.p10k.zsh
   zinit ice depth=1
   zinit light romkatv/powerlevel10k
-  
+
   # ======================
   # Key Bindings
   # ======================
-  
+
   # Bind keys for history-substring-search if loaded
   if zinit lb zsh-users/zsh-history-substring-search &>/dev/null; then
     bindkey '^[[A' history-substring-search-up
@@ -132,30 +190,30 @@ if [[ -f "$ZINIT_BIN_DIR" ]]; then
     bindkey '^K' history-substring-search-up
     bindkey '^J' history-substring-search-down
   fi
-  
+
   # ======================
   # Plugin Configurations
   # ======================
-  
+
   # Autosuggestions configuration
   ZSH_AUTOSUGGEST_STRATEGY=(history completion)
   ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
   ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=244"
   ZSH_AUTOSUGGEST_USE_ASYNC=1
-  
+
   # Fast-syntax-highlighting configuration
   # FAST_HIGHLIGHT[use_brackets]=1 # Disabled to prevent errors
-  
-  # Zinit turbo mode
+
+  # Zinit turbo mode - direct URL with full path
   zinit wait'2' lucid for \
-    OMZP::command-not-found
-  
+    https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/command-not-found/command-not-found.plugin.zsh
+
   # =======================
   # User Plugin Selection
   # =======================
   # Load user-specified plugins from local configuration
   [[ -f "$HOME/.zsh/plugins.local.zsh" ]] && source "$HOME/.zsh/plugins.local.zsh"
-  
+
 else
   # Fallback if zinit not available
   echo "Warning: Zinit not found. Using basic configuration."

@@ -51,7 +51,7 @@ path=(
   /opt/homebrew/sbin
   /usr/local/bin
   /usr/local/sbin
-  
+
   # System directories
   /usr/bin
   /bin

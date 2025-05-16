@@ -15,11 +15,12 @@ path=(
   /opt/homebrew/sbin
   /usr/local/bin
   /usr/local/sbin
-  
+
   # User directories (higher priority than system)
   $HOME/.local/bin
   $HOME/bin
-  
+  $HOME/dotfiles/bin
+
   # Development tools managed by package managers
   $HOME/.cargo/bin                     # Rust/Cargo
   $HOME/.npm/bin                       # NPM global packages
@@ -29,7 +30,7 @@ path=(
   $HOME/go/bin                         # Go packages
   $HOME/Library/Python/3.9/bin         # Python packages (adjust version as needed)
   $HOME/.local/share/JetBrains/Toolbox/scripts # JetBrains Toolbox
-  
+
   # System directories (lowest priority, cleaned up to avoid redundancy)
   /usr/bin
   /bin
@@ -68,7 +69,8 @@ typeset -U CDPATH cdpath
 cdpath=(
   $HOME
   $HOME/Documents
-  $HOME/Projects       # Adjust based on your preferred project location
+  $HOME/Documents/Projects  # New project location
+  $HOME/Projects           # Legacy project location
   $HOME/Desktop
 )
 cdpath=($^cdpath(N))
