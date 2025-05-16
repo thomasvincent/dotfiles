@@ -19,4 +19,3 @@ home/dot_zsh/productivity.zsh.tmpl @thomasvincent
 
 # Documentation files
 *.md @thomasvincent
-EOF < /dev/null
