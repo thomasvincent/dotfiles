@@ -1,0 +1,945 @@
+# Development Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# ==================================
+# WordPress Development Workflows
+# ==================================
+
+{{ if or (eq .preferences.enable_wordpress true) (eq .enable_dev_tools true) -}}
+# Initialize a WordPress development environment
+wp-init() {
+  local project_name=$1
+  local version=${2:-"latest"}
+  local port=${3:-8888}
+  
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: wp-init <project-name> [version] [port]"
+    echo "Example: wp-init my-wordpress-site latest 8000"
+    return 1
+  fi
+  
+  local dir="{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"
+  
+  # Create project directory if it doesn't exist
+  mkdir -p "$dir"
+  cd "$dir" || return 1
+  
+  # Check if Docker is installed
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Error: Docker is not installed. Please install Docker first."
+    return 1
+  fi
+  
+  # Check if docker-compose is installed
+  if ! command -v docker-compose >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
+    echo "Error: docker-compose is not installed. Please install docker-compose first."
+    return 1
+  fi
+  
+  # Create a docker-compose.yml file for WordPress
+  cat > docker-compose.yml << EOF
+version: '3'
+
+services:
+  db:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    networks:
+      - wpsite
+
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:$version
+    ports:
+      - "$port:80"
+    restart: always
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: 1
+    networks:
+      - wpsite
+
+  phpmyadmin:
+    depends_on:
+      - db
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "$((port+1)):80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: wordpress
+    networks:
+      - wpsite
+
+networks:
+  wpsite:
+
+volumes:
+  db_data:
+EOF
+
+  # Create a custom php.ini for upload limits
+  cat > uploads.ini << EOF
+file_uploads = On
+memory_limit = 256M
+upload_max_filesize = 64M
+post_max_size = 64M
+max_execution_time = 600
+EOF
+
+  # Create a gitignore file
+  cat > .gitignore << EOF
+# WordPress core files (if using Git for WP core)
+wp-admin/
+wp-includes/
+wp-config.php
+wp-config-sample.php
+wp-content/index.php
+index.php
+license.txt
+readme.html
+xmlrpc.php
+
+# Configuration files
+wp-config.php
+.htaccess
+
+# Uploads
+wp-content/uploads/
+
+# Plugins (if managing via Composer)
+# wp-content/plugins/
+
+# Themes (if managing via Composer)
+# wp-content/themes/
+
+# Node modules
+node_modules/
+
+# Composer
+vendor/
+
+# Log files
+*.log
+error_log
+wp-content/debug.log
+
+# Caches
+wp-content/cache/
+wp-content/advanced-cache.php
+wp-content/wp-cache-config.php
+wp-content/backup-db/
+
+# Docker volumes
+db_data/
+
+# System files
+.DS_Store
+Thumbs.db
+EOF
+
+  # Create directories for WordPress
+  mkdir -p wp-content/plugins wp-content/themes wp-content/uploads
+  
+  # Initialize Git repository
+  git init
+  git add .gitignore docker-compose.yml uploads.ini
+  git commit -m "Initial WordPress development environment setup"
+  
+  echo "Starting WordPress containers..."
+  if command -v docker-compose >/dev/null 2>&1; then
+    docker-compose up -d
+  else 
+    docker compose up -d
+  fi
+  
+  echo "WordPress development environment setup complete!"
+  echo "WordPress is running at: http://localhost:$port"
+  echo "PhpMyAdmin is running at: http://localhost:$((port+1))"
+  echo "Username: wordpress"
+  echo "Password: wordpress"
+}
+
+# Generate a WordPress child theme
+wp-child-theme() {
+  local parent_theme=$1
+  local child_theme_name=$2
+  local child_theme_title=${3:-"$child_theme_name"}
+  local author=${4:-"{{ .name | default \"WordPress Developer\" }}"}
+  
+  if [[ -z "$parent_theme" || -z "$child_theme_name" ]]; then
+    echo "Usage: wp-child-theme <parent-theme-folder> <child-theme-folder> [child-theme-title] [author]"
+    echo "Example: wp-child-theme twentytwentyone my-custom-theme \"My Custom Theme\" \"John Doe\""
+    return 1
+  fi
+  
+  # Check if we're in a WordPress project
+  if [[ ! -d "wp-content" && ! -d "../wp-content" ]]; then
+    echo "Error: Not in a WordPress project directory."
+    echo "Please navigate to the WordPress root or wp-content directory."
+    return 1
+  fi
+  
+  # Navigate to themes directory
+  if [[ -d "wp-content/themes" ]]; then
+    cd wp-content/themes || return 1
+  elif [[ -d "themes" ]]; then
+    cd themes || return 1
+  elif [[ -d "../wp-content/themes" ]]; then
+    cd ../wp-content/themes || return 1
+  else
+    echo "Error: Could not find themes directory."
+    return 1
+  fi
+  
+  # Check if parent theme exists
+  if [[ ! -d "$parent_theme" ]]; then
+    echo "Error: Parent theme '$parent_theme' not found."
+    echo "Available themes:"
+    ls -la
+    return 1
+  fi
+  
+  # Create child theme directory
+  mkdir -p "$child_theme_name"
+  
+  # Create style.css
+  cat > "$child_theme_name/style.css" << EOF
+/*
+Theme Name: $child_theme_title
+Theme URI: 
+Description: Child theme of $parent_theme
+Author: $author
+Author URI: 
+Template: $parent_theme
+Version: 1.0.0
+Text Domain: $child_theme_name
+*/
+
+/* Add your custom styles below this line */
+
+EOF
+
+  # Create functions.php
+  cat > "$child_theme_name/functions.php" << EOF
+<?php
+/**
+ * Child Theme Functions
+ *
+ * @package $child_theme_title
+ */
+
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+/**
+ * Enqueue parent theme and child theme styles
+ */
+function ${child_theme_name//-/_}_enqueue_styles() {
+    $parent_style = '$parent_theme';
+    
+    // Enqueue parent theme's style
+    wp_enqueue_style( $parent_style, get_template_directory_uri() . '/style.css' );
+    
+    // Enqueue child theme's style
+    wp_enqueue_style( '${child_theme_name//-/_}-style',
+        get_stylesheet_directory_uri() . '/style.css',
+        array( $parent_style ),
+        wp_get_theme()->get('Version')
+    );
+}
+add_action( 'wp_enqueue_scripts', '${child_theme_name//-/_}_enqueue_styles' );
+
+/**
+ * Custom functions for this child theme
+ */
+
+// Add your custom functions below this line
+
+
+EOF
+
+  # Create screenshot.png (empty placeholder)
+  touch "$child_theme_name/screenshot.png"
+  
+  echo "Child theme '$child_theme_title' created successfully in $child_theme_name/"
+  echo "Don't forget to activate the child theme in the WordPress admin!"
+}
+
+# Export WordPress database
+wp-export-db() {
+  local output_file=${1:-"wordpress_db_$(date +%Y%m%d).sql"}
+  
+  # Check if we're in a WordPress Docker project
+  if [[ ! -f "docker-compose.yml" ]]; then
+    echo "Error: docker-compose.yml not found."
+    echo "Please run this command in a directory with a WordPress Docker setup."
+    return 1
+  fi
+  
+  # Check if WordPress containers are running
+  if ! docker ps | grep -q wordpress; then
+    echo "Error: WordPress containers are not running."
+    echo "Start them with 'docker-compose up -d' first."
+    return 1
+  fi
+  
+  echo "Exporting WordPress database to $output_file..."
+  
+  # Find the database container name
+  local db_container
+  db_container=$(docker ps | grep mysql | grep -v "phpmyadmin" | awk '{print $NF}')
+  
+  if [[ -z "$db_container" ]]; then
+    echo "Error: Could not find MySQL container."
+    return 1
+  fi
+  
+  # Export the database
+  docker exec "$db_container" mysqldump -u wordpress -pwordpress wordpress > "$output_file"
+  
+  echo "Database exported to $output_file"
+}
+
+# Install WP-CLI in a WordPress project
+wp-install-cli() {
+  # Check if WP-CLI is already installed
+  if command -v wp >/dev/null 2>&1; then
+    echo "WP-CLI is already installed globally."
+    return 0
+  fi
+  
+  echo "Installing WP-CLI..."
+  curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+  chmod +x wp-cli.phar
+  
+  # Check if we can move it to /usr/local/bin
+  if [[ -d "/usr/local/bin" && -w "/usr/local/bin" ]]; then
+    sudo mv wp-cli.phar /usr/local/bin/wp
+    echo "WP-CLI installed globally at /usr/local/bin/wp"
+  else
+    mkdir -p "$HOME/bin"
+    mv wp-cli.phar "$HOME/bin/wp"
+    
+    # Add to PATH if it's not already there
+    if [[ ! "$PATH" =~ "$HOME/bin" ]]; then
+      echo "export PATH=\"\$HOME/bin:\$PATH\"" >> ~/.zshrc
+      echo "Added $HOME/bin to your PATH. Please restart your terminal or run 'source ~/.zshrc'"
+    fi
+    
+    echo "WP-CLI installed at $HOME/bin/wp"
+  fi
+  
+  # Test the installation
+  if command -v wp >/dev/null 2>&1; then
+    wp --info
+  else
+    echo "You can now use WP-CLI with: $HOME/bin/wp --info"
+  fi
+}
+{{- end }}
+
+# ==================================
+# Chef Development Workflows
+# ==================================
+
+{{ if or (eq .preferences.enable_chef true) (eq .enable_dev_tools true) -}}
+# Initialize a Chef cookbook
+chef-init-cookbook() {
+  local cookbook_name=$1
+  local options="${@:2}"
+  
+  if [[ -z "$cookbook_name" ]]; then
+    echo "Usage: chef-init-cookbook <cookbook-name> [options]"
+    echo "Example: chef-init-cookbook my-cookbook --cookbook-license apache2"
+    return 1
+  fi
+  
+  # Check if Chef is installed
+  if ! command -v chef >/dev/null 2>&1; then
+    echo "Error: Chef is not installed."
+    echo "Install it with: gem install chef"
+    return 1
+  fi
+  
+  # Create the cookbook
+  chef generate cookbook "$cookbook_name" $options
+  
+  # Navigate to the cookbook
+  cd "$cookbook_name" || return 1
+  
+  # Initialize git repository
+  git init
+  
+  # Create .gitignore if it doesn't exist
+  if [[ ! -f ".gitignore" ]]; then
+    cat > .gitignore << 'EOF'
+.vagrant
+*~
+*#
+.#*
+\#*#
+.*.sw[a-z]
+*.un~
+
+# Bundler
+Gemfile.lock
+gems.locked
+bin/*
+.bundle/*
+
+# test kitchen
+.kitchen/
+kitchen.local.yml
+
+# Chef
+Berksfile.lock
+.zero-knife.rb
+Policyfile.lock.json
+
+# IDE files
+.idea/
+.vscode/
+EOF
+  fi
+  
+  # Initial commit
+  git add .
+  git commit -m "Initial Chef cookbook created"
+  
+  echo "Chef cookbook '$cookbook_name' initialized successfully"
+  echo "Run 'kitchen create' to create a test instance"
+}
+
+# Generate a Chef recipe
+chef-gen-recipe() {
+  local recipe_name=$1
+  
+  if [[ -z "$recipe_name" ]]; then
+    echo "Usage: chef-gen-recipe <recipe-name>"
+    echo "Example: chef-gen-recipe web_server"
+    return 1
+  fi
+  
+  # Check if we're in a Chef cookbook
+  if [[ ! -f "metadata.rb" ]]; then
+    echo "Error: Not in a Chef cookbook directory."
+    echo "Run this command from the root of your cookbook."
+    return 1
+  fi
+  
+  # Generate the recipe
+  chef generate recipe "$recipe_name"
+  
+  # Generate a test for the recipe
+  chef generate recipe_spec "$recipe_name"
+  
+  echo "Recipe '$recipe_name' created successfully"
+  echo "Edit it at recipes/$recipe_name.rb"
+  echo "Write tests at spec/unit/recipes/${recipe_name}_spec.rb"
+}
+
+# Test a Chef cookbook with Test Kitchen
+chef-test() {
+  local instance=${1:-"default"}
+  
+  # Check if we're in a Chef cookbook
+  if [[ ! -f "metadata.rb" ]]; then
+    echo "Error: Not in a Chef cookbook directory."
+    echo "Run this command from the root of your cookbook."
+    return 1
+  fi
+  
+  # Check if Test Kitchen is installed
+  if ! command -v kitchen >/dev/null 2>&1; then
+    echo "Error: Test Kitchen is not installed."
+    echo "Install it with: gem install test-kitchen kitchen-vagrant"
+    return 1
+  fi
+  
+  echo "Testing Chef cookbook..."
+  
+  # Run Test Kitchen
+  kitchen create "$instance"
+  kitchen converge "$instance"
+  kitchen verify "$instance"
+  
+  echo "Test complete. Run 'kitchen destroy' to clean up the test instance."
+}
+
+# Create a Chef role
+chef-create-role() {
+  local role_name=$1
+  local description=${2:-"Role $role_name"}
+  
+  if [[ -z "$role_name" ]]; then
+    echo "Usage: chef-create-role <role-name> [description]"
+    echo "Example: chef-create-role web_server \"Web Server Role\""
+    return 1
+  fi
+  
+  # Create the roles directory if it doesn't exist
+  mkdir -p roles
+  
+  # Create the role file
+  cat > "roles/$role_name.json" << EOF
+{
+  "name": "$role_name",
+  "description": "$description",
+  "json_class": "Chef::Role",
+  "default_attributes": {
+    
+  },
+  "override_attributes": {
+    
+  },
+  "chef_type": "role",
+  "run_list": [
+    
+  ],
+  "env_run_lists": {
+    
+  }
+}
+EOF
+  
+  echo "Role '$role_name' created at roles/$role_name.json"
+  echo "Edit the file to add run list items and attributes."
+}
+
+# Generate a Chef cookbook report
+chef-report() {
+  local output_file=${1:-"cookbook_report.md"}
+  
+  # Check if we're in a Chef cookbook
+  if [[ ! -f "metadata.rb" ]]; then
+    echo "Error: Not in a Chef cookbook directory."
+    echo "Run this command from the root of your cookbook."
+    return 1
+  fi
+  
+  # Get cookbook name and version
+  local cookbook_name=$(grep "^name" metadata.rb | sed -E "s/name\s+'([^']+)'.*/\1/")
+  local cookbook_version=$(grep "^version" metadata.rb | sed -E "s/version\s+'([^']+)'.*/\1/")
+  
+  # Create the report
+  cat > "$output_file" << EOF
+# Chef Cookbook Report: $cookbook_name v$cookbook_version
+
+## Overview
+
+$(grep "^description" metadata.rb | sed -E "s/description\s+'([^']+)'.*/\1/" || echo "No description found.")
+
+## Recipes
+
+EOF
+  
+  # List recipes
+  for recipe in recipes/*.rb; do
+    recipe_name=$(basename "$recipe" .rb)
+    echo "### $recipe_name" >> "$output_file"
+    echo "" >> "$output_file"
+    
+    # Extract recipe description from comments
+    grep "^#" "$recipe" | grep -v "^#=\|^#-\|^##\|^###" | sed 's/^# //' >> "$output_file"
+    
+    echo "" >> "$output_file"
+  done
+  
+  # List attributes
+  if [[ -d "attributes" ]]; then
+    echo "## Attributes" >> "$output_file"
+    echo "" >> "$output_file"
+    
+    for attr in attributes/*.rb; do
+      attr_name=$(basename "$attr" .rb)
+      echo "### $attr_name" >> "$output_file"
+      echo "" >> "$output_file"
+      
+      # Extract attribute descriptions
+      grep "^#" "$attr" | grep -v "^#=\|^#-\|^##\|^###" | sed 's/^# //' >> "$output_file"
+      
+      echo "" >> "$output_file"
+    done
+  fi
+  
+  # List dependencies
+  echo "## Dependencies" >> "$output_file"
+  echo "" >> "$output_file"
+  grep "^depends" metadata.rb | sed -E "s/depends\s+'([^']+)'(.*)/- \1\2/" >> "$output_file"
+  echo "" >> "$output_file"
+  
+  echo "Cookbook report generated at $output_file"
+}
+
+# Upload a Chef cookbook to a Chef server
+chef-upload() {
+  # Check if we're in a Chef cookbook
+  if [[ ! -f "metadata.rb" ]]; then
+    echo "Error: Not in a Chef cookbook directory."
+    echo "Run this command from the root of your cookbook."
+    return 1
+  fi
+  
+  # Check if knife is installed
+  if ! command -v knife >/dev/null 2>&1; then
+    echo "Error: knife command not found."
+    echo "Please ensure Chef Workstation is installed and knife is configured."
+    return 1
+  fi
+  
+  # Get cookbook name
+  local cookbook_name=$(grep "^name" metadata.rb | sed -E "s/name\s+'([^']+)'.*/\1/")
+  
+  echo "Uploading cookbook $cookbook_name to Chef server..."
+  
+  # Run foodcritic to check for lint errors
+  if command -v foodcritic >/dev/null 2>&1; then
+    echo "Running foodcritic..."
+    foodcritic .
+    
+    if [[ $? -ne 0 ]]; then
+      echo "Warning: foodcritic found issues. Continue with upload? [y/N]"
+      read -r response
+      
+      if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        echo "Upload cancelled."
+        return 1
+      fi
+    fi
+  fi
+  
+  # Upload the cookbook
+  knife cookbook upload "$cookbook_name"
+  
+  if [[ $? -eq 0 ]]; then
+    echo "Cookbook $cookbook_name uploaded successfully"
+  else
+    echo "Error uploading cookbook $cookbook_name"
+  fi
+}
+{{- end }}
+
+# ==================================
+# Puppet Development Workflows
+# ==================================
+
+{{ if or (eq .preferences.enable_puppet true) (eq .enable_dev_tools true) -}}
+# Initialize a new Puppet module
+puppet-init-module() {
+  local module_name=$1
+  local author=${2:-"{{ .name | default \"Puppet Developer\" }}"}
+  
+  if [[ -z "$module_name" ]]; then
+    echo "Usage: puppet-init-module <module-name> [author]"
+    echo "Example: puppet-init-module my_webapp \"John Doe\""
+    return 1
+  fi
+  
+  # Check if Puppet Development Kit is installed
+  if command -v pdk >/dev/null 2>&1; then
+    echo "Creating new Puppet module with PDK..."
+    pdk new module "$module_name" --skip-interview
+  else
+    # Check if puppet is installed
+    if ! command -v puppet >/dev/null 2>&1; then
+      echo "Error: Neither PDK nor Puppet is installed."
+      echo "Install PDK (recommended) or Puppet to create modules."
+      return 1
+    fi
+    
+    echo "Creating new Puppet module with puppet module generate..."
+    puppet module generate "$author-$module_name"
+  fi
+  
+  # Navigate to the module directory
+  cd "$module_name" || return 1
+  
+  # Initialize git repository
+  git init
+  
+  # Create .gitignore if it doesn't exist
+  if [[ ! -f ".gitignore" ]]; then
+    cat > .gitignore << 'EOF'
+.git/
+.*.sw[op]
+.metadata
+.yardoc
+.yardwarns
+*.iml
+/.bundle/
+/.idea/
+/.vagrant/
+/coverage/
+/bin/
+/doc/
+/Gemfile.local
+/Gemfile.lock
+/junit/
+/log/
+/pkg/
+/spec/fixtures/manifests/
+/spec/fixtures/modules/
+/tmp/
+/vendor/
+/convert_report.txt
+/update_report.txt
+.DS_Store
+/spec/fixtures/
+EOF
+  fi
+  
+  # Initial commit
+  git add .
+  git commit -m "Initial Puppet module created"
+  
+  echo "Puppet module '$module_name' initialized successfully"
+}
+
+# Generate a Puppet class
+puppet-gen-class() {
+  local class_name=$1
+  
+  if [[ -z "$class_name" ]]; then
+    echo "Usage: puppet-gen-class <class-name>"
+    echo "Example: puppet-gen-class webapp::config"
+    return 1
+  fi
+  
+  # Check if we're in a Puppet module
+  if [[ ! -f "metadata.json" ]]; then
+    echo "Error: Not in a Puppet module directory."
+    echo "Run this command from the root of your module."
+    return 1
+  fi
+  
+  # Create the class using PDK if available
+  if command -v pdk >/dev/null 2>&1; then
+    echo "Creating class with PDK..."
+    pdk new class "$class_name"
+  else
+    # Manual creation of class files
+    echo "PDK not found. Creating class files manually..."
+    
+    # Determine the path components
+    local path_parts
+    IFS=':' read -ra path_parts <<< "$class_name"
+    
+    # Get the module name from metadata.json
+    local module_name
+    module_name=$(grep -o '"name": *"[^"]*"' metadata.json | cut -d'"' -f4 | cut -d'-' -f2)
+    
+    # Create the class manifest
+    local class_path="manifests"
+    local class_file="init.pp"
+    
+    if [[ ${#path_parts[@]} -gt 1 ]]; then
+      # For subclasses, create the directory path and set correct filename
+      for ((i=1; i<${#path_parts[@]}; i++)); do
+        class_path="$class_path/${path_parts[$i]}"
+      done
+      class_file="${path_parts[-1]}.pp"
+    fi
+    
+    # Create the directory
+    mkdir -p "$class_path"
+    
+    # Create the class file
+    cat > "$class_path/$class_file" << EOF
+# @summary A short summary of the purpose of this class
+#
+# @example
+#   include ${class_name}
+class ${class_name} {
+
+}
+EOF
+    
+    # Create the spec test file
+    mkdir -p "spec/classes"
+    
+    local spec_file="${class_name//::/\/}_spec.rb"
+    local spec_path="spec/classes/$spec_file"
+    
+    mkdir -p "$(dirname "$spec_path")"
+    
+    cat > "$spec_path" << EOF
+require 'spec_helper'
+
+describe '${class_name}' do
+  on_supported_os.each do |os, os_facts|
+    context "on \#{os}" do
+      let(:facts) { os_facts }
+
+      it { is_expected.to compile }
+    end
+  end
+end
+EOF
+  fi
+  
+  echo "Class '$class_name' created successfully"
+}
+
+# Create a Puppet resource type
+puppet-gen-type() {
+  local type_name=$1
+  
+  if [[ -z "$type_name" ]]; then
+    echo "Usage: puppet-gen-type <type-name>"
+    echo "Example: puppet-gen-type myservice"
+    return 1
+  fi
+  
+  # Check if we're in a Puppet module
+  if [[ ! -f "metadata.json" ]]; then
+    echo "Error: Not in a Puppet module directory."
+    echo "Run this command from the root of your module."
+    return 1
+  fi
+  
+  # Create directories if they don't exist
+  mkdir -p "lib/puppet/type"
+  mkdir -p "lib/puppet/provider/$type_name"
+  
+  # Create the type file
+  cat > "lib/puppet/type/$type_name.rb" << EOF
+Puppet::Type.newtype(:$type_name) do
+  @doc = "Manage a $type_name."
+
+  ensurable
+
+  newparam(:name, :namevar => true) do
+    desc "The name of the $type_name."
+  end
+
+  # Add more parameters and properties here
+end
+EOF
+  
+  # Create the provider file
+  cat > "lib/puppet/provider/$type_name/ruby.rb" << EOF
+Puppet::Type.type(:$type_name).provide(:ruby) do
+  desc "Ruby provider for $type_name type."
+
+  def create
+    # Implementation for creating the resource
+  end
+
+  def destroy
+    # Implementation for removing the resource
+  end
+
+  def exists?
+    # Implementation to check if the resource exists
+    false
+  end
+end
+EOF
+  
+  echo "Type '$type_name' and provider created successfully"
+}
+
+# Run Puppet lint on a module
+puppet-lint() {
+  local path=${1:-.}
+  
+  # Check if puppet-lint is installed
+  if ! command -v puppet-lint >/dev/null 2>&1; then
+    echo "Error: puppet-lint is not installed."
+    echo "Install it with: gem install puppet-lint"
+    return 1
+  fi
+  
+  echo "Running puppet-lint on $path..."
+  puppet-lint --fix --relative "$path"
+}
+
+# Run Puppet Tests with PDK
+puppet-test() {
+  # Check if we're in a Puppet module
+  if [[ ! -f "metadata.json" ]]; then
+    echo "Error: Not in a Puppet module directory."
+    echo "Run this command from the root of your module."
+    return 1
+  fi
+  
+  # Run tests using PDK if available
+  if command -v pdk >/dev/null 2>&1; then
+    echo "Running PDK validate..."
+    pdk validate
+    
+    echo "Running PDK test unit..."
+    pdk test unit
+  else
+    # Fallback to direct commands
+    echo "PDK not found. Running tests directly..."
+    
+    if command -v puppet-lint >/dev/null 2>&1; then
+      echo "Running puppet-lint..."
+      puppet-lint --relative .
+    fi
+    
+    if command -v puppet-syntax >/dev/null 2>&1; then
+      echo "Running puppet-syntax..."
+      puppet-syntax --future_parser .
+    fi
+    
+    if command -v rspec >/dev/null 2>&1 && [[ -d "spec" ]]; then
+      echo "Running rspec..."
+      rspec spec
+    fi
+  fi
+}
+
+# Build a Puppet module package
+puppet-build() {
+  # Check if we're in a Puppet module
+  if [[ ! -f "metadata.json" ]]; then
+    echo "Error: Not in a Puppet module directory."
+    echo "Run this command from the root of your module."
+    return 1
+  fi
+  
+  # Get module name and version from metadata.json
+  local module_name
+  module_name=$(grep -o '"name": *"[^"]*"' metadata.json | cut -d'"' -f4)
+  
+  local module_version
+  module_version=$(grep -o '"version": *"[^"]*"' metadata.json | cut -d'"' -f4)
+  
+  # Build using PDK if available
+  if command -v pdk >/dev/null 2>&1; then
+    echo "Building module package with PDK..."
+    pdk build
+  else
+    # Fallback to puppet module build
+    if command -v puppet >/dev/null 2>&1; then
+      echo "Building module package with puppet module build..."
+      puppet module build .
+    else
+      echo "Error: Neither PDK nor Puppet is installed for building modules."
+      return 1
+    fi
+  fi
+  
+  echo "Module package for $module_name v$module_version built successfully"
+  echo "Check the pkg/ directory for the module package."
+}
+{{- end }}

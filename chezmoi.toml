@@ -24,12 +24,20 @@
     minimal = false  # Set to true for minimal installation
     
     # Feature toggles
-    enable_cloud = true      # Enable cloud provider tools
-    enable_containers = true # Enable container tools
-    enable_kubernetes = true # Enable Kubernetes tools
-    enable_dev_tools = true  # Enable development tools
-    enable_editors = true    # Enable code editors
-    enable_extras = false    # Enable extra applications
+    enable_cloud = true        # Enable cloud provider tools
+    enable_containers = true   # Enable container tools
+    enable_kubernetes = true   # Enable Kubernetes tools
+    enable_dev_tools = true    # Enable development tools
+    enable_editors = true      # Enable code editors
+    enable_extras = false      # Enable extra applications
+    enable_workflows = true    # Enable workflow automation
+    enable_productivity = true # Enable productivity tools
+    
+    # Specific workflow toggles
+    enable_wordpress = true    # Enable WordPress development workflows
+    enable_chef = true         # Enable Chef development workflows
+    enable_puppet = true       # Enable Puppet development workflows
+    enable_gtd = true          # Enable GTD workflows
     
     # Work-specific settings (uncomment and set as needed)
     # work = true
@@ -55,6 +63,39 @@
         terminal = "iterm2"  # Options: iterm2, alacritty, kitty, terminal
         shell_prompt = "powerlevel10k"  # Options: powerlevel10k, starship, pure
         color_scheme = "dark"  # Options: dark, light, auto
+        
+        # Workflow preferences
+        projects_dir = "$HOME/Projects"  # Base directory for all projects
+        
+        # Productivity preferences
+        task_dir = "$HOME/.tasks"  # Directory for task management
+        notes_dir = "$HOME/.notes"  # Directory for notes
+        meeting_dir = "$HOME/.notes/meetings"  # Directory for meeting notes
+        time_track_dir = "$HOME/.timetrack"  # Directory for time tracking
+        
+        # macOS integration preferences
+        notes_folder = "CLI Notes"     # Default folder name in macOS Notes app
+        meeting_folder = "Meetings"    # Default folder name for meetings in macOS Notes app
+        reminders_list = "CLI Tools"   # Default list name in macOS Reminders app
+        
+        # GTD workflow preferences
+        gtd_inbox_folder = "GTD/Inbox"   # Folder for GTD inbox in Notes app
+        gtd_inbox_file = "$HOME/.gtd/inbox.md" # File for GTD inbox items
+        gtd_templates_dir = "$HOME/.gtd/templates" # Directory for GTD templates
+        gtd_projects_folder = "GTD/Projects" # Folder for GTD projects in Notes app
+        gtd_projects_dir = "$HOME/.gtd/projects" # Directory for GTD project files
+        gtd_next_actions_file = "$HOME/.gtd/next-actions.md" # File for next actions
+        
+        # Development workflow preferences
+        enable_wordpress = true    # Enable WordPress development workflows
+        enable_chef = true         # Enable Chef development workflows
+        enable_puppet = true       # Enable Puppet development workflows
+        
+        # Pomodoro timer settings
+        pomodoro_work = 25  # Work period in minutes
+        pomodoro_break = 5  # Short break period in minutes
+        pomodoro_longbreak = 15  # Long break period in minutes
+        pomodoro_cycles = 4  # Number of work periods before a long break
     
     # Security settings
     [data.security]
