@@ -1,0 +1,995 @@
+# Groovy Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# ==================================
+# Groovy Development Workflows
+# ==================================
+
+{{ if or (eq .preferences.enable_groovy true) (eq .enable_dev_tools true) -}}
+# Initialize a new Groovy project with Gradle
+groovy-init-project() {
+  local project_name=$1
+  local package_name=${2:-"com.example.$project_name"}
+  local directory=${3:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
+  
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: groovy-init-project <project-name> [package-name] [directory]"
+    echo "Example: groovy-init-project my-app com.example.myapp ~/Projects/my-app"
+    return 1
+  fi
+  
+  # Check if Gradle is installed
+  if ! command -v gradle >/dev/null 2>&1; then
+    echo "Error: Gradle is not installed."
+    echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
+    return 1
+  fi
+  
+  # Create project directory if it doesn't exist
+  mkdir -p "$directory"
+  cd "$directory" || return 1
+  
+  # Create gradle project with init task
+  gradle init --type groovy-application --dsl groovy --test-framework spock --package "$package_name" --project-name "$project_name"
+  
+  # Enhance the build.gradle file
+  cat > build.gradle << EOF
+plugins {
+    id 'groovy'
+    id 'application'
+    id 'codenarc'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+group = '$package_name'
+version = '0.1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Groovy
+    implementation 'org.apache.groovy:groovy-all:4.0.9'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.5'
+    implementation 'ch.qos.logback:logback-classic:1.4.6'
+    
+    // CLI parsing
+    implementation 'info.picocli:picocli:4.7.0'
+    
+    // Utils
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'commons-io:commons-io:2.11.0'
+    
+    // Testing
+    testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+}
+
+application {
+    mainClass = '${package_name}.App'
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': '${package_name}.App',
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version
+        )
+    }
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    mergeServiceFiles()
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
+codenarc {
+    toolVersion = '3.2.0'
+    configFile = file("\${rootDir}/config/codenarc/codenarc.groovy")
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '7.6'
+}
+EOF
+
+  # Create a simple logback configuration
+  mkdir -p src/main/resources
+  cat > src/main/resources/logback.xml << 'EOF'
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
+EOF
+
+  # Create CodeNarc configuration
+  mkdir -p config/codenarc
+  cat > config/codenarc/codenarc.groovy << 'EOF'
+ruleset {
+    description 'CodeNarc RuleSet'
+
+    ruleset('rulesets/basic.xml')
+    ruleset('rulesets/braces.xml')
+    ruleset('rulesets/concurrency.xml')
+    ruleset('rulesets/convention.xml') {
+        NoDef {
+            enabled = false
+        }
+    }
+    ruleset('rulesets/design.xml')
+    ruleset('rulesets/dry.xml')
+    ruleset('rulesets/exceptions.xml')
+    ruleset('rulesets/formatting.xml') {
+        SpaceAroundMapEntryColon {
+            enabled = false
+        }
+        LineLength {
+            length = 120
+        }
+    }
+    ruleset('rulesets/generic.xml')
+    ruleset('rulesets/groovyism.xml')
+    ruleset('rulesets/imports.xml') {
+        MisorderedStaticImports {
+            enabled = false
+        }
+        NoWildcardImports {
+            enabled = false
+        }
+    }
+    ruleset('rulesets/jdbc.xml')
+    ruleset('rulesets/junit.xml')
+    ruleset('rulesets/logging.xml')
+    ruleset('rulesets/naming.xml') {
+        MethodName {
+            regex = /[a-z][\w\s']*/
+        }
+    }
+    ruleset('rulesets/security.xml')
+    ruleset('rulesets/serialization.xml')
+    ruleset('rulesets/size.xml')
+    ruleset('rulesets/unnecessary.xml') {
+        UnnecessaryGetter {
+            enabled = false
+        }
+        UnnecessarySemicolon {
+            enabled = false
+        }
+    }
+    ruleset('rulesets/unused.xml')
+}
+EOF
+
+  # Modify the main class to use picocli
+  cat > src/main/groovy/${package_name//./\/}/App.groovy << EOF
+package $package_name
+
+import groovy.util.logging.Slf4j
+import picocli.CommandLine
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
+
+@Slf4j
+@Command(
+    name = "$project_name", 
+    mixinStandardHelpOptions = true, 
+    version = "0.1.0",
+    description = "A Groovy application"
+)
+class App implements Runnable {
+    
+    @Option(names = ["-v", "--verbose"], description = "Enable verbose output")
+    boolean verbose
+    
+    @Parameters(paramLabel = "ARGS", description = "Arguments")
+    List<String> args = []
+
+    static void main(String[] args) {
+        int exitCode = new CommandLine(new App()).execute(args)
+        System.exit(exitCode)
+    }
+
+    @Override
+    void run() {
+        if (verbose) {
+            log.info("Verbose mode enabled")
+        }
+        
+        log.info("Hello from $project_name!")
+        
+        if (args) {
+            log.info("Arguments: {}", args.join(", "))
+        }
+    }
+}
+EOF
+
+  # Create a better Spock test
+  cat > src/test/groovy/${package_name//./\/}/AppTest.groovy << EOF
+package $package_name
+
+import spock.lang.Specification
+import spock.lang.Subject
+
+class AppTest extends Specification {
+    @Subject
+    App app
+    
+    def setup() {
+        app = new App()
+    }
+    
+    def "application runs without arguments"() {
+        when:
+        app.run()
+        
+        then:
+        noExceptionThrown()
+    }
+    
+    def "application handles verbose flag"() {
+        given:
+        app.verbose = true
+        
+        when:
+        app.run()
+        
+        then:
+        noExceptionThrown()
+    }
+    
+    def "application processes arguments"() {
+        given:
+        app.args = ["one", "two", "three"]
+        
+        when:
+        app.run()
+        
+        then:
+        noExceptionThrown()
+    }
+}
+EOF
+
+  # Create a README file
+  cat > README.md << EOF
+# $project_name
+
+## Overview
+This is a Groovy application created with Gradle.
+
+## Prerequisites
+- Java 8 or higher
+- Gradle 7.6 or higher
+
+## Building
+To build the project:
+\`\`\`
+./gradlew build
+\`\`\`
+
+## Running
+To run the application:
+\`\`\`
+./gradlew run
+\`\`\`
+
+Or with arguments:
+\`\`\`
+./gradlew run --args="--verbose arg1 arg2"
+\`\`\`
+
+## Creating a distributable package
+To create a fat JAR with all dependencies:
+\`\`\`
+./gradlew shadowJar
+\`\`\`
+This will create a JAR in \`build/libs/\`.
+
+## Testing
+To run tests:
+\`\`\`
+./gradlew test
+\`\`\`
+
+## Code Quality
+This project uses CodeNarc for code quality checks:
+\`\`\`
+./gradlew codenarcMain codenarcTest
+\`\`\`
+EOF
+
+  # Create .gitignore
+  cat > .gitignore << 'EOF'
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse
+.settings/
+.classpath
+.project
+.factorypath
+bin/
+
+# VS Code
+.vscode/
+
+# Mac OS
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# JVM crash logs
+hs_err_pid*
+replay_pid*
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+EOF
+
+  # Initialize git repository
+  git init
+  git add .
+  git commit -m "Initial Groovy project setup"
+  
+  echo "Groovy project '$project_name' initialized successfully at $directory"
+  echo "Next steps:"
+  echo "1. Open the project in your IDE"
+  echo "2. Run './gradlew build' to build the project"
+  echo "3. Customize src/main/groovy/${package_name//./\/}/App.groovy"
+}
+
+# Create a new Groovy script
+groovy-new-script() {
+  local script_name=$1
+  local description=${2:-"Groovy script"}
+  
+  if [[ -z "$script_name" ]]; then
+    echo "Usage: groovy-new-script <script-name> [description]"
+    echo "Example: groovy-new-script dataProcessor.groovy \"Process data files\""
+    return 1
+  fi
+  
+  # Add .groovy extension if not provided
+  if [[ ! "$script_name" =~ \.groovy$ ]]; then
+    script_name="${script_name}.groovy"
+  fi
+  
+  # Create the script file
+  cat > "$script_name" << EOF
+#!/usr/bin/env groovy
+/**
+ * $description
+ * 
+ * Usage: groovy $script_name [args]
+ */
+
+// Import libraries
+import groovy.util.logging.Slf4j
+import groovy.cli.commons.CliBuilder
+
+@Slf4j
+class Script {
+    static void main(String[] args) {
+        def cli = new CliBuilder(usage: 'groovy $script_name [options] <args>', header: '$description')
+        cli.h(longOpt: 'help', 'Show usage information')
+        cli.v(longOpt: 'verbose', 'Enable verbose output')
+        cli.i(longOpt: 'input', args: 1, argName: 'file', 'Input file path')
+        cli.o(longOpt: 'output', args: 1, argName: 'file', 'Output file path')
+        
+        def options = cli.parse(args)
+        if (!options || options.h) {
+            cli.usage()
+            return
+        }
+        
+        if (options.v) {
+            println "Verbose mode enabled"
+        }
+        
+        def inputFile = options.i ?: 'input.txt'
+        def outputFile = options.o ?: 'output.txt'
+        
+        println "Processing data from \${inputFile} to \${outputFile}"
+        
+        // TODO: Add your script logic here
+        processData(inputFile, outputFile)
+    }
+    
+    static void processData(String inputPath, String outputPath) {
+        // Example implementation
+        def file = new File(inputPath)
+        if (!file.exists()) {
+            println "Input file not found: \${inputPath}"
+            return
+        }
+        
+        def output = new File(outputPath)
+        output.withWriter { writer ->
+            file.eachLine { line ->
+                // Process each line
+                writer.writeLine(line.toUpperCase())
+            }
+        }
+        
+        println "Processing complete"
+    }
+}
+
+// Run the script
+Script.main(args)
+EOF
+
+  # Make the script executable
+  chmod +x "$script_name"
+  
+  echo "Groovy script created at: $script_name"
+  echo "To run it: groovy $script_name [args]"
+}
+
+# Generate Groovy class with Spock test
+groovy-gen-class() {
+  local class_name=$1
+  local package_name=${2:-"com.example"}
+  
+  if [[ -z "$class_name" ]]; then
+    echo "Usage: groovy-gen-class <class-name> [package-name]"
+    echo "Example: groovy-gen-class DataProcessor com.example.util"
+    return 1
+  fi
+  
+  # Create the package directory structure
+  local package_dir="src/main/groovy/${package_name//./\/}"
+  mkdir -p "$package_dir"
+  
+  # Define the class file path
+  local class_file="$package_dir/$class_name.groovy"
+  
+  # Create the class file
+  cat > "$class_file" << EOF
+package $package_name
+
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
+
+/**
+ * $class_name class.
+ */
+@CompileStatic
+@Slf4j
+class $class_name {
+    
+    /**
+     * Process the input string.
+     * 
+     * @param input The input to process
+     * @return The processed result
+     */
+    String process(String input) {
+        if (!input) {
+            log.warn("Empty input provided")
+            return ""
+        }
+        
+        log.debug("Processing input: {}", input)
+        
+        // TODO: Implement processing logic
+        String result = input.toUpperCase()
+        
+        log.debug("Processed result: {}", result)
+        return result
+    }
+}
+EOF
+  
+  # Create a corresponding test class
+  local test_dir="src/test/groovy/${package_name//./\/}"
+  mkdir -p "$test_dir"
+  
+  local test_file="$test_dir/${class_name}Spec.groovy"
+  
+  cat > "$test_file" << EOF
+package $package_name
+
+import spock.lang.Specification
+import spock.lang.Subject
+
+class ${class_name}Spec extends Specification {
+    
+    @Subject
+    $class_name ${class_name,} // lowercase first letter
+    
+    def setup() {
+        ${class_name,} = new $class_name()
+    }
+    
+    def "should process non-empty input"() {
+        given:
+        def input = "test"
+        
+        when:
+        def result = ${class_name,}.process(input)
+        
+        then:
+        result == "TEST"
+    }
+    
+    def "should handle empty input"() {
+        when:
+        def result = ${class_name,}.process(input)
+        
+        then:
+        result == expected
+        
+        where:
+        input | expected
+        ""    | ""
+        null  | ""
+    }
+}
+EOF
+  
+  echo "Generated Groovy class $class_name in package $package_name"
+  echo "Class file created at: $class_file"
+  echo "Test file created at: $test_file"
+}
+
+# Compile and run a standalone Groovy script
+groovy-run() {
+  local script_path=$1
+  local args=${@:2}
+  
+  if [[ -z "$script_path" ]]; then
+    echo "Usage: groovy-run <script-path> [args]"
+    echo "Example: groovy-run scripts/data-processor.groovy --input data.csv"
+    return 1
+  fi
+  
+  # Check if script exists
+  if [[ ! -f "$script_path" ]]; then
+    echo "Error: Script not found at $script_path"
+    return 1
+  fi
+  
+  # Check if Groovy is installed
+  if ! command -v groovy >/dev/null 2>&1; then
+    echo "Error: Groovy is not installed."
+    echo "Install it with: brew install groovy (macOS) or sdk install groovy (sdkman)"
+    return 1
+  fi
+  
+  # Run the script
+  groovy "$script_path" $args
+}
+
+# Convert a Java class to Groovy
+groovy-convert-java() {
+  local java_file=$1
+  local output_dir=${2:-"$(dirname "$java_file")"}
+  
+  if [[ -z "$java_file" ]]; then
+    echo "Usage: groovy-convert-java <java-file> [output-directory]"
+    echo "Example: groovy-convert-java src/main/java/com/example/User.java src/main/groovy"
+    return 1
+  fi
+  
+  # Check if file exists
+  if [[ ! -f "$java_file" ]]; then
+    echo "Error: Java file not found at $java_file"
+    return 1
+  fi
+  
+  # Get the class name and package
+  local class_name=$(basename "$java_file" .java)
+  local package_name=$(grep -o "package [a-zA-Z0-9_.]*;" "$java_file" | sed "s/package //;s/;//")
+  
+  # Create output directory
+  local output_package_dir="$output_dir/${package_name//./\/}"
+  mkdir -p "$output_package_dir"
+  
+  local output_file="$output_package_dir/$class_name.groovy"
+  
+  # Perform the conversion
+  echo "Converting $java_file to Groovy..."
+  
+  # Read the Java file
+  local java_content=$(cat "$java_file")
+  
+  # Replace common Java patterns with Groovy equivalents
+  local groovy_content="$java_content"
+  
+  # Remove semicolons
+  groovy_content=$(echo "$groovy_content" | sed 's/;\s*$//')
+  
+  # Convert getters/setters to Groovy property syntax
+  groovy_content=$(echo "$groovy_content" | sed 's/public \(\w\+\) get\([A-Z]\)\(\w*\)() {/\2\3 {/')
+  groovy_content=$(echo "$groovy_content" | sed 's/public void set\([A-Z]\)\(\w*\)(\(\w\+\) \(\w\+\)) {/void set\1\2(\3 \4) {/')
+  
+  # Add Groovy imports and annotations
+  groovy_content=$(echo "$groovy_content" | sed '/^package/a \\nimport groovy.transform.CompileStatic')
+  groovy_content=$(echo "$groovy_content" | sed '/^public class/i @CompileStatic')
+  
+  # Write the Groovy file
+  echo "$groovy_content" > "$output_file"
+  
+  echo "Converted file created at: $output_file"
+  echo "Note: This is a basic conversion. You may need to manually adjust the file for Groovy idioms."
+}
+
+# Generate a Groovy DSL builder
+groovy-gen-dsl() {
+  local dsl_name=$1
+  local package_name=${2:-"com.example.dsl"}
+  
+  if [[ -z "$dsl_name" ]]; then
+    echo "Usage: groovy-gen-dsl <dsl-name> [package-name]"
+    echo "Example: groovy-gen-dsl ConfigBuilder com.example.config"
+    return 1
+  fi
+  
+  # Create the package directory structure
+  local package_dir="src/main/groovy/${package_name//./\/}"
+  mkdir -p "$package_dir"
+  
+  # Define the DSL files
+  local builder_file="$package_dir/${dsl_name}.groovy"
+  local example_file="$package_dir/${dsl_name}Example.groovy"
+  
+  # Create the builder file
+  cat > "$builder_file" << EOF
+package $package_name
+
+import groovy.transform.CompileStatic
+
+/**
+ * $dsl_name - A Groovy DSL for building configurations.
+ */
+@CompileStatic
+class $dsl_name {
+    String name
+    Map<String, Object> properties = [:]
+    List<Map<String, Object>> items = []
+    
+    /**
+     * Create a new $dsl_name with the specified name.
+     * 
+     * @param name The configuration name
+     * @return The builder instance
+     */
+    static $dsl_name create(String name, @DelegatesTo($dsl_name) Closure closure) {
+        def builder = new $dsl_name(name: name)
+        def code = closure.rehydrate(builder, this, this)
+        code.resolveStrategy = Closure.DELEGATE_FIRST
+        code()
+        return builder
+    }
+    
+    /**
+     * Set a property value.
+     * 
+     * @param name The property name
+     * @param value The property value
+     */
+    void property(String name, Object value) {
+        properties[name] = value
+    }
+    
+    /**
+     * Add an item to the configuration.
+     * 
+     * @param name The item name
+     * @param closure The closure defining the item
+     */
+    void item(String name, @DelegatesTo(ItemBuilder) Closure closure) {
+        def builder = new ItemBuilder(name: name)
+        def code = closure.rehydrate(builder, this, this)
+        code.resolveStrategy = Closure.DELEGATE_FIRST
+        code()
+        items << builder.build()
+    }
+    
+    /**
+     * Build the final configuration.
+     * 
+     * @return The configuration as a Map
+     */
+    Map<String, Object> build() {
+        [
+            name: name,
+            properties: properties,
+            items: items
+        ]
+    }
+    
+    /**
+     * Convert the configuration to a formatted string.
+     * 
+     * @return A string representation of the configuration
+     */
+    String toFormattedString() {
+        def result = new StringBuilder()
+        result << "Configuration: \${name}\\n"
+        result << "Properties:\\n"
+        properties.each { k, v ->
+            result << "  \${k} = \${v}\\n"
+        }
+        result << "Items:\\n"
+        items.each { item ->
+            result << "  \${item.name}:\\n"
+            item.attributes.each { k, v ->
+                result << "    \${k} = \${v}\\n"
+            }
+        }
+        return result.toString()
+    }
+    
+    /**
+     * Builder for configuration items.
+     */
+    @CompileStatic
+    static class ItemBuilder {
+        String name
+        Map<String, Object> attributes = [:]
+        
+        /**
+         * Set an attribute value.
+         * 
+         * @param name The attribute name
+         * @param value The attribute value
+         */
+        void attribute(String name, Object value) {
+            attributes[name] = value
+        }
+        
+        /**
+         * Build the item configuration.
+         * 
+         * @return The item as a Map
+         */
+        Map<String, Object> build() {
+            [
+                name: name,
+                attributes: attributes
+            ]
+        }
+    }
+}
+EOF
+  
+  # Create an example usage file
+  cat > "$example_file" << EOF
+package $package_name
+
+/**
+ * Example of using the $dsl_name DSL.
+ */
+class ${dsl_name}Example {
+    
+    static void main(String[] args) {
+        def config = $dsl_name.create("MyConfiguration") {
+            property "version", "1.0.0"
+            property "enabled", true
+            
+            item "database" {
+                attribute "url", "jdbc:mysql://localhost:3306/mydb"
+                attribute "username", "admin"
+                attribute "password", "secret"
+                attribute "poolSize", 10
+            }
+            
+            item "server" {
+                attribute "host", "localhost"
+                attribute "port", 8080
+                attribute "threads", 20
+            }
+        }
+        
+        println config.toFormattedString()
+    }
+}
+EOF
+  
+  # Create a corresponding test class
+  local test_dir="src/test/groovy/${package_name//./\/}"
+  mkdir -p "$test_dir"
+  
+  local test_file="$test_dir/${dsl_name}Spec.groovy"
+  
+  cat > "$test_file" << EOF
+package $package_name
+
+import spock.lang.Specification
+
+class ${dsl_name}Spec extends Specification {
+    
+    def "should create configuration with properties and items"() {
+        when:
+        def config = $dsl_name.create("TestConfig") {
+            property "version", "1.0.0"
+            property "enabled", true
+            
+            item "test" {
+                attribute "key", "value"
+            }
+        }
+        
+        then:
+        config.name == "TestConfig"
+        config.properties.size() == 2
+        config.properties["version"] == "1.0.0"
+        config.properties["enabled"] == true
+        config.items.size() == 1
+        config.items[0].name == "test"
+        config.items[0].attributes["key"] == "value"
+    }
+}
+EOF
+  
+  echo "Generated Groovy DSL $dsl_name in package $package_name"
+  echo "DSL file created at: $builder_file"
+  echo "Example usage file created at: $example_file"
+  echo "Test file created at: $test_file"
+}
+
+# Install Groovy using SDKMAN
+groovy-install() {
+  local version=${1:-"latest"}
+  
+  # Check if SDKMAN is installed
+  if [[ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
+    echo "SDKMAN is not installed. Do you want to install it now? (y/n)"
+    read -r install_sdkman
+    
+    if [[ "$install_sdkman" =~ ^[Yy]$ ]]; then
+      curl -s "https://get.sdkman.io" | bash
+      source "$HOME/.sdkman/bin/sdkman-init.sh"
+    else
+      echo "SDKMAN is required for this command."
+      return 1
+    fi
+  fi
+  
+  # Source SDKMAN
+  source "$HOME/.sdkman/bin/sdkman-init.sh"
+  
+  # List available Groovy versions if requested
+  if [[ "$version" == "list" ]]; then
+    sdk list groovy
+    return 0
+  fi
+  
+  # Install the specified Groovy version
+  sdk install groovy "$version"
+  
+  # Verify installation
+  groovy -version
+}
+
+# Create a Groovy Grape dependency script
+groovy-grape-script() {
+  local script_name=$1
+  local description=${2:-"Groovy script with Grape dependencies"}
+  
+  if [[ -z "$script_name" ]]; then
+    echo "Usage: groovy-grape-script <script-name> [description]"
+    echo "Example: groovy-grape-script httpClient.groovy \"HTTP client script\""
+    return 1
+  fi
+  
+  # Add .groovy extension if not provided
+  if [[ ! "$script_name" =~ \.groovy$ ]]; then
+    script_name="${script_name}.groovy"
+  fi
+  
+  # Create the script file
+  cat > "$script_name" << EOF
+#!/usr/bin/env groovy
+/**
+ * $description
+ * 
+ * Usage: groovy $script_name [args]
+ */
+
+// Grape dependencies
+@Grab('org.apache.httpcomponents:httpclient:4.5.13')
+@Grab('org.slf4j:slf4j-api:2.0.5')
+@Grab('ch.qos.logback:logback-classic:1.4.6')
+@Grab('com.fasterxml.jackson.core:jackson-databind:2.14.2')
+
+// Import libraries
+import groovy.json.JsonSlurper
+import groovy.util.logging.Slf4j
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.util.EntityUtils
+import com.fasterxml.jackson.databind.ObjectMapper
+
+@Slf4j
+class Script {
+    static void main(String[] args) {
+        def url = args.length > 0 ? args[0] : 'https://jsonplaceholder.typicode.com/posts/1'
+        
+        log.info("Fetching data from: {}", url)
+        
+        def httpClient = HttpClients.createDefault()
+        def request = new HttpGet(url)
+        
+        try {
+            def response = httpClient.execute(request)
+            def statusCode = response.statusLine.statusCode
+            
+            log.info("Response status: {}", statusCode)
+            
+            if (statusCode == 200) {
+                def entity = response.entity
+                def content = EntityUtils.toString(entity)
+                
+                log.debug("Response content: {}", content)
+                
+                // Parse JSON
+                def json = new JsonSlurper().parseText(content)
+                
+                // Pretty print using Jackson
+                def mapper = new ObjectMapper()
+                def prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mapper.readTree(content))
+                
+                println prettyJson
+            } else {
+                log.error("Error response: {}", response.statusLine)
+            }
+        } catch (Exception e) {
+            log.error("Error fetching data: {}", e.message)
+        } finally {
+            httpClient.close()
+        }
+    }
+}
+
+// Run the script
+Script.main(args)
+EOF
+
+  # Make the script executable
+  chmod +x "$script_name"
+  
+  echo "Groovy script with Grape dependencies created at: $script_name"
+  echo "To run it: groovy $script_name [url]"
+  echo "Example: groovy $script_name https://jsonplaceholder.typicode.com/users"
+}
+{{- end }}

@@ -49,6 +49,31 @@ source "$HOME/.zsh/dev_workflows.zsh"
 source "$HOME/.zsh/app_workflows.zsh"
 {{- end }}
 
+# Ansible workflows
+{{- if or .preferences.enable_ansible .enable_dev_tools }}
+source "$HOME/.zsh/ansible_workflows.zsh"
+{{- end }}
+
+# Java/Gradle workflows
+{{- if or .preferences.enable_java .enable_dev_tools }}
+source "$HOME/.zsh/java_gradle_workflows.zsh"
+{{- end }}
+
+# Groovy workflows
+{{- if or .preferences.enable_groovy .enable_dev_tools }}
+source "$HOME/.zsh/groovy_workflows.zsh"
+{{- end }}
+
+# Rails workflows
+{{- if or .preferences.enable_rails .enable_dev_tools }}
+source "$HOME/.zsh/rails_workflows.zsh"
+{{- end }}
+
+# OmniFocus workflows
+{{- if or .preferences.enable_omnifocus .enable_productivity }}
+source "$HOME/.zsh/omnifocus_workflows.zsh"
+{{- end }}
+
 # Local customizations
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
