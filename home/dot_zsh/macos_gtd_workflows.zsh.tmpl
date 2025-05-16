@@ -1,0 +1,1173 @@
+# macOS Native GTD Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Only enable these functions on macOS
+{{ if and (eq .macos true) (not .minimal) -}}
+
+# ==================================
+# Integration Setup
+# ==================================
+
+# Initialize constants
+GTD_INBOX_FOLDER="{{ .preferences.gtd_inbox_folder | default \"GTD/Inbox\" }}"
+GTD_PROJECTS_FOLDER="{{ .preferences.gtd_projects_folder | default \"GTD/Projects\" }}"
+
+# ==================================
+# Reminders App Integrations
+# ==================================
+
+# Create a new list in Reminders
+reminders-new-list() {
+  local list_name=$1
+
+  if [[ -z "$list_name" ]]; then
+    echo "Usage: reminders-new-list <list-name>"
+    return 1
+  fi
+
+  osascript <<EOF
+tell application "Reminders"
+  make new list with properties {name:"$list_name"}
+  return "List '$list_name' created."
+end tell
+EOF
+}
+
+# Show all lists in Reminders
+reminders-lists() {
+  osascript <<EOF | awk '{print NR ") " $0}'
+tell application "Reminders"
+  set output to ""
+  repeat with theList in lists
+    set output to output & name of theList & "\n"
+  end repeat
+  return output
+end tell
+EOF
+}
+
+# Create a new GTD project list
+reminders-new-project() {
+  local project_name=$1
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: reminders-new-project <project-name>"
+    return 1
+  fi
+
+  # Create the project list
+  osascript <<EOF
+tell application "Reminders"
+  make new list with properties {name:"Project: $project_name"}
+  return "Project list '$project_name' created."
+end tell
+EOF
+}
+
+# Add a task to Reminders
+reminders-add() {
+  local task=$1
+  local list=${2:-"Inbox"}
+  local due_date=${3:-""}
+  local priority=${4:-"none"}
+
+  if [[ -z "$task" ]]; then
+    echo "Usage: reminders-add <task> [list] [due-date] [priority]"
+    echo "Example: reminders-add \"Call client\" \"Work\" \"tomorrow at 10am\" \"high\""
+    return 1
+  fi
+
+  # Set up priority value
+  local prio_val=0
+  case "$priority" in
+    low)
+      prio_val=1
+      ;;
+    medium)
+      prio_val=5
+      ;;
+    high)
+      prio_val=9
+      ;;
+  esac
+
+  # Add the task with or without due date
+  if [[ -z "$due_date" ]]; then
+    osascript <<EOF
+tell application "Reminders"
+  tell list "$list"
+    make new reminder with properties {name:"$task", priority:$prio_val}
+  end tell
+end tell
+EOF
+  else
+    osascript <<EOF
+tell application "Reminders"
+  tell list "$list"
+    set dueDate to (do shell script "date -j -f '%Y-%m-%d %H:%M' '$due_date' '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -j -f '%a %b %d %H:%M:%S %Z %Y' \"\$(date -d '$due_date')\" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo \"error\"")
+    if dueDate is "error" then
+      make new reminder with properties {name:"$task", priority:$prio_val}
+      return "Added task without due date (date format not recognized)"
+    else
+      set theDate to date dueDate
+      make new reminder with properties {name:"$task", due date:theDate, priority:$prio_val}
+    end if
+  end tell
+end tell
+EOF
+  fi
+
+  echo "Task added to $list: $task"
+}
+
+# List tasks in a specified list
+reminders-list() {
+  local list=${1:-"Inbox"}
+  local filter=${2:-""}
+
+  if [[ -z "$filter" ]]; then
+    osascript <<EOF | awk '{print NR ") " $0}'
+tell application "Reminders"
+  set taskList to list "$list"
+  set taskItems to (reminders in taskList whose completed is false)
+  set output to ""
+  repeat with theTask in taskItems
+    set taskName to name of theTask
+    set dueStr to ""
+    if due date of theTask is not missing value then
+      set dueDate to due date of theTask
+      set dueStr to " (Due: " & (short date string of dueDate) & ")"
+    end if
+    set priorityStr to ""
+    if priority of theTask > 0 then
+      if priority of theTask ≥ 9 then
+        set priorityStr to " [!]"
+      else if priority of theTask ≥ 5 then
+        set priorityStr to " [*]"
+      end if
+    end if
+    set output to output & taskName & dueStr & priorityStr & "\n"
+  end repeat
+  return output
+end tell
+EOF
+  else
+    osascript <<EOF | grep -i "$filter" | awk '{print NR ") " $0}'
+tell application "Reminders"
+  set taskList to list "$list"
+  set taskItems to (reminders in taskList whose completed is false)
+  set output to ""
+  repeat with theTask in taskItems
+    set taskName to name of theTask
+    set dueStr to ""
+    if due date of theTask is not missing value then
+      set dueDate to due date of theTask
+      set dueStr to " (Due: " & (short date string of dueDate) & ")"
+    end if
+    set priorityStr to ""
+    if priority of theTask > 0 then
+      if priority of theTask ≥ 9 then
+        set priorityStr to " [!]"
+      else if priority of theTask ≥ 5 then
+        set priorityStr to " [*]"
+      end if
+    end if
+    set output to output & taskName & dueStr & priorityStr & "\n"
+  end repeat
+  return output
+end tell
+EOF
+  fi
+}
+
+# Complete a task
+reminders-complete() {
+  local task_num=$1
+  local list=${2:-"Inbox"}
+
+  if [[ -z "$task_num" ]]; then
+    echo "Usage: reminders-complete <task-number> [list]"
+    return 1
+  fi
+
+  osascript <<EOF
+tell application "Reminders"
+  set taskList to list "$list"
+  set taskItems to (reminders in taskList whose completed is false)
+  if (count of taskItems) ≥ $task_num then
+    set theTask to item $task_num of taskItems
+    set completed of theTask to true
+    return name of theTask
+  else
+    return "Task #$task_num not found."
+  end if
+end tell
+EOF
+
+  echo "Task #$task_num completed in list '$list'"
+}
+
+# Weekly review of all tasks
+reminders-review() {
+  # Show counts for each list
+  echo "GTD System Status:"
+  echo "=================="
+
+  osascript <<EOF
+tell application "Reminders"
+  set allLists to name of lists
+  set output to ""
+  repeat with listName in allLists
+    set theList to list listName
+    set incompleteCount to (count of (reminders in theList whose completed is false))
+    if incompleteCount > 0 then
+      set output to output & listName & ": " & incompleteCount & " tasks\n"
+    end if
+  end repeat
+  return output
+end tell
+EOF
+
+  # Show inbox items
+  echo "\nInbox Tasks:"
+  echo "============"
+  reminders-list "Inbox"
+}
+
+# ==================================
+# Notes App Integrations
+# ==================================
+
+# Create a new folder in Notes
+notes-new-folder() {
+  local folder_name=$1
+
+  if [[ -z "$folder_name" ]]; then
+    echo "Usage: notes-new-folder <folder-name>"
+    return 1
+  fi
+
+  osascript <<EOF
+tell application "Notes"
+  make new folder with properties {name:"$folder_name"}
+  return "Folder '$folder_name' created."
+end tell
+EOF
+}
+
+# List all folders in Notes
+notes-folders() {
+  osascript <<EOF | awk '{print NR ") " $0}'
+tell application "Notes"
+  set output to ""
+  repeat with theFolder in folders
+    set output to output & name of theFolder & "\n"
+  end repeat
+  return output
+end tell
+EOF
+}
+
+# Create a new note
+notes-new() {
+  local title=$1
+  local folder=${2:-"Notes"}
+  local content=${3:-""}
+
+  if [[ -z "$title" ]]; then
+    echo "Usage: notes-new <title> [folder] [content]"
+    return 1
+  fi
+
+  # If content is empty, add basic structure
+  if [[ -z "$content" ]]; then
+    content="# $title\n\nCreated: $(date '+%Y-%m-%d %H:%M')\n\n"
+  fi
+
+  osascript <<EOF
+tell application "Notes"
+  set theFolder to folder "$folder"
+  tell theFolder
+    make new note with properties {name:"$title", body:"$content"}
+  end tell
+  -- Open the note
+  show note "$title" in folder "$folder"
+  activate
+end tell
+EOF
+
+  echo "Note '$title' created in folder '$folder'"
+}
+
+# Create a new project note with template
+notes-new-project() {
+  local project_name=$1
+  local folder=${2:-"$GTD_PROJECTS_FOLDER"}
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: notes-new-project <project-name> [folder]"
+    return 1
+  fi
+
+  # Make sure folder exists
+  osascript <<EOF > /dev/null 2>&1
+tell application "Notes"
+  if not (exists folder "$folder") then
+    make new folder with properties {name:"$folder"}
+  end if
+end tell
+EOF
+
+  # Create project note with template
+  local date=$(date '+%Y-%m-%d')
+  local template="# Project: $project_name
+
+Created: $date
+Status: Active
+
+## Outcome
+What is the successful outcome of this project?
+
+## Purpose
+Why am I doing this project?
+
+## Next Actions
+- [ ]
+- [ ]
+- [ ]
+
+## Waiting For
+- [ ]
+
+## Reference Material
+*
+
+## Notes
+"
+
+  osascript <<EOF
+tell application "Notes"
+  tell folder "$folder"
+    make new note with properties {name:"Project: $project_name", body:"$template"}
+  end tell
+  show note "Project: $project_name" in folder "$folder"
+  activate
+end tell
+EOF
+
+  echo "Project note for '$project_name' created in Notes folder: $folder"
+}
+
+# List notes in a folder
+notes-list() {
+  local folder=${1:-"Notes"}
+  local filter=${2:-""}
+
+  echo "Notes in '$folder' folder:"
+  echo "========================="
+
+  if [[ -z "$filter" ]]; then
+    osascript <<EOF | awk '{print NR ") " $0}'
+tell application "Notes"
+  set theFolder to folder "$folder"
+  set output to ""
+  repeat with theNote in notes of theFolder
+    set output to output & name of theNote & "\n"
+  end repeat
+  return output
+end tell
+EOF
+  else
+    osascript <<EOF | grep -i "$filter" | awk '{print NR ") " $0}'
+tell application "Notes"
+  set theFolder to folder "$folder"
+  set output to ""
+  repeat with theNote in notes of theFolder
+    set theName to name of theNote
+    set theBody to body of theNote
+    if theName contains "$filter" or theBody contains "$filter" then
+      set output to output & theName & "\n"
+    end if
+  end repeat
+  return output
+end tell
+EOF
+  fi
+}
+
+# Open a specific note
+notes-open() {
+  local title=$1
+  local folder=${2:-"Notes"}
+
+  if [[ -z "$title" ]]; then
+    echo "Usage: notes-open <title> [folder]"
+    return 1
+  fi
+
+  osascript <<EOF
+tell application "Notes"
+  try
+    set theFolder to folder "$folder"
+    set foundNote to false
+    repeat with theNote in notes of theFolder
+      if name of theNote contains "$title" then
+        show theNote
+        activate
+        return "Opening note '" & name of theNote & "'"
+        set foundNote to true
+        exit repeat
+      end if
+    end repeat
+    if not foundNote then
+      return "Note '$title' not found in folder '$folder'."
+    end if
+  on error errMsg
+    return "Error: " & errMsg
+  end try
+end tell
+EOF
+}
+
+# ==================================
+# Calendar App Integrations
+# ==================================
+
+# Create a new calendar event
+calendar-create() {
+  local title=$1
+  local start_date=$2
+  local end_date=$3
+  local location=${4:-""}
+  local calendar_name=${5:-""}
+  local all_day=${6:-"false"}
+
+  if [[ -z "$title" || -z "$start_date" ]]; then
+    echo "Usage: calendar-create <title> <start-date-time> [end-date-time] [location] [calendar] [all-day]"
+    echo "Example: calendar-create \"Team Meeting\" \"2023-12-15 14:00\" \"2023-12-15 15:00\" \"Conference Room\" \"Work\" false"
+    return 1
+  fi
+
+  # If end date is not provided, set it to 1 hour after start date
+  if [[ -z "$end_date" ]]; then
+    # Parse the start date to determine format
+    if [[ "$start_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+      # Start date is just a date (YYYY-MM-DD), assume all-day event
+      end_date="$start_date"
+      all_day="true"
+    else
+      # Start date includes time, set end date to 1 hour later
+      end_date=$(date -j -f "%Y-%m-%d %H:%M" -v+1H "$start_date" "+%Y-%m-%d %H:%M" 2>/dev/null ||
+                date -d "$start_date 1 hour" "+%Y-%m-%d %H:%M" 2>/dev/null)
+    fi
+  fi
+
+  # Create the Calendar event
+  osascript <<EOF
+tell application "Calendar"
+  set allDay to $all_day
+
+  -- Convert date strings to date objects
+  set startDate to (do shell script "date -j -f '%Y-%m-%d %H:%M' '$start_date' '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -j -f '%a %b %d %H:%M:%S %Z %Y' \"\$(date -d '$start_date')\" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo \"error\"")
+  set endDate to (do shell script "date -j -f '%Y-%m-%d %H:%M' '$end_date' '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -j -f '%a %b %d %H:%M:%S %Z %Y' \"\$(date -d '$end_date')\" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo \"error\"")
+
+  if startDate is "error" or endDate is "error" then
+    return "Error: Could not parse date format."
+  end if
+
+  set startDate to date startDate
+  set endDate to date endDate
+
+  -- Determine which calendar to use
+  if "$calendar_name" is not "" then
+    set targetCalendar to calendar "$calendar_name"
+  else
+    set targetCalendar to default calendar
+  end if
+
+  -- Create the event
+  tell targetCalendar
+    make new event with properties {summary:"$title", start date:startDate, end date:endDate, location:"$location", allday event:allDay}
+  end tell
+
+  return "Created event: $title on " & name of targetCalendar
+end tell
+EOF
+}
+
+# List available calendars
+calendar-list() {
+  osascript <<EOF | awk '{print NR ") " $0}'
+tell application "Calendar"
+  set output to ""
+  repeat with cal in calendars
+    set output to output & name of cal & "\n"
+  end repeat
+  return output
+end tell
+EOF
+}
+
+# List today's events
+calendar-today() {
+  osascript <<EOF
+tell application "Calendar"
+  set todayStart to current date
+  set time of todayStart to 0
+  set todayEnd to todayStart + (1 * days)
+
+  set todayEvents to {}
+  repeat with c in calendars
+    set calEvents to (events of c whose start date ≥ todayStart and start date < todayEnd)
+    set todayEvents to todayEvents & calEvents
+  end repeat
+
+  -- Sort events by start time
+  set sortedEvents to {}
+  repeat with e in todayEvents
+    set eventStartDate to start date of e
+    set eventTime to time string of eventStartDate
+    set eventTitle to summary of e
+    set loc to location of e
+    if loc is not "" then
+      set eventInfo to eventTime & " - " & eventTitle & " (" & loc & ")"
+    else
+      set eventInfo to eventTime & " - " & eventTitle
+    end if
+    set end of sortedEvents to {eventStartDate, eventInfo}
+  end repeat
+
+  -- Sort and output
+  set sortedEvents to sortedEvents as list
+  set results to {}
+
+  repeat while (count of sortedEvents) > 0
+    set earliest to item 1 of sortedEvents
+    set earliestIndex to 1
+
+    repeat with i from 1 to count of sortedEvents
+      set this_event to item i of sortedEvents
+      if item 1 of this_event < item 1 of earliest then
+        set earliest to this_event
+        set earliestIndex to i
+      end if
+    end repeat
+
+    set end of results to item 2 of earliest
+    set sortedEvents to items 1 thru (earliestIndex - 1) of sortedEvents & items (earliestIndex + 1) thru (count of sortedEvents) of sortedEvents
+  end repeat
+
+  if (count of results) > 0 then
+    set output to "Today's Events:" & return & "----------------" & return
+    repeat with r in results
+      set output to output & r & return
+    end repeat
+    return output
+  else
+    return "No events scheduled for today."
+  end if
+end tell
+EOF
+}
+
+# ==================================
+# Mail App Integrations
+# ==================================
+
+# Process Mail.app inbox
+mail-process() {
+  # Open Mail.app and focus on inbox
+  osascript <<EOF
+tell application "Mail"
+  activate
+  set selected mailboxes of message viewer 1 to {inbox}
+end tell
+EOF
+
+  echo "Mail.app opened and focused on inbox."
+  echo ""
+  echo "Keyboard Shortcuts for Processing:"
+  echo "⌘+A: Select all messages"
+  echo "⌘+Delete: Delete selected messages"
+  echo "⌘+Shift+A: Archive selected messages"
+  echo "⌘+Shift+L: Flag selected messages"
+  echo "⌘+Shift+J: Mark as Junk"
+  echo "Spacebar: Preview message"
+  echo ""
+  echo "Close this terminal with ⌘+W when finished processing email."
+}
+
+# Create a new email
+mail-new() {
+  local recipient=$1
+  local subject=${2:-""}
+  local body=${3:-""}
+
+  if [[ -z "$recipient" ]]; then
+    echo "Usage: mail-new <recipient> [subject] [body]"
+    echo "Example: mail-new user@example.com \"Meeting Tomorrow\" \"Hi, let's meet tomorrow.\""
+    return 1
+  fi
+
+  osascript <<EOF
+tell application "Mail"
+  set newMessage to make new outgoing message with properties {subject:"$subject", content:"$body", visible:true}
+  tell newMessage
+    make new to recipient at end of to recipients with properties {address:"$recipient"}
+  end tell
+  activate
+end tell
+EOF
+
+  echo "New email created to $recipient"
+}
+
+# Count unread emails
+mail-unread() {
+  osascript <<EOF
+tell application "Mail"
+  set unreadCount to unread count of inbox
+  return "You have " & unreadCount & " unread messages in your inbox."
+end tell
+EOF
+}
+
+# Create email from a note
+mail-from-note() {
+  local note_title=$1
+
+  if [[ -z "$note_title" ]]; then
+    echo "Usage: mail-from-note <note-title>"
+    echo "Creates an email draft from a note in Apple Notes"
+    return 1
+  fi
+
+  osascript <<EOF
+tell application "Notes"
+  set noteFound to false
+  set noteContent to ""
+  set noteTitle to ""
+
+  repeat with aNote in notes
+    if name of aNote contains "$note_title" then
+      set noteContent to body of aNote
+      set noteTitle to name of aNote
+      set noteFound to true
+      exit repeat
+    end if
+  end repeat
+
+  if not noteFound then
+    return "Note '$note_title' not found."
+  end if
+
+  tell application "Mail"
+    set newMessage to make new outgoing message with properties {subject:noteTitle, content:noteContent, visible:true}
+    activate
+  end tell
+
+  return "Created new email draft from note: " & noteTitle
+end tell
+EOF
+}
+
+# ==================================
+# Integrated GTD Workflows
+# ==================================
+
+# Quick inbox capture to Notes
+gtd-capture() {
+  local note_text=$1
+
+  if [[ -z "$note_text" ]]; then
+    echo "Usage: gtd-capture <note-text>"
+    echo "Captures a quick note to your GTD inbox"
+    return 1
+  fi
+
+  # Make sure the inbox folder exists in Notes
+  osascript <<EOF > /dev/null 2>&1
+tell application "Notes"
+  if not (exists folder "$GTD_INBOX_FOLDER") then
+    make new folder with properties {name:"$GTD_INBOX_FOLDER"}
+  end if
+end tell
+EOF
+
+  # Add the note to the inbox folder
+  local date=$(date '+%Y-%m-%d %H:%M')
+  local title="Inbox: ${note_text:0:50}..."
+
+  osascript <<EOF
+tell application "Notes"
+  tell folder "$GTD_INBOX_FOLDER"
+    make new note with properties {name:"$title", body:"# Inbox Item\n\nCreated: $date\n\n$note_text\n\nTags: #inbox"}
+  end tell
+end tell
+EOF
+
+  echo "Note captured in Apple Notes ($GTD_INBOX_FOLDER folder)"
+}
+
+# Generate a weekly review template
+gtd-review() {
+  local review_title="GTD Weekly Review - $(date '+%Y-%m-%d')"
+  local template="# GTD Weekly Review - $(date '+%Y-%m-%d')
+
+## Collect Loose Papers and Materials
+- [ ] Physical inbox processed
+- [ ] Desk cleared
+- [ ] Notes from meetings processed
+
+## Process Notes
+- [ ] Apple Notes inbox processed
+- [ ] Physical notes processed
+- [ ] Other digital notes processed
+
+## Process Email Inboxes
+- [ ] Work email processed to zero
+- [ ] Personal email processed to zero
+
+## Empty Your Head
+- [ ] Capture any new tasks or projects
+
+## Review Action Lists
+- [ ] Review Next Actions lists
+- [ ] Review Waiting For list
+- [ ] Review Project lists
+- [ ] Review Someday/Maybe list
+- [ ] Review Calendar
+
+## Review Goals
+- [ ] Review short-term goals
+- [ ] Review annual goals
+- [ ] Review 3-5 year goals
+
+## Planning
+- [ ] Choose key tasks for next week
+- [ ] Schedule time blocks for important work
+
+## Notes from this review:
+
+
+"
+
+  osascript <<EOF
+tell application "Notes"
+  make new note with properties {name:"$review_title", body:"$template"}
+  show note "$review_title"
+  activate
+end tell
+EOF
+
+  echo "Weekly Review template opened in Apple Notes"
+}
+
+# Create a new project in both Notes and Reminders
+gtd-new-project() {
+  local project_name=$1
+
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: gtd-new-project <project-name>"
+    echo "Creates a new GTD project in Notes and Reminders"
+    return 1
+  fi
+
+  # Create project note in Notes
+  notes-new-project "$project_name"
+
+  # Create project list in Reminders
+  reminders-new-project "$project_name"
+
+  echo "Project '$project_name' created in Notes and Reminders"
+}
+
+# Show next actions from Reminders
+gtd-next() {
+  local context=$1
+
+  # Different behavior based on whether a context is specified
+  if [[ -z "$context" ]]; then
+    # List all contexts with counts
+    echo "GTD Next Actions by Context:"
+    echo "==========================="
+
+    osascript <<EOF | sort
+tell application "Reminders"
+  set allLists to name of lists
+  set output to ""
+  repeat with listName in allLists
+    if listName starts with "@" then
+      set theList to list listName
+      set incompleteCount to (count of (reminders in theList whose completed is false))
+      if incompleteCount > 0 then
+        set output to output & listName & " (" & incompleteCount & ")\n"
+      end if
+    end if
+  end repeat
+  return output
+end tell
+EOF
+    echo ""
+    echo "Use 'gtd-next @context' to see tasks for a specific context"
+  else
+    # Show reminders for the specific context
+    echo "Next Actions for $context:"
+    echo "======================="
+
+    osascript <<EOF | awk '{print "- " $0}'
+tell application "Reminders"
+  if not (exists list "$context") then
+    return "Context list '$context' not found. Available contexts start with @."
+  end if
+
+  set output to ""
+  set theList to list "$context"
+  set theReminders to (reminders in theList whose completed is false)
+  repeat with r in theReminders
+    set output to output & name of r & "\n"
+  end repeat
+  return output
+end tell
+EOF
+  fi
+}
+
+# Show current GTD system status
+gtd-status() {
+  echo "GTD System Status:"
+  echo "=================="
+  echo ""
+
+  # Count inbox items
+  echo "1. INBOX ITEMS:"
+  osascript <<EOF
+tell application "Reminders"
+  if exists list "Inbox" then
+    set inboxCount to (count of (reminders in list "Inbox" whose completed is false))
+    return "Reminders Inbox: " & inboxCount & " items"
+  else
+    return "Reminders Inbox: Not found"
+  end if
+end tell
+EOF
+
+  osascript <<EOF
+tell application "Notes"
+  if exists folder "$GTD_INBOX_FOLDER" then
+    set inboxCount to (count of notes in folder "$GTD_INBOX_FOLDER")
+    return "Notes Inbox: " & inboxCount & " items"
+  else
+    return "Notes Inbox: Not found"
+  end if
+end tell
+EOF
+
+  # Count projects
+  echo "\n2. PROJECTS:"
+  osascript <<EOF
+tell application "Reminders"
+  set projectCount to 0
+  repeat with theList in lists
+    if name of theList starts with "Project: " then
+      set projectCount to projectCount + 1
+    end if
+  end repeat
+  return "Active Projects in Reminders: " & projectCount
+end tell
+EOF
+
+  osascript <<EOF
+tell application "Notes"
+  if exists folder "$GTD_PROJECTS_FOLDER" then
+    set projectCount to (count of notes in folder "$GTD_PROJECTS_FOLDER")
+    return "Projects in Notes: " & projectCount & " items"
+  else
+    return "Projects in Notes: Not found"
+  end if
+end tell
+EOF
+
+  # Check next actions
+  echo "\n3. NEXT ACTIONS:"
+  osascript <<EOF
+tell application "Reminders"
+  set contextCount to 0
+  set actionCount to 0
+  repeat with theList in lists
+    if name of theList starts with "@" then
+      set contextCount to contextCount + 1
+      set incompleteCount to (count of (reminders in theList whose completed is false))
+      set actionCount to actionCount + incompleteCount
+    end if
+  end repeat
+  return "Next Actions: " & actionCount & " across " & contextCount & " contexts"
+end tell
+EOF
+
+  # Check calendar events
+  echo "\n4. CALENDAR:"
+  osascript <<EOF
+tell application "Calendar"
+  set todayStart to current date
+  set time of todayStart to 0
+  set todayEnd to todayStart + (1 * days)
+  set weekEnd to todayStart + (7 * days)
+
+  set todayEvents to {}
+  set weekEvents to {}
+  repeat with c in calendars
+    set calTodayEvents to (events of c whose start date ≥ todayStart and start date < todayEnd)
+    set calWeekEvents to (events of c whose start date ≥ todayStart and start date < weekEnd)
+    set todayEvents to todayEvents & calTodayEvents
+    set weekEvents to weekEvents & calWeekEvents
+  end repeat
+
+  return "Today: " & (count of todayEvents) & " events" & return & "Next 7 days: " & (count of weekEvents) & " events"
+end tell
+EOF
+
+  # Count waiting for items
+  echo "\n5. WAITING FOR:"
+  osascript <<EOF
+tell application "Reminders"
+  if exists list "Waiting For" then
+    set waitingCount to (count of (reminders in list "Waiting For" whose completed is false))
+    return "Waiting For: " & waitingCount & " items"
+  else
+    return "Waiting For list: Not found"
+  end if
+end tell
+EOF
+
+  echo "\nRun 'gtd-review' to start a weekly review"
+}
+
+# Create new context list for next actions
+gtd-new-context() {
+  local context=$1
+
+  if [[ -z "$context" ]]; then
+    echo "Usage: gtd-new-context <context-name>"
+    echo "Example: gtd-new-context @home"
+    return 1
+  fi
+
+  # Add @ symbol if not provided
+  if [[ ! "$context" == @* ]]; then
+    context="@$context"
+  fi
+
+  # Create the context list
+  osascript <<EOF
+tell application "Reminders"
+  make new list with properties {name:"$context"}
+  return "Context list '$context' created."
+end tell
+EOF
+}
+
+# Process email and create actions
+gtd-process-email() {
+  # First open Mail.app
+  mail-process
+
+  echo "\nProcessing Options:"
+  echo "1. Create a task from email: gtd-email-to-task"
+  echo "2. Create a note from email: gtd-email-to-note"
+  echo "3. Mark email for follow-up: mail-flag-search [search term]"
+}
+
+# Create a task from an email
+gtd-email-to-task() {
+  # Show prompts for the user to input details
+  read -p "Task description: " task_description
+  read -p "List name (default: Inbox): " list_name
+  list_name=${list_name:-"Inbox"}
+  read -p "Due date (optional): " due_date
+
+  # Add the task
+  reminders-add "$task_description" "$list_name" "$due_date"
+}
+
+# ==================================
+# Meeting and Work Session Functions
+# ==================================
+
+# Create a meeting note and calendar event
+gtd-meeting() {
+  local title=$1
+  local date=$2
+  local attendees=${3:-""}
+  local location=${4:-""}
+
+  if [[ -z "$title" || -z "$date" ]]; then
+    echo "Usage: gtd-meeting <title> <date-time> [attendees] [location]"
+    echo "Example: gtd-meeting \"Project Review\" \"2023-12-15 14:00\" \"John, Mary, Bob\" \"Conference Room A\""
+    return 1
+  fi
+
+  # Calculate end time (1 hour after start)
+  local end_date=$(date -j -f "%Y-%m-%d %H:%M" -v+1H "$date" "+%Y-%m-%d %H:%M" 2>/dev/null ||
+                 date -d "$date 1 hour" "+%Y-%m-%d %H:%M" 2>/dev/null)
+
+  # Create calendar event
+  calendar-create "$title" "$date" "$end_date" "$location"
+
+  # Create meeting note
+  local meeting_folder="Meetings"
+  local meeting_title="Meeting: $title ($(date -j -f "%Y-%m-%d %H:%M" "$date" "+%Y-%m-%d" 2>/dev/null || date -d "$date" "+%Y-%m-%d"))"
+
+  local meeting_content="# Meeting: $title
+
+Date: $(date -j -f "%Y-%m-%d %H:%M" "$date" "+%Y-%m-%d" 2>/dev/null || date -d "$date" "+%Y-%m-%d")
+Time: $(date -j -f "%Y-%m-%d %H:%M" "$date" "+%H:%M" 2>/dev/null || date -d "$date" "+%H:%M")
+Location: $location"
+
+  if [[ -n "$attendees" ]]; then
+    meeting_content+="\nAttendees: $attendees"
+  else
+    meeting_content+="\nAttendees: "
+  fi
+
+  meeting_content+="\n\n## Agenda\n\n1. \n\n## Notes\n\n\n## Action Items\n\n- [ ] "
+
+  # Make sure folder exists
+  osascript <<EOF > /dev/null 2>&1
+tell application "Notes"
+  if not (exists folder "$meeting_folder") then
+    make new folder with properties {name:"$meeting_folder"}
+  end if
+end tell
+EOF
+
+  # Create the note
+  osascript <<EOF
+tell application "Notes"
+  tell folder "$meeting_folder"
+    make new note with properties {name:"$meeting_title", body:"$meeting_content"}
+  end tell
+  show note "$meeting_title" in folder "$meeting_folder"
+  activate
+end tell
+EOF
+
+  echo "Meeting scheduled in Calendar and meeting note created in Notes"
+}
+
+# Set up a focused work session with notes and reminders
+gtd-focus() {
+  local task=$1
+  local duration=${2:-25}
+
+  if [[ -z "$task" ]]; then
+    echo "Usage: gtd-focus <task-description> [duration-minutes]"
+    echo "Example: gtd-focus \"Write project proposal\" 45"
+    return 1
+  fi
+
+  # Create a focus note
+  local focus_folder="Focus Sessions"
+  local focus_title="Focus: $task ($(date '+%Y-%m-%d'))"
+
+  local focus_content="# Focus Session: $task
+
+Started: $(date '+%Y-%m-%d %H:%M')
+Duration: $duration minutes
+Expected completion: $(date -v "+${duration}M" '+%H:%M' 2>/dev/null || date --date="+${duration} minutes" '+%H:%M')
+
+## Objectives
+-
+
+## Notes
+-
+
+## Next Steps
+- [ ]
+
+"
+
+  # Make sure folder exists
+  osascript <<EOF > /dev/null 2>&1
+tell application "Notes"
+  if not (exists folder "$focus_folder") then
+    make new folder with properties {name:"$focus_folder"}
+  end if
+end tell
+EOF
+
+  # Create the note
+  osascript <<EOF
+tell application "Notes"
+  tell folder "$focus_folder"
+    make new note with properties {name:"$focus_title", body:"$focus_content"}
+  end tell
+  show note "$focus_title" in folder "$focus_folder"
+  activate
+end tell
+EOF
+
+  # Start timer notification
+  osascript <<EOF
+display notification "Focus session started: $task" with title "Focus Timer" subtitle "Focus for $duration minutes"
+EOF
+
+  # Start timer in background
+  (
+    sleep $(( duration * 60 ))
+    osascript <<EOF
+display notification "Focus session complete: $task" with title "Focus Timer" sound name "Glass"
+EOF
+  ) &
+
+  echo "Focus session started for $task ($duration minutes)"
+  echo "Notes document created in Notes"
+  echo "Timer will notify you when time is up"
+}
+
+# Extract action items from all meeting notes
+gtd-extract-actions() {
+  local days=${1:-30}  # Default to 30 days
+
+  echo "Action items from meetings in the last $days days:"
+  echo "================================================="
+
+  osascript <<EOF
+tell application "Notes"
+  set meetingFolder to folder "Meetings"
+  set cutoffDate to (current date) - $days * days
+  set output to ""
+
+  repeat with theNote in notes of meetingFolder
+    if creation date of theNote > cutoffDate then
+      set noteBody to body of theNote
+      set noteName to name of theNote
+
+      -- Look for action items by finding "- [ ]" patterns
+      set AppleScript's text item delimiters to "- [ ]"
+      set actionItems to text items of noteBody
+
+      if (count of actionItems) > 1 then
+        -- Found action items
+        set output to output & "From: " & noteName & "\n"
+
+        repeat with i from 2 to count of actionItems
+          set actionText to item i of actionItems
+          -- Extract just the first line of each action item
+          set AppleScript's text item delimiters to "\n"
+          set actionLine to text item 1 of actionText
+          set output to output & "  - [ ] " & actionLine & "\n"
+        end repeat
+
+        set output to output & "\n"
+      end if
+    end if
+  end repeat
+
+  set AppleScript's text item delimiters to ""
+  return output
+end tell
+EOF
+}
+
+{{- end }}
