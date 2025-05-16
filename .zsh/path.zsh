@@ -10,6 +10,11 @@ typeset -U PATH path
 
 # Start with a minimal path to avoid duplicates
 path=(
+  # Homebrew Ruby (highest priority)
+  /opt/homebrew/opt/ruby/bin
+  # Add Homebrew Ruby gems (if Ruby is available)
+  $(test -x /opt/homebrew/opt/ruby/bin/gem && /opt/homebrew/opt/ruby/bin/gem env gemdir 2>/dev/null || echo "")/bin
+
   # Homebrew paths (Apple Silicon first, then Intel for backwards compatibility)
   /opt/homebrew/bin
   /opt/homebrew/sbin
