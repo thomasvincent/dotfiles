@@ -18,6 +18,13 @@ My personal dotfiles optimized for macOS and Linux development, managed with che
 - **Makefile Automation** - Simple commands for common operations
 - **CI/CD Integration** - GitHub Actions and Jenkins pipelines
 - **Quality Assurance** - Pre-commit hooks and linting for all files
+- **Workflow Automation** - Project management, Git, and Docker workflows
+- **Productivity Tools** - Task management, note-taking, and time tracking
+- **macOS Integration** - Native Notes, Reminders, Mail, and Calendar apps integration
+- **Development Workflows** - WordPress, Chef, and Puppet development environments
+- **GTD Methodology** - Getting Things Done workflow support
+- **Chat Integration** - Slack and Microsoft Teams workflows
+- **Email & Calendar** - Gmail, Google Calendar, and Office365 integrations
 
 ## Quick Start
 
@@ -64,7 +71,14 @@ make lint
 ## Components
 
 - **Templates** - Chezmoi templates for different environments
-- **.zsh/** - ZSH configuration modules
+- **home/dot_zsh/** - ZSH configuration modules
+  - **cloud.zsh.tmpl** - Cloud provider specific functions and aliases
+  - **security.zsh.tmpl** - Security enhancements and configurations
+  - **workflows.zsh.tmpl** - Development workflow functions
+  - **productivity.zsh.tmpl** - Productivity tools and functions
+  - **cicd.zsh.tmpl** - CI/CD workflows for Jenkins and GitHub Actions
+  - **dev_workflows.zsh.tmpl** - WordPress, Chef, and Puppet development workflows
+  - **app_workflows.zsh.tmpl** - Integration with productivity apps (GTD, Mail, Slack, Teams, etc.)
 - **.config/** - XDG configuration files
 - **bin/** - Executable scripts
 - **lib/** - Shared functions and utilities
@@ -102,6 +116,208 @@ These settings enable/disable various security features such as:
 - SSH agent management
 - 1Password integration
 - YubiKey integration
+
+## Workflow Automation
+
+Various workflow automation functions are provided to streamline your development process:
+
+### Project Management
+
+- `new-project <name> [type]` - Create a new project with standard structure (supports node, python, go, rust, java, web)
+- `clone-and-setup <repo-url> [destination]` - Clone a repository and set up dependencies based on project type
+- `dev-start [project-name]` - Start a development session with tmux and appropriate environment
+
+### Git Workflows
+
+- `git-feature <feature-name>` - Create a new feature branch from the default branch
+- `git-publish [branch-name]` - Push a branch to remote and optionally create a PR
+- `git-sync [branch-name]` - Sync a branch with the default branch
+
+### Development Workflows
+
+- `release-version <version> [release-notes]` - Create and push a new version tag
+- `code-review <pr-number> [repository]` - Set up an environment for code review
+
+### Docker Workflows
+
+- `docker-run-project [project-name] [environment] [build]` - Run a project in Docker
+- `docker-logs-project [project-name] [service] [follow]` - View logs for a Docker project
+
+### CI/CD Workflows
+
+#### Jenkins Workflows
+- `jenkins-status <jenkins-url> <job-name>` - Get the status of a Jenkins job
+- `jenkins-build <jenkins-url> <job-name>` - Trigger a Jenkins build
+- `jenkins-new-file [pipeline-type]` - Create a new Jenkinsfile (simple, nodejs, python, java, multi-branch)
+
+#### GitHub Actions Workflows
+- `github-actions-new [workflow-type]` - Create new GitHub Actions workflow files (simple, nodejs, python, docker, release, pages)
+- `github-actions-status <owner/repo> [workflow-name]` - Check GitHub Actions workflow status
+- `github-actions-run <workflow> [repo] [branch]` - Run a GitHub Actions workflow
+
+### DigitalOcean Workflows
+- `do-droplets` - List DigitalOcean droplets with details
+- `do-create-droplet <name> [size] [region] [image]` - Create a new DigitalOcean droplet
+- `do-delete-droplet <droplet-id>` - Delete a DigitalOcean droplet
+- `do-create-lamp <name> [size] [region]` - Create a LAMP stack droplet
+- `do-create-wordpress <name> [size] [region]` - Create a WordPress droplet
+- `do-volumes` - List DigitalOcean volumes
+- `do-create-db <name> [engine] [size] [region]` - Create a database cluster
+- `do-k8s` - List Kubernetes clusters
+- `do-create-k8s <name> [region] [size] [count]` - Create a Kubernetes cluster
+- `do-k8s-config <cluster-id>` - Configure kubectl for a DO Kubernetes cluster
+- `do-app-create <name> [region]` - Create a new App Platform app
+
+### WordPress Development Workflows
+- `wp-init <project-name> [version] [port]` - Initialize a WordPress development environment
+- `wp-child-theme <parent-theme> <child-theme> [title] [author]` - Generate a WordPress child theme
+- `wp-export-db [output-file]` - Export WordPress database
+- `wp-install-cli` - Install WP-CLI in a WordPress project
+
+### Chef Development Workflows
+- `chef-init-cookbook <cookbook-name> [options]` - Initialize a Chef cookbook
+- `chef-gen-recipe <recipe-name>` - Generate a Chef recipe
+- `chef-test [instance]` - Test a Chef cookbook with Test Kitchen
+- `chef-create-role <role-name> [description]` - Create a Chef role
+- `chef-report [output-file]` - Generate a Chef cookbook report
+- `chef-upload` - Upload a Chef cookbook to a Chef server
+
+### Puppet Development Workflows
+- `puppet-init-module <module-name> [author]` - Initialize a new Puppet module
+- `puppet-gen-class <class-name>` - Generate a Puppet class
+- `puppet-gen-type <type-name>` - Create a Puppet resource type
+- `puppet-lint [path]` - Run Puppet lint on a module
+- `puppet-test` - Run Puppet Tests with PDK
+- `puppet-build` - Build a Puppet module package
+
+## Productivity Tools
+
+This dotfiles setup includes several productivity enhancing tools:
+
+### Task Management
+
+- `task-add <description> [list]` - Add a new task to track
+- `task-list [filter] [list]` - List current tasks
+- `task-done <task-number> [list]` - Mark a task as completed
+- `task-history [days] [list]` - Show completed task history
+- `task-clear [list]` - Clear completed task history
+
+macOS specific (with Reminders app integration):
+- `task-lists` - List all available Reminders lists
+- `task-new-list <name>` - Create a new Reminders list
+
+### Note Taking
+
+- `note-new <title> [folder] [content]` - Create a new note
+- `note-list [filter] [folder]` - List available notes
+- `note-view <title> [folder]` - View a specific note
+- `note-search <term> [folder]` - Search notes for a term
+
+macOS specific (with Notes app integration):
+- `note-folders` - List all available Notes folders
+- `note-new-folder <name>` - Create a new Notes folder
+
+### Meeting Notes
+
+- `meeting-start <title> [attendees]` - Start a meeting note with a standard template
+- `meeting-list [filter]` - List meeting notes
+- `meeting-view <title>` - View a specific meeting note
+- `meeting-actions [days]` - Extract action items from meeting notes
+
+macOS specific:
+- `meeting-to-tasks <title> [list]` - Convert meeting action items to tasks in Reminders
+
+### Time Tracking
+
+- `time-start <project> <task>` - Start tracking time
+- `time-stop` - Stop tracking time for the current task
+- `time-switch <project> <task>` - Switch to tracking a different task
+- `time-summary [period]` - Show time tracking summary
+
+### Focus Tools
+
+- `pomodoro <task> [cycles]` - Run a Pomodoro timer for focused work
+- `timer <minutes> [description]` - Run a simple countdown timer
+
+### GTD (Getting Things Done) Workflows
+
+- `gtd-capture <note-text>` - Capture a quick note to your GTD inbox
+- `gtd-review` - Start a GTD weekly review with a template
+- `gtd-new-project <project-name>` - Create a new GTD project template
+- `gtd-next [context]` - List GTD next actions, optionally by context
+
+### Mail App Workflows (macOS)
+
+- `mail-process` - Process Mail.app inbox using keyboard shortcuts
+- `mail-new <recipient> [subject] [body]` - Create a new email
+- `mail-unread` - Count unread emails
+- `mail-flag-search <search-term>` - Flag important emails matching a search term
+- `mail-from-note <note-title>` - Create an email draft from notes
+
+### Slack Workflows
+
+- `slack-send <webhook-url> <message> [channel] [username]` - Send a Slack message via webhook
+- `slack-open <channel>` - Open Slack and navigate to a channel
+- `slack-status <status-text> [status-emoji]` - Set Slack status
+- `slack-remind <reminder-text> <time>` - Create a Slack reminder
+
+### Microsoft Teams Workflows (macOS)
+
+- `teams-open <team-name> [channel-name]` - Open Microsoft Teams and navigate to a channel
+- `teams-new-meeting` - Start a new Teams meeting
+- `teams-status <status>` - Set Teams status
+
+### Gmail Workflows
+
+- `gmail-search <search-query>` - Open Gmail with search
+- `gmail-compose <to> [subject] [body]` - Create a Gmail draft with mailto
+- `gmail-filter <filter>` - Open Gmail with predefined filters
+
+### Calendar Workflows (macOS)
+
+- `calendar-new <title> <start-date-time> [end-date-time] [location] [calendar]` - Create a new Calendar event
+- `calendar-today` - List today's Calendar events
+- `calendar-search <search-term> [days]` - Search Calendar events
+
+### Google Calendar Workflows
+
+- `gcal-new <title> <start-date-time> [end-date-time] [details] [location]` - Open Google Calendar to create a new event
+- `gcal-open [view] [date]` - Open Google Calendar with specific view
+- `gcal-range <start-date> <end-date>` - Open Google Calendar for a specific date range
+
+### Office365 Workflows
+
+- `office365-open <app>` - Open Office365 apps
+- `office365-new <document-type>` - Create a new document in Office365
+- `outlook-compose <to> [subject] [body]` - Compose a new email in Outlook
+- `onedrive-open [folder-path]` - Open OneDrive folder
+
+### macOS Integration
+
+On macOS systems, this dotfiles setup integrates with native applications:
+
+- **Reminders App**: Task management functions automatically use Apple Reminders
+- **Notes App**: Note taking functions integrate with Apple Notes
+- **Mail.app**: Email management functions
+- **Calendar.app**: Calendar management functions 
+- **Notification Center**: Timers and alerts use native notifications
+- **Folders & Organization**: Specific folders for meetings and tasks sync with the native apps
+
+To customize the macOS integration, use the following settings in your `chezmoi.toml`:
+
+```toml
+[data.preferences]
+    # macOS integration preferences
+    notes_folder = "CLI Notes"     # Default folder name in macOS Notes app
+    meeting_folder = "Meetings"    # Folder for meetings in macOS Notes app
+    reminders_list = "CLI Tools"   # Default list name in macOS Reminders app
+    
+    # GTD workflow preferences
+    gtd_inbox_folder = "GTD/Inbox"   # Folder for GTD inbox in Notes app
+    gtd_projects_folder = "GTD/Projects"  # Folder for GTD projects in Notes app
+```
+
+If you're not using macOS or prefer the plain text approach, all functions automatically fall back to local files.
 
 ## Customization
 

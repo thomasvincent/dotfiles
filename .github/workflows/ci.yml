@@ -5,71 +5,76 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    - name: Install pre-commit
-      run: pip install pre-commit
-    - name: Run pre-commit hooks
-      run: pre-commit run --all-files
-
   lint:
+    name: Lint
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v3
+      
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    - name: Install linting tools
+        
+    - name: Install dependencies
       run: |
-        pip install shellcheck-py yamllint
-    - name: Run ShellCheck
+        python -m pip install --upgrade pip
+        pip install pre-commit
+        
+    - name: Run pre-commit
+      run: pre-commit run --all-files
+      
+  test-linux:
+    name: Test on Linux
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up environment
       run: |
-        find . -type f -name "*.sh" ! -path "*/\.*" -exec shellcheck -S warning {} \;
-    - name: Run YAML Lint
+        sudo apt-get update
+        sudo apt-get install -y zsh
+        
+    - name: Test shell startup
       run: |
-        find . -type f \( -name "*.yml" -o -name "*.yaml" \) ! -path "*/\.*" -exec yamllint {} \;
-
-  macos-test:
+        chmod +x ./test_shell_startup.sh
+        ./test_shell_startup.sh
+        
+  test-macos:
+    name: Test on macOS
     runs-on: macos-latest
+    
     steps:
     - uses: actions/checkout@v3
-    - name: Install testing dependencies
+    
+    - name: Test shell startup
       run: |
-        brew install zsh
-    - name: Set permissions
-      run: |
-        chmod +x $(find . -name "*.sh")
-    - name: Test installation script
-      run: |
-        ./install.sh --test || true
-
-  linux-test:
+        chmod +x ./test_shell_startup.sh
+        ./test_shell_startup.sh
+        
+  verify-templates:
+    name: Verify Chezmoi Templates
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v3
-    - name: Set permissions
+    
+    - name: Install Chezmoi
       run: |
-        chmod +x $(find . -name "*.sh")
-    - name: Test installation script
+        sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $(pwd)/bin
+        echo "$(pwd)/bin" >> $GITHUB_PATH
+        
+    - name: Verify templates
       run: |
-        ./install.sh --test || true
-
-  template-check:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Verify chezmoi templates
-      run: |
-        for tmpl in $(find ./home -name "*.tmpl"); do
-          echo "Validating $tmpl"
-          grep -q "{{" "$tmpl" || echo "WARNING: No template variables found in $tmpl"
-        done
+        chezmoi execute-template < home/dot_zshrc.tmpl > /dev/null
+        chezmoi execute-template < home/dot_zsh/cloud.zsh.tmpl > /dev/null
+        chezmoi execute-template < home/dot_zsh/workflows.zsh.tmpl > /dev/null
+        chezmoi execute-template < home/dot_zsh/productivity.zsh.tmpl > /dev/null
+        chezmoi execute-template < home/dot_zsh/cicd.zsh.tmpl > /dev/null
+        chezmoi execute-template < home/dot_zsh/dev_workflows.zsh.tmpl > /dev/null
+        chezmoi execute-template < home/dot_zsh/app_workflows.zsh.tmpl > /dev/null
+EOF < /dev/null

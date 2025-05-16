@@ -1,0 +1,609 @@
+# Workflow automation functions
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# ==================================
+# Project Management Workflows
+# ==================================
+
+# Create a new project with standard structure
+new-project() {
+  local project_name=$1
+  local project_type=${2:-generic}  # default to generic
+  local project_dir="{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"
+  
+  if [[ -z "$project_name" ]]; then
+    echo "Usage: new-project <project-name> [project-type]"
+    echo "Available project types: generic, node, python, go, rust, java, web"
+    return 1
+  fi
+  
+  # Create the base project directory
+  mkdir -p "$project_dir"
+  cd "$project_dir" || return 1
+  
+  # Initialize git repository
+  git init
+  
+  # Create README and LICENSE
+  echo "# $project_name" > README.md
+  echo "" >> README.md
+  echo "Created on $(date +%Y-%m-%d)" >> README.md
+  
+  # Create .gitignore
+  touch .gitignore
+  
+  # Project type specific setup
+  case "$project_type" in
+    node)
+      npm init -y
+      mkdir -p src test
+      echo "node_modules/" >> .gitignore
+      echo "dist/" >> .gitignore
+      echo "npm-debug.log" >> .gitignore
+      echo "package-lock.json" >> .gitignore
+      ;;
+    python)
+      python -m venv venv
+      mkdir -p src tests
+      echo "venv/" >> .gitignore
+      echo "__pycache__/" >> .gitignore
+      echo "*.pyc" >> .gitignore
+      echo "*.egg-info/" >> .gitignore
+      touch requirements.txt
+      ;;
+    go)
+      mkdir -p cmd pkg internal
+      go mod init "$(basename "$project_dir")"
+      echo "bin/" >> .gitignore
+      ;;
+    rust)
+      cargo init
+      ;;
+    java)
+      mkdir -p src/main/java src/main/resources src/test/java
+      echo "target/" >> .gitignore
+      echo ".classpath" >> .gitignore
+      echo ".project" >> .gitignore
+      echo ".settings/" >> .gitignore
+      ;;
+    web)
+      mkdir -p css js img
+      touch index.html
+      ;;
+    *)
+      mkdir -p src docs tests
+      ;;
+  esac
+  
+  # Initialize pre-commit hooks if installed
+  if command -v pre-commit >/dev/null; then
+    pre-commit init
+  fi
+  
+  # Create initial commit
+  git add .
+  git commit -m "Initial commit"
+  
+  echo "Project $project_name created successfully!"
+  echo "Project type: $project_type"
+  echo "Location: $project_dir"
+}
+
+# Clone and set up a repository
+clone-and-setup() {
+  local repo_url=$1
+  local dest_dir=$2
+  
+  if [[ -z "$repo_url" ]]; then
+    echo "Usage: clone-and-setup <repo-url> [destination-directory]"
+    return 1
+  fi
+  
+  # Extract repo name from URL if destination not provided
+  if [[ -z "$dest_dir" ]]; then
+    dest_dir=$(basename "$repo_url" .git)
+  fi
+  
+  # Clone the repository
+  git clone "$repo_url" "$dest_dir"
+  cd "$dest_dir" || return 1
+  
+  # Detect project type and install dependencies
+  if [[ -f "package.json" ]]; then
+    echo "Node.js project detected. Installing dependencies..."
+    npm install
+  elif [[ -f "requirements.txt" ]]; then
+    echo "Python project detected. Setting up virtual environment..."
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+  elif [[ -f "Cargo.toml" ]]; then
+    echo "Rust project detected. Running cargo check..."
+    cargo check
+  elif [[ -f "go.mod" ]]; then
+    echo "Go project detected. Running go mod download..."
+    go mod download
+  elif [[ -f "pom.xml" ]]; then
+    echo "Maven project detected. Running mvn install..."
+    mvn install -DskipTests
+  elif [[ -f "build.gradle" ]]; then
+    echo "Gradle project detected. Running gradle build..."
+    ./gradlew build -x test
+  fi
+  
+  # Set up pre-commit hooks if available
+  if [[ -f ".pre-commit-config.yaml" ]]; then
+    echo "Setting up pre-commit hooks..."
+    pre-commit install
+  fi
+  
+  echo "Repository cloned and set up successfully!"
+}
+
+# ==================================
+# Development Workflows
+# ==================================
+
+# Start a development session
+dev-start() {
+  local project_name=$1
+  
+  if [[ -z "$project_name" ]]; then
+    # If no project specified, use current directory
+    project_name=$(basename "$PWD")
+    cd "." || return 1
+  else
+    # Navigate to project directory
+    cd "{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name" || {
+      echo "Project $project_name not found!"
+      return 1
+    }
+  fi
+  
+  echo "Starting development session for $project_name..."
+  
+  # Start tmux session for the project if tmux is installed
+  if command -v tmux >/dev/null; then
+    # Check if session already exists
+    if ! tmux has-session -t "$project_name" 2>/dev/null; then
+      tmux new-session -d -s "$project_name"
+      tmux rename-window -t "$project_name:0" "editor"
+      
+      # Create windows based on project type
+      if [[ -f "package.json" ]]; then
+        # Node.js project
+        tmux new-window -t "$project_name:1" -n "server"
+        tmux send-keys -t "$project_name:1" "npm start" C-m
+        tmux new-window -t "$project_name:2" -n "tests"
+      elif [[ -f "requirements.txt" ]]; then
+        # Python project
+        tmux new-window -t "$project_name:1" -n "shell"
+        tmux send-keys -t "$project_name:1" "source venv/bin/activate" C-m
+        tmux new-window -t "$project_name:2" -n "tests"
+      elif [[ -f "go.mod" ]]; then
+        # Go project
+        tmux new-window -t "$project_name:1" -n "run"
+        tmux new-window -t "$project_name:2" -n "tests"
+      elif [[ -f "docker-compose.yml" ]]; then
+        # Docker project
+        tmux new-window -t "$project_name:1" -n "docker"
+        tmux send-keys -t "$project_name:1" "docker-compose up" C-m
+        tmux new-window -t "$project_name:2" -n "logs"
+      fi
+      
+      # Return to first window
+      tmux select-window -t "$project_name:0"
+    fi
+    
+    # Attach to the session
+    tmux attach-session -t "$project_name"
+  else
+    # If tmux is not available, open editor
+    {{ if eq .preferences.editor "vscode" -}}
+    code .
+    {{ else if eq .preferences.editor "vim" -}}
+    vim .
+    {{ else if eq .preferences.editor "neovim" -}}
+    nvim .
+    {{ else if eq .preferences.editor "emacs" -}}
+    emacs .
+    {{ else -}}
+    echo "No preferred editor found. Opening default editor."
+    {{ end -}}
+  fi
+}
+
+# Release workflow - Tag and release a project
+release-version() {
+  local version=$1
+  local release_notes=$2
+  
+  if [[ -z "$version" ]]; then
+    echo "Usage: release-version <version> [release-notes-file]"
+    return 1
+  fi
+  
+  # Confirm release
+  echo "Preparing to release version $version"
+  read -r -p "Are you sure you want to release this version? [y/N] " response
+  if [[ ! "$response" =~ ^[Yy]$ ]]; then
+    echo "Release cancelled."
+    return 0
+  fi
+  
+  # Check for uncommitted changes
+  if ! git diff --quiet HEAD; then
+    echo "You have uncommitted changes. Please commit or stash them before releasing."
+    return 1
+  fi
+  
+  # Create version file or update version in package.json
+  if [[ -f "package.json" ]]; then
+    # For Node.js projects
+    npm version "$version" --no-git-tag-version
+    git add package.json
+    git commit -m "Bump version to $version"
+  elif [[ -f "VERSION" ]]; then
+    # For projects with VERSION file
+    echo "$version" > VERSION
+    git add VERSION
+    git commit -m "Bump version to $version"
+  elif [[ -f "pyproject.toml" ]]; then
+    # For Python projects
+    sed -i.bak "s/version = \".*\"/version = \"$version\"/" pyproject.toml
+    rm pyproject.toml.bak
+    git add pyproject.toml
+    git commit -m "Bump version to $version"
+  else
+    echo "No version file found. Creating VERSION file."
+    echo "$version" > VERSION
+    git add VERSION
+    git commit -m "Bump version to $version"
+  fi
+  
+  # Create a tag with release notes if provided
+  if [[ -n "$release_notes" && -f "$release_notes" ]]; then
+    git tag -a "v$version" -F "$release_notes"
+  else
+    git tag -a "v$version" -m "Release version $version"
+  fi
+  
+  # Push commits and tags
+  echo "Pushing commits and tags..."
+  git push
+  git push --tags
+  
+  # Check if GitHub CLI is available
+  if command -v gh >/dev/null; then
+    echo "Creating GitHub release..."
+    if [[ -n "$release_notes" && -f "$release_notes" ]]; then
+      gh release create "v$version" -F "$release_notes"
+    else
+      gh release create "v$version" -t "Release $version"
+    fi
+  fi
+  
+  echo "Version $version released successfully!"
+}
+
+# Start a code review session
+code-review() {
+  local pr_number=$1
+  local repo=$2
+  
+  if [[ -z "$pr_number" ]]; then
+    echo "Usage: code-review <pr-number> [repository]"
+    return 1
+  fi
+  
+  # If repository not specified, use current directory
+  if [[ -z "$repo" ]]; then
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      repo=$(git remote get-url origin 2>/dev/null)
+      # Extract repo name in format "owner/repo"
+      repo=$(echo "$repo" | sed -E 's|.*github.com[:/]([^/]+/[^/]+).*|\1|' | sed 's/.git$//')
+    else
+      echo "Not in a git repository. Please specify the repository."
+      return 1
+    fi
+  fi
+  
+  # Create a temporary directory for the PR review
+  local temp_dir="/tmp/pr-review-$pr_number"
+  mkdir -p "$temp_dir"
+  cd "$temp_dir" || return 1
+  
+  # Check if GitHub CLI is available
+  if command -v gh >/dev/null; then
+    echo "Checking out PR #$pr_number from $repo..."
+    gh pr checkout "$pr_number" --repo "$repo"
+    
+    # Get PR information
+    echo "Pull Request details:"
+    gh pr view "$pr_number" --repo "$repo"
+    
+    # Open in editor
+    {{ if eq .preferences.editor "vscode" -}}
+    code .
+    {{ else if eq .preferences.editor "vim" -}}
+    vim .
+    {{ else if eq .preferences.editor "neovim" -}}
+    nvim .
+    {{ else if eq .preferences.editor "emacs" -}}
+    emacs .
+    {{ else -}}
+    echo "No preferred editor found. Opening default editor."
+    {{ end -}}
+    
+    # If tmux is available, create a review session
+    if command -v tmux >/dev/null; then
+      local session_name="review-pr-$pr_number"
+      if ! tmux has-session -t "$session_name" 2>/dev/null; then
+        tmux new-session -d -s "$session_name"
+        tmux rename-window -t "$session_name:0" "code"
+        tmux new-window -t "$session_name:1" -n "diff"
+        tmux send-keys -t "$session_name:1" "git diff origin/main...HEAD" C-m
+        tmux new-window -t "$session_name:2" -n "log"
+        tmux send-keys -t "$session_name:2" "git log --oneline origin/main..HEAD" C-m
+        tmux select-window -t "$session_name:0"
+      fi
+      tmux attach-session -t "$session_name"
+    fi
+  else
+    echo "GitHub CLI not available. Please install it to use this function."
+    return 1
+  fi
+}
+
+# ==================================
+# Docker Workflows
+# ==================================
+
+# Run a project in Docker
+docker-run-project() {
+  local project_name=$1
+  local environment=${2:-dev}  # default to dev
+  local build=${3:-true}       # build by default
+  
+  if [[ -z "$project_name" ]]; then
+    # If no project specified, use current directory
+    project_name=$(basename "$PWD")
+  else
+    # Navigate to project directory
+    cd "{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name" || {
+      echo "Project $project_name not found!"
+      return 1
+    }
+  fi
+  
+  # Check if docker-compose.yml exists
+  if [[ ! -f "docker-compose.yml" && ! -f "docker-compose.yaml" ]]; then
+    echo "No docker-compose file found in the project directory."
+    return 1
+  fi
+  
+  # Check if there's an environment-specific compose file
+  local compose_file="docker-compose.yml"
+  if [[ -f "docker-compose.$environment.yml" ]]; then
+    compose_file="docker-compose.$environment.yml"
+  elif [[ -f "docker-compose.$environment.yaml" ]]; then
+    compose_file="docker-compose.$environment.yaml"
+  fi
+  
+  echo "Starting $project_name in $environment environment..."
+  
+  # Build if required
+  if [[ "$build" == "true" ]]; then
+    echo "Building containers..."
+    docker-compose -f docker-compose.yml -f "$compose_file" build
+  fi
+  
+  # Run the containers
+  docker-compose -f docker-compose.yml -f "$compose_file" up -d
+  
+  echo "$project_name is now running in $environment environment."
+  echo "Use 'docker-logs-project $project_name' to view logs."
+}
+
+# View logs for a Docker project
+docker-logs-project() {
+  local project_name=$1
+  local service=$2
+  local follow=${3:-true}  # follow logs by default
+  
+  if [[ -z "$project_name" ]]; then
+    # If no project specified, use current directory
+    project_name=$(basename "$PWD")
+  else
+    # Navigate to project directory
+    cd "{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name" || {
+      echo "Project $project_name not found!"
+      return 1
+    }
+  fi
+  
+  # Check if docker-compose.yml exists
+  if [[ ! -f "docker-compose.yml" && ! -f "docker-compose.yaml" ]]; then
+    echo "No docker-compose file found in the project directory."
+    return 1
+  fi
+  
+  # View logs
+  if [[ -z "$service" ]]; then
+    # View logs for all services
+    if [[ "$follow" == "true" ]]; then
+      docker-compose logs -f
+    else
+      docker-compose logs
+    fi
+  else
+    # View logs for a specific service
+    if [[ "$follow" == "true" ]]; then
+      docker-compose logs -f "$service"
+    else
+      docker-compose logs "$service"
+    fi
+  fi
+}
+
+# ==================================
+# Git Workflows
+# ==================================
+
+# Start a new feature branch
+git-feature() {
+  local feature_name=$1
+  
+  if [[ -z "$feature_name" ]]; then
+    echo "Usage: git-feature <feature-name>"
+    return 1
+  fi
+  
+  # Ensure we're in a git repository
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Not in a git repository."
+    return 1
+  }
+  
+  # Get the default branch (main or master)
+  local default_branch
+  default_branch=$(git remote show origin | grep "HEAD branch" | sed 's/.*: //')
+  
+  # Ensure default branch is up to date
+  echo "Fetching latest changes..."
+  git fetch origin
+  
+  # Create and checkout feature branch
+  local branch_name="feature/$feature_name"
+  echo "Creating branch $branch_name from $default_branch..."
+  git checkout -b "$branch_name" "origin/$default_branch"
+  
+  echo "Feature branch $branch_name created and checked out."
+  echo "Run 'git-publish $branch_name' when ready to push to remote."
+}
+
+# Publish a branch to remote
+git-publish() {
+  local branch_name=${1:-$(git symbolic-ref --short HEAD)}
+  
+  # Ensure we're in a git repository
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Not in a git repository."
+    return 1
+  }
+  
+  # Check if the branch exists
+  if ! git show-ref --verify --quiet "refs/heads/$branch_name"; then
+    echo "Branch $branch_name does not exist."
+    return 1
+  }
+  
+  # Push to remote
+  echo "Publishing branch $branch_name to remote..."
+  git push -u origin "$branch_name"
+  
+  # Check if GitHub CLI is available to create a PR
+  if command -v gh >/dev/null; then
+    read -r -p "Do you want to create a pull request for this branch? [y/N] " response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+      gh pr create --web
+    fi
+  fi
+  
+  echo "Branch $branch_name published to remote."
+}
+
+# Sync with remote
+git-sync() {
+  local branch_name=${1:-$(git symbolic-ref --short HEAD)}
+  
+  # Ensure we're in a git repository
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Not in a git repository."
+    return 1
+  }
+  
+  # Get the default branch (main or master)
+  local default_branch
+  default_branch=$(git remote show origin | grep "HEAD branch" | sed 's/.*: //')
+  
+  # Stash changes if working directory is not clean
+  local stashed=false
+  if ! git diff --quiet HEAD; then
+    echo "Stashing changes..."
+    git stash push -m "git-sync: auto stash"
+    stashed=true
+  fi
+  
+  # Update default branch
+  echo "Updating $default_branch..."
+  git fetch origin
+  git checkout "$default_branch"
+  git merge --ff-only "origin/$default_branch"
+  
+  # Update the specified branch
+  if [[ "$branch_name" != "$default_branch" ]]; then
+    echo "Updating $branch_name..."
+    git checkout "$branch_name"
+    
+    # Try to rebase
+    echo "Rebasing $branch_name on $default_branch..."
+    if ! git rebase "$default_branch"; then
+      echo "Rebase failed. Aborting rebase and trying merge instead..."
+      git rebase --abort
+      git merge "$default_branch"
+    fi
+  fi
+  
+  # Apply stashed changes if needed
+  if [[ "$stashed" == "true" ]]; then
+    echo "Applying stashed changes..."
+    git stash pop
+  fi
+  
+  echo "Branch $branch_name is now in sync with $default_branch."
+}
+
+# ==================================
+# Utilities
+# ==================================
+
+# Open project in editor
+edit-project() {
+  local project_name=$1
+  
+  if [[ -z "$project_name" ]]; then
+    # If no project specified, use current directory
+    {{ if eq .preferences.editor "vscode" -}}
+    code .
+    {{ else if eq .preferences.editor "vim" -}}
+    vim .
+    {{ else if eq .preferences.editor "neovim" -}}
+    nvim .
+    {{ else if eq .preferences.editor "emacs" -}}
+    emacs .
+    {{ else -}}
+    echo "No preferred editor found. Opening default editor."
+    {{ end -}}
+  else
+    # Navigate to project directory
+    local project_dir="{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"
+    if [[ ! -d "$project_dir" ]]; then
+      echo "Project $project_name not found!"
+      return 1
+    fi
+    
+    # Open in editor
+    {{ if eq .preferences.editor "vscode" -}}
+    code "$project_dir"
+    {{ else if eq .preferences.editor "vim" -}}
+    vim "$project_dir"
+    {{ else if eq .preferences.editor "neovim" -}}
+    nvim "$project_dir"
+    {{ else if eq .preferences.editor "emacs" -}}
+    emacs "$project_dir"
+    {{ else -}}
+    echo "No preferred editor found. Opening default editor."
+    {{ end -}}
+  fi
+}

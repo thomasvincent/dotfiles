@@ -1,0 +1,65 @@
+#!/bin/bash
+# run_once_setup.sh
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+set -euo pipefail
+
+# Create necessary directories
+mkdir -p "$HOME/.zsh"
+
+# Link our ZSH module files from the chezmoi directory
+ln -sf "$HOME/.local/share/chezmoi/home/dot_zsh"/*.zsh "$HOME/.zsh/"
+
+# Create productivity directories if enabled
+{{ if .enable_productivity -}}
+mkdir -p "{{ .preferences.task_dir | default "$HOME/.tasks" }}"
+mkdir -p "{{ .preferences.notes_dir | default "$HOME/.notes" }}"
+mkdir -p "{{ .preferences.meeting_dir | default "$HOME/.notes/meetings" }}"
+mkdir -p "{{ .preferences.time_track_dir | default "$HOME/.timetrack" }}"
+{{ end -}}
+
+# Set up the projects directory if workflows are enabled
+{{ if .enable_workflows -}}
+mkdir -p "{{ .preferences.projects_dir | default "$HOME/Projects" }}"
+{{ end -}}
+
+# Install required tools based on OS
+if [[ "$(uname)" == "Darwin" ]]; then
+    # macOS
+    if command -v brew >/dev/null 2>&1; then
+        echo "Installing tools with Homebrew..."
+        brew install tmux # For development sessions
+        
+        {{ if .enable_workflows -}}
+        brew install gh # GitHub CLI for code review and PRs
+        {{ end -}}
+    else
+        echo "Homebrew not found. Please install Homebrew first."
+    fi
+elif [[ "$(uname)" == "Linux" ]]; then
+    # Linux
+    if command -v apt-get >/dev/null 2>&1; then
+        echo "Installing tools with apt..."
+        sudo apt-get update
+        sudo apt-get install -y tmux
+        
+        {{ if .enable_workflows -}}
+        # Install GitHub CLI on Linux
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/etc/apt/trusted.gpg.d/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list
+        sudo apt-get update
+        sudo apt-get install -y gh
+        {{ end -}}
+    elif command -v dnf >/dev/null 2>&1; then
+        echo "Installing tools with dnf..."
+        sudo dnf install -y tmux
+        
+        {{ if .enable_workflows -}}
+        sudo dnf install -y 'dnf-command(config-manager)'
+        sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+        sudo dnf install -y gh
+        {{ end -}}
+    fi
+fi
+
+echo "Setup complete!"

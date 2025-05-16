@@ -1,0 +1,56 @@
+# .zshrc
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Enable Powerlevel10k instant prompt
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Set default editor
+export EDITOR='{{ .preferences.editor | default "vim" }}'
+
+# Load plugins and modules
+source "$HOME/.zsh/aliases.zsh"
+source "$HOME/.zsh/functions.zsh"
+source "$HOME/.zsh/completion.zsh"
+source "$HOME/.zsh/history.zsh"
+source "$HOME/.zsh/keybindings.zsh"
+
+# Load conditionally enabled modules
+{{- if .enable_cloud }}
+source "$HOME/.zsh/cloud.zsh"
+{{- end }}
+
+{{- if .security.gpg_signing | or .security.use_ssh_agent | or .security.use_keychain | or .security.use_1password | or .security.use_yubikey }}
+source "$HOME/.zsh/security.zsh"
+{{- end }}
+
+# Workflow modules
+{{- if .enable_workflows }}
+source "$HOME/.zsh/workflows.zsh"
+{{- end }}
+
+{{- if .enable_productivity }}
+source "$HOME/.zsh/productivity.zsh"
+{{- end }}
+
+# CI/CD workflows
+{{- if or .enable_workflows .enable_dev_tools }}
+source "$HOME/.zsh/cicd.zsh"
+{{- end }}
+
+# Development workflows
+{{- if .enable_dev_tools }}
+source "$HOME/.zsh/dev_workflows.zsh"
+{{- end }}
+
+# App integrations
+{{- if .enable_productivity }}
+source "$HOME/.zsh/app_workflows.zsh"
+{{- end }}
+
+# Local customizations
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
+
+# Load powerlevel10k configuration
+[[ -f "$HOME/.p10k.zsh" ]] && source "$HOME/.p10k.zsh"

@@ -1,12 +1,22 @@
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
-# @thomasvincent will be requested for review when someone
-# opens a pull request.
-*       @thomasvincent
+# they will be requested for review when someone opens a pull request.
+* @thomasvincent @github/copilot
 
-# Shell scripts
-*.sh    @thomasvincent
-*.zsh   @thomasvincent
+# Match all files and folders in shell scripts
+*.sh @thomasvincent
 
-# Dotfiles
-.*      @thomasvincent
+# Match specific files in dot directories
+*.zsh* @thomasvincent
+*.tmpl @thomasvincent
+
+# Workflow files
+home/dot_zsh/workflows.zsh.tmpl @thomasvincent
+home/dot_zsh/cicd.zsh.tmpl @thomasvincent
+home/dot_zsh/dev_workflows.zsh.tmpl @thomasvincent
+home/dot_zsh/app_workflows.zsh.tmpl @thomasvincent
+home/dot_zsh/productivity.zsh.tmpl @thomasvincent
+
+# Documentation files
+*.md @thomasvincent
+EOF < /dev/null
