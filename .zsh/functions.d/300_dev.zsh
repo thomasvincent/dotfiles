@@ -34,19 +34,19 @@ genpass() {
 findkill() {
   local pattern=$1
   local pids=$(ps aux | grep -i "$pattern" | grep -v grep | awk '{print $2}')
-  
+
   if [ -z "$pids" ]; then
     echo "No processes found matching '$pattern'"
     return 1
   fi
-  
+
   echo "Found processes:"
   ps -p "$pids" -o pid,user,%cpu,%mem,command
   echo ""
-  
+
   read -q "REPLY?Kill these processes? (y/n) "
   echo ""
-  
+
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "$pids" | xargs kill -9
     echo "Processes killed"
@@ -59,12 +59,12 @@ findkill() {
 repeat_cmd() {
   local interval=${1:-2}
   local cmd=${@:2}
-  
+
   if [ -z "$cmd" ]; then
     echo "Usage: repeat_cmd <interval_in_seconds> <command>"
     return 1
   fi
-  
+
   while true; do
     clear
     date
@@ -113,11 +113,11 @@ greplace() {
     echo "Usage: greplace 'search text' 'replacement text' ['file pattern']"
     return 1
   fi
-  
+
   local search=$1
   local replace=$2
   local pattern=${3:-"*"}
-  
+
   find . -name "$pattern" -type f -print0 | xargs -0 sed -i '' -e "s/$search/$replace/g"
 }
 
@@ -129,7 +129,7 @@ urlencode() {
   else
     data=$1
   fi
-  
+
   python3 -c "import urllib.parse; print(urllib.parse.quote('''$data'''))"
 }
 
@@ -141,7 +141,7 @@ urldecode() {
   else
     data=$1
   fi
-  
+
   python3 -c "import urllib.parse; print(urllib.parse.unquote('''$data'''))"
 }
 

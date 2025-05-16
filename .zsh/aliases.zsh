@@ -194,11 +194,14 @@ alias sz='source ~/.zshrc'
 # ====================================
 # Find aliases (use fd if available)
 if command -v fd &>/dev/null; then
-  alias find='fd'
+  # Don't alias find to fd to avoid argument compatibility issues
+  alias f='fd -t f'
+  alias ff='fd -t f'
+  alias df='fd -t d'
 else
   alias f='find . -name'
-  alias ffind='find . -type f -name'
-  alias dfind='find . -type d -name'
+  alias ff='find . -type f -name'
+  alias df='find . -type d -name'
 fi
 
 # Grep aliases (use ripgrep if available)
@@ -295,8 +298,9 @@ manpdf() {
   man -t "$1" | open -f -a Preview
 }
 
-# Quick find file
-ff() { find . -type f -name "*$1*" -ls; }
+# Quick find file (renamed to avoid alias conflict)
+find_file() { find . -type f -name "*$1*" -ls; }
+alias findf='find_file'
 
 # Quick grep in files
 grepf() { grep -r "$1" .; }

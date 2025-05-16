@@ -1,0 +1,28 @@
+# SSH Configuration
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Global settings
+Host *
+    AddKeysToAgent yes
+    UseKeychain yes
+    IdentityFile ~/.ssh/id_ed25519
+    IdentityFile ~/.ssh/id_rsa
+    ServerAliveInterval 60
+    ServerAliveCountMax 120
+    HashKnownHosts no
+
+# GitHub account
+Host github.com
+    User {{ .github_username }}
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+
+{{ if .work -}}
+# Work-specific configuration
+Host *.work.example.com
+    User {{ .work_username }}
+    IdentityFile ~/.ssh/id_work
+    IdentitiesOnly yes
+{{ end -}}
+
+# Add custom hosts below

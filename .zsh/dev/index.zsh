@@ -1,21 +1,27 @@
 #!/usr/bin/env zsh
 # Developer environment configuration loader
 # This file loads all development environment modules based on availability
+# Optimized for macOS development workflows
 
 DEV_MODULE_DIR="${0:h}"
 
-# Function to source a file if it exists
+# Function to source a file if it exists (with macOS error handling)
 source_if_exists() {
-  [[ -f "$1" ]] && source "$1"
+  emulate -L zsh
+  [[ -f "$1" ]] && source "$1" 2>/dev/null || true
 }
 
 # Load core development tools
-source_if_exists "$DEV_MODULE_DIR/git.zsh"
+source_if_exists "$DEV_MODULE_DIR/git-module.zsh"
 
 # Load language-specific configurations
 # Core languages
 source_if_exists "$DEV_MODULE_DIR/node.zsh"
 source_if_exists "$DEV_MODULE_DIR/python.zsh"
+source_if_exists "$DEV_MODULE_DIR/java.zsh"
+source_if_exists "$DEV_MODULE_DIR/php.zsh"
+source_if_exists "$DEV_MODULE_DIR/rust.zsh"
+source_if_exists "$DEV_MODULE_DIR/ruby.zsh"
 
 # Container-related tools
 source_if_exists "$DEV_MODULE_DIR/docker.zsh"
@@ -24,11 +30,13 @@ source_if_exists "$DEV_MODULE_DIR/docker.zsh"
 source_if_exists "$DEV_MODULE_DIR/aws.zsh"
 source_if_exists "$DEV_MODULE_DIR/gcp.zsh"
 source_if_exists "$DEV_MODULE_DIR/azure.zsh"
+source_if_exists "$DEV_MODULE_DIR/digitalocean.zsh"
 
 # Load other tools
 source_if_exists "$DEV_MODULE_DIR/database.zsh"
 source_if_exists "$DEV_MODULE_DIR/kubernetes.zsh"
 source_if_exists "$DEV_MODULE_DIR/terraform.zsh"
+source_if_exists "$DEV_MODULE_DIR/github.zsh"
 
 # Load local developer config if exists
 source_if_exists "$DEV_MODULE_DIR/local.zsh"
@@ -38,17 +46,21 @@ init-project() {
   local project_type="$1"
   local project_name="$2"
   local args=("${@:3}")
-  
+
   if [[ -z "$project_type" || -z "$project_name" ]]; then
     echo "Usage: init-project <type> <name> [options]"
-    echo "Available types:"
-    echo "  node     - Create a Node.js project"
-    echo "  python   - Create a Python project"
-    echo "  git      - Initialize a Git repository"
-    echo "  docker   - Create a Docker project"
+    print -P "%F{blue}Available types:%f"
+    print -P "  %F{green}node%f     - Create a Node.js project"
+    print -P "  %F{green}python%f   - Create a Python project"
+    print -P "  %F{green}git%f      - Initialize a Git repository"
+    print -P "  %F{green}docker%f   - Create a Docker project"
+    print -P "  %F{green}php%f      - Create a PHP project"
+    print -P "  %F{green}java%f     - Create a Java project"
+    print -P "  %F{green}rust%f     - Create a Rust project"
+    print -P "  %F{green}gh%f       - Create a GitHub repository"
     return 1
   fi
-  
+
   case "$project_type" in
     node)
       create-node-project "$project_name" "${args[@]}"
@@ -73,7 +85,7 @@ init-project() {
 # Function to open project documentation
 docs() {
   local project_type="$1"
-  
+
   if [[ -z "$project_type" ]]; then
     echo "Usage: docs <technology>"
     echo "Available documentation:"
@@ -83,7 +95,7 @@ docs() {
     echo "  docker   - Docker documentation"
     return 1
   fi
-  
+
   case "$project_type" in
     node)
       open "https://nodejs.org/en/docs/"
@@ -115,7 +127,7 @@ in-git-repo() {
 # Set up a simple development environment
 dev-env() {
   local env_type="$1"
-  
+
   case "$env_type" in
     node)
       echo "Setting up Node.js development environment..."

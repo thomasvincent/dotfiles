@@ -1,198 +1,138 @@
 #!/bin/bash
+set -euo pipefail
+
 # Dotfiles installation script
-# Creates symbolic links from the dotfiles repository to the home directory
+# This script installs chezmoi and uses it to apply dotfiles
 
-set -e  # Exit on error
+echo "==> Starting dotfiles installation"
 
+# Installation directory
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_DIR="$HOME/dotfiles_backup_$(date +%Y%m%d_%H%M%S)"
 
-# Colors for pretty output
-RED="\033[0;31m"
-GREEN="\033[0;32m"
-YELLOW="\033[0;33m"
-BLUE="\033[0;34m"
-CYAN="\033[0;36m"
-RESET="\033[0m"
+# Check if running on a supported OS
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="macos"
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    OS="linux"
+else
+    echo "Warning: Unsupported OS. Some features may not work correctly."
+    OS="unknown"
+fi
 
-# Print a pretty header
-echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${RESET}"
-echo -e "${CYAN}║                    Dotfiles Installation                       ║${RESET}"
-echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${RESET}"
-echo ""
+# Install dependencies based on OS
+install_dependencies() {
+    echo "==> Installing dependencies for $OS"
 
-# Backup existing files and create symbolic links
-link_file() {
-    local src="$1"
-    local dst="$2"
-    
-    # Create the parent directory if it doesn't exist
-    mkdir -p "$(dirname "$dst")"
-    
-    # Backup existing file if it exists and is not a symlink
-    if [[ -e "$dst" && ! -L "$dst" ]]; then
-        mkdir -p "$BACKUP_DIR"
-        echo -e "${YELLOW}Backing up ${dst} to ${BACKUP_DIR}/${RESET}"
-        mv "$dst" "$BACKUP_DIR/"
+    if [[ "$OS" == "macos" ]]; then
+        # Check if Homebrew is installed
+        if ! command -v brew &> /dev/null; then
+            echo "Installing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
+
+        # Install chezmoi using Homebrew
+        if ! command -v chezmoi &> /dev/null; then
+            brew install chezmoi
+        fi
+    elif [[ "$OS" == "linux" ]]; then
+        # Install chezmoi directly
+        if ! command -v chezmoi &> /dev/null; then
+            echo "Installing chezmoi..."
+            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+            export PATH="$HOME/.local/bin:$PATH"
+        fi
     fi
-    
-    # Remove existing symlink
-    if [[ -L "$dst" ]]; then
-        rm "$dst"
-    fi
-    
-    # Create symlink
-    echo -e "${GREEN}Linking ${src} to ${dst}${RESET}"
-    ln -sf "$src" "$dst"
 }
 
-# Create directories
-echo -e "${BLUE}Creating necessary directories...${RESET}"
-mkdir -p "$HOME/.zsh/functions.d"
-mkdir -p "$HOME/.zsh/dev"
-mkdir -p "$HOME/.zsh/platforms"
-mkdir -p "$HOME/.config/zsh/themes"
-mkdir -p "$HOME/.local/bin"
-mkdir -p "$HOME/.local/share/dotfiles/backups"
-mkdir -p "$HOME/.cache"
+# Ask for user data for templating
+configure_user_data() {
+    echo "==> Configuring user data"
 
-# Link main dotfiles
-echo -e "${BLUE}Linking main configuration files...${RESET}"
-link_file "$DOTFILES_DIR/.zshrc" "$HOME/.zshrc"
-link_file "$DOTFILES_DIR/.zshenv" "$HOME/.zshenv"
-link_file "$DOTFILES_DIR/.zprofile" "$HOME/.zprofile"
+    # Create chezmoi config directory
+    mkdir -p "$HOME/.config/chezmoi"
 
-# Link ZSH directory contents
-echo -e "${BLUE}Linking ZSH configuration files...${RESET}"
-for zshfile in "$DOTFILES_DIR/.zsh/"*; do
-    if [[ -f "$zshfile" ]]; then
-        filename=$(basename "$zshfile")
-        link_file "$zshfile" "$HOME/.zsh/$filename"
+    # Start with template configuration
+    cp "$DOTFILES_DIR/chezmoi.toml" "$HOME/.config/chezmoi/chezmoi.toml"
+
+    # Get user input for personalization
+    read -p "Enter your full name: " USER_NAME
+    read -p "Enter your email: " USER_EMAIL
+    read -p "Enter your GitHub username: " GITHUB_USERNAME
+
+    # Update configuration file
+    if [[ "$OS" == "macos" ]]; then
+        sed -i '' "s/name = \".*\"/name = \"$USER_NAME\"/" "$HOME/.config/chezmoi/chezmoi.toml"
+        sed -i '' "s/email = \".*\"/email = \"$USER_EMAIL\"/" "$HOME/.config/chezmoi/chezmoi.toml"
+        sed -i '' "s/github_username = \".*\"/github_username = \"$GITHUB_USERNAME\"/" "$HOME/.config/chezmoi/chezmoi.toml"
+    else
+        sed -i "s/name = \".*\"/name = \"$USER_NAME\"/" "$HOME/.config/chezmoi/chezmoi.toml"
+        sed -i "s/email = \".*\"/email = \"$USER_EMAIL\"/" "$HOME/.config/chezmoi/chezmoi.toml"
+        sed -i "s/github_username = \".*\"/github_username = \"$GITHUB_USERNAME\"/" "$HOME/.config/chezmoi/chezmoi.toml"
     fi
-done
 
-# Link ZSH functions directory and contents
-echo -e "${BLUE}Linking ZSH functions...${RESET}"
-mkdir -p "$HOME/.zsh/functions.d"
-for funcfile in "$DOTFILES_DIR/.zsh/functions.d/"*; do
-    if [[ -f "$funcfile" ]]; then
-        filename=$(basename "$funcfile")
-        link_file "$funcfile" "$HOME/.zsh/functions.d/$filename"
-    fi
-done
+    echo "User data configured"
+}
 
-# Link ZSH dev directory and contents
-echo -e "${BLUE}Linking ZSH developer environments...${RESET}"
-mkdir -p "$HOME/.zsh/dev"
-for devfile in "$DOTFILES_DIR/.zsh/dev/"*; do
-    if [[ -f "$devfile" ]]; then
-        filename=$(basename "$devfile")
-        link_file "$devfile" "$HOME/.zsh/dev/$filename"
-    fi
-done
+# Apply dotfiles using chezmoi
+apply_dotfiles() {
+    echo "==> Applying dotfiles with chezmoi"
 
-# Create platform directories
-echo -e "${BLUE}Creating platform directories...${RESET}"
-mkdir -p "$HOME/.zsh/platforms"
-for platform in "$DOTFILES_DIR/.zsh/platforms/"*; do
-    if [[ -f "$platform" ]]; then
-        filename=$(basename "$platform")
-        link_file "$platform" "$HOME/.zsh/platforms/$filename"
-    fi
-done
+    # Initialize chezmoi with the dotfiles repository
+    chezmoi init "$DOTFILES_DIR"
 
-# Create theme directories for terminal themes
-echo -e "${BLUE}Creating theme directories...${RESET}"
-mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/themes"
+    # Apply the dotfiles
+    chezmoi apply -v
 
-# Link config directory contents
-echo -e "${BLUE}Linking config directories...${RESET}"
-for config in "$DOTFILES_DIR/.config/"*; do
-    if [[ -d "$config" ]]; then
-        dirname=$(basename "$config")
-        link_file "$config" "$HOME/.config/$dirname"
-    fi
-done
+    echo "Dotfiles applied successfully"
+}
 
-# Create local ZSH files if they don't exist
-echo -e "${BLUE}Creating local configuration files...${RESET}"
-if [[ ! -f "$HOME/.zsh/local.zsh" ]]; then
-    cat > "$HOME/.zsh/local.zsh" <<EOL
-#!/usr/bin/env zsh
-# This file is for machine-specific configurations
-# It should not be committed to version control
-EOL
-    echo -e "${GREEN}Created $HOME/.zsh/local.zsh${RESET}"
-fi
+# Install additional tools and applications
+install_additional_tools() {
+    echo "==> Installing additional tools"
 
-if [[ ! -f "$HOME/.zsh/secrets.zsh" ]]; then
-    cat > "$HOME/.zsh/secrets.zsh" <<EOL
-#!/usr/bin/env zsh
-# This file is for private API keys and tokens
-# It should not be committed to version control
-EOL
-    chmod 600 "$HOME/.zsh/secrets.zsh"
-    echo -e "${GREEN}Created $HOME/.zsh/secrets.zsh${RESET}"
-fi
-
-# Link scripts directory
-echo -e "${BLUE}Linking scripts...${RESET}"
-mkdir -p "$HOME/.local/bin"
-for script in "$DOTFILES_DIR/scripts/"*; do
-    if [[ -f "$script" && -x "$script" ]]; then
-        filename=$(basename "$script")
-        link_file "$script" "$HOME/.local/bin/$filename"
-    fi
-done
-
-# Ask about Homebrew installation
-if command -v brew >/dev/null 2>&1; then
-    echo -e "${BLUE}Homebrew is already installed.${RESET}"
-    echo -n "Would you like to install packages from the Brewfile? (y/n) "
-    read -r install_brew
-    
-    if [[ "$install_brew" =~ ^[Yy]$ ]]; then
-        echo -e "${BLUE}Installing packages from Brewfile...${RESET}"
-        brew bundle --file="$DOTFILES_DIR/Brewfile"
-        echo -e "${GREEN}Homebrew packages installed.${RESET}"
-    fi
-else
-    echo -e "${YELLOW}Homebrew is not installed.${RESET}"
-    echo -n "Would you like to install Homebrew? (y/n) "
-    read -r install_brew
-    
-    if [[ "$install_brew" =~ ^[Yy]$ ]]; then
-        echo -e "${BLUE}Installing Homebrew...${RESET}"
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        
-        # Add Homebrew to PATH for the current session
-        if [[ -f /opt/homebrew/bin/brew ]]; then
-            eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [[ -f /usr/local/bin/brew ]]; then
-            eval "$(/usr/local/bin/brew shellenv)"
+    if [[ "$OS" == "macos" ]]; then
+        # Install packages from Brewfile
+        if [ -f "$HOME/Brewfile" ]; then
+            echo "Installing packages from Brewfile..."
+            brew bundle --file="$HOME/Brewfile"
         fi
-        
-        echo -n "Would you like to install packages from the Brewfile? (y/n) "
-        read -r install_packages
-        
-        if [[ "$install_packages" =~ ^[Yy]$ ]]; then
-            echo -e "${BLUE}Installing packages from Brewfile...${RESET}"
-            brew bundle --file="$DOTFILES_DIR/Brewfile"
-            echo -e "${GREEN}Homebrew packages installed.${RESET}"
+    elif [[ "$OS" == "linux" ]]; then
+        # Install common packages
+        echo "Installing common packages on Linux..."
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y git zsh curl wget ripgrep fd-find bat tmux neovim
+        elif command -v yum &> /dev/null; then
+            sudo yum install -y git zsh curl wget ripgrep fd tmux neovim
         fi
     fi
-fi
 
-# Create local backups directory
-echo -e "${BLUE}Creating backups directory...${RESET}"
-mkdir -p "${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/backups"
+    # Install Oh-My-Zsh if needed
+    if [ ! -d "$HOME/.oh-my-zsh" ]; then
+        echo "Installing Oh-My-Zsh..."
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    fi
 
-echo -e "${GREEN}Dotfiles installation complete!${RESET}"
-echo -e "${CYAN}Your old dotfiles have been backed up to ${BACKUP_DIR}${RESET}"
-echo -e "${CYAN}New configuration is now in place.${RESET}"
-echo ""
-echo -e "${YELLOW}Next steps:${RESET}"
-echo -e "1. Start a new terminal session or run 'source ~/.zshrc'"
-echo -e "2. Customize your local settings in ~/.zsh/local.zsh"
-echo -e "3. Use 'theme' command to customize your terminal appearance"
-echo -e "4. Run 'dotfiles help' to see available dotfiles management commands"
+    # Change default shell to zsh
+    if [ "$SHELL" != "$(which zsh)" ]; then
+        echo "Changing default shell to zsh..."
+        chsh -s "$(which zsh)"
+    fi
+}
+
+# Main installation process
+main() {
+    echo "Starting dotfiles installation..."
+
+    install_dependencies
+    configure_user_data
+    apply_dotfiles
+    install_additional_tools
+
+    echo "==> Installation complete!"
+    echo "Please restart your terminal for all changes to take effect."
+    echo "To update your dotfiles in the future, run: chezmoi update"
+}
+
+# Run the main function
+main

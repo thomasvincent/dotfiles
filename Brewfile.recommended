@@ -1,0 +1,80 @@
+# Brewfile for macOS dotfiles
+# Run with: `brew bundle install --file=~/dotfiles/Brewfile.recommended`
+
+# Taps
+tap "homebrew/bundle"
+tap "homebrew/cask"
+tap "homebrew/cask-fonts"
+tap "homebrew/core"
+tap "homebrew/services"
+
+# Core tools
+brew "zsh"
+brew "git"
+brew "coreutils"
+brew "grep"
+brew "curl"
+brew "wget"
+brew "openssl"
+brew "htop"
+brew "tmux"
+brew "vim"
+brew "neovim"
+brew "tree"
+brew "bat"  # Better cat
+brew "ripgrep"  # Better grep
+brew "fd"  # Better find
+brew "fzf"  # Fuzzy finder
+brew "jq"  # JSON processor
+brew "yq"  # YAML processor
+brew "eza"  # Better ls
+brew "zoxide"  # Jump around
+brew "diff-so-fancy"  # Better diff
+brew "moreutils"  # Additional Unix utilities
+brew "gnupg"  # GPG
+brew "pinentry-mac"  # For GPG
+brew "direnv"  # Directory-specific environments
+brew "chezmoi"  # Dotfiles manager
+
+# Development tools
+brew "asdf"  # Version manager for multiple languages
+brew "gh"  # GitHub CLI
+brew "shellcheck"  # Shell script linter
+brew "shfmt"  # Shell script formatter
+brew "git-extras"  # Additional git commands
+brew "git-lfs"  # Git large file storage
+brew "git-secrets"  # Prevents committing secrets
+
+# Container tools
+brew "docker"
+brew "docker-compose"
+brew "kubernetes-cli"
+brew "kubectx"  # Kubernetes context switcher
+brew "helm"  # Kubernetes package manager
+
+# Cloud tools
+brew "awscli"  # AWS CLI
+brew "azure-cli"  # Azure CLI
+brew "terraform"  # Infrastructure as code
+
+# GUI Applications
+cask "iterm2"  # Better terminal
+cask "visual-studio-code"  # Code editor
+cask "docker"  # Docker desktop
+cask "raycast"  # Spotlight replacement
+cask "google-chrome"
+cask "firefox"
+
+# Essential Fonts
+cask "font-fira-code"  # Programming font
+cask "font-jetbrains-mono"  # Programming font
+cask "font-hack-nerd-font"  # For Powerlevel10k
+cask "font-meslo-lg-nerd-font"  # Alternative for terminal
+cask "font-cascadia-code"  # Microsoft's coding font
+
+# Mac App Store apps (requires mas-cli)
+# Run: brew install mas
+# mas "Amphetamine", id: 937984704  # Keep Mac awake
+# mas "The Unarchiver", id: 425424353  # Unarchive everything
+
+# Uncomment the specific apps you want to install

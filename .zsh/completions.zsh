@@ -102,7 +102,7 @@ fi
 
 # SSH completion - use hosts from ~/.ssh/config
 if [[ -f ~/.ssh/config ]]; then
-  zstyle -e ':completion:*:(ssh|scp|sftp|rsync):*' hosts 'reply=(${=${${(f)"$(cat ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null)"}%%\#*}##host(name)?[[:space:]]##})' 
+  zstyle -e ':completion:*:(ssh|scp|sftp|rsync):*' hosts 'reply=(${=${${(f)"$(cat ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null)"}%%\#*}##host(name)?[[:space:]]##})'
 fi
 
 # Kubectl completion
@@ -148,10 +148,22 @@ fi
 custom_completions="${ZDOTDIR:-$HOME}/.zsh/completions"
 if [[ -d "$custom_completions" ]]; then
   fpath=("$custom_completions" $fpath)
-  
+
   # Load custom completion files
   for file in "$custom_completions"/_*(N); do
     [[ -f "$file" ]] && compinit -C -d "$zcompdump"
+  done
+fi
+
+# Add dotfiles completions directory to fpath if it exists and has files
+if [[ -d "/Users/thomasvincent/dotfiles/.zsh/completions" ]] && [[ -n "$(ls -A /Users/thomasvincent/dotfiles/.zsh/completions 2>/dev/null)" ]]; then
+  fpath=("/Users/thomasvincent/dotfiles/.zsh/completions" $fpath)
+
+  # Load only existing completion files
+  for file in "/Users/thomasvincent/dotfiles/.zsh/completions"/_*(N); do
+    if [[ -f "$file" ]]; then
+      autoload -Uz ${file:t}
+    fi
   done
 fi
 
@@ -166,7 +178,7 @@ setopt ALWAYS_TO_END
 
 # Disable inserting a tab character (default on macOS)
 setopt NO_LIST_BEEP  # No beeping on ambiguous completions
-unsetopt MENU_COMPLETE 
+unsetopt MENU_COMPLETE
 
 # Allow selection from completion menu using arrow keys
 zmodload zsh/complist

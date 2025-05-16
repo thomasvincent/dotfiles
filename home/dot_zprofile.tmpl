@@ -1,0 +1,36 @@
+# .zprofile - ZSH profile configuration
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Set environment variables
+export EDITOR="code --wait"
+export VISUAL="code --wait"
+export PAGER="less"
+export LANG="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
+
+# Load OS-specific settings
+{{ if eq .chezmoi.os "darwin" -}}
+# macOS-specific settings
+export BROWSER="open"
+# Add homebrew to path if it exists
+if [ -d "/opt/homebrew/bin" ]; then
+    export PATH="/opt/homebrew/bin:$PATH"
+fi
+{{ else if eq .chezmoi.os "linux" -}}
+# Linux-specific settings
+export BROWSER="xdg-open"
+{{ end -}}
+
+# Personal environment variables
+export NAME="{{ .name }}"
+export EMAIL="{{ .email }}"
+export GITHUB_USERNAME="{{ .github_username }}"
+
+# Add user's private bin to PATH if it exists
+if [ -d "$HOME/bin" ]; then
+    export PATH="$HOME/bin:$PATH"
+fi
+
+if [ -d "$HOME/.local/bin" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi

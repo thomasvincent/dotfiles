@@ -61,49 +61,49 @@ pnpm() {
 }
 
 # === Node.js Utilities ===
-# Create a new Node.js project 
+# Create a new Node.js project
 create-node-project() {
   local project_name="$1"
-  
+
   if [[ -z "$project_name" ]]; then
     echo "Usage: create-node-project <project-name>"
     return 1
   fi
-  
+
   if [[ -d "$project_name" ]]; then
     echo "Directory $project_name already exists"
     return 1
   fi
-  
+
   mkdir -p "$project_name"
   cd "$project_name" || return 1
-  
+
   # Initialize package.json
   npm init -y
-  
+
   # Create basic directory structure
   mkdir -p src test
-  
+
   # Create basic files
   echo 'console.log("Hello, world!");' > src/index.js
   echo 'module.exports = {};' > src/main.js
   echo '# Project: '"$project_name"'\n\nA Node.js project.' > README.md
   echo 'node_modules\n.env\n.DS_Store\ncoverage\n.nyc_output\ndist' > .gitignore
-  
+
   # Add commonly used dependencies
   npm install --save-dev nodemon eslint jest
-  
+
   # Add scripts to package.json
   npm pkg set scripts.start="node src/index.js"
   npm pkg set scripts.dev="nodemon src/index.js"
   npm pkg set scripts.test="jest"
   npm pkg set scripts.lint="eslint ."
-  
+
   # Initialize git repository
   git init
   git add .
   git commit -m "Initial commit"
-  
+
   echo "Node.js project $project_name created successfully"
   echo "Run 'npm run dev' to start development server"
 }
@@ -111,10 +111,10 @@ create-node-project() {
 # Install global packages I commonly use
 node-globals() {
   echo "Installing common global Node.js packages..."
-  
+
   # Make sure NVM is loaded
   _nvm_init > /dev/null
-  
+
   npm install -g npm
   npm install -g typescript
   npm install -g ts-node
@@ -123,7 +123,7 @@ node-globals() {
   npm install -g http-server
   npm install -g json-server
   npm install -g npm-check-updates
-  
+
   echo "Global packages installed successfully"
 }
 
@@ -133,19 +133,19 @@ npm-update-all() {
     echo "No package.json found in current directory"
     return 1
   fi
-  
+
   echo "Updating all npm packages..."
-  
+
   # Check if npm-check-updates is installed
   if ! command -v ncu &> /dev/null; then
     echo "Installing npm-check-updates..."
     npm install -g npm-check-updates
   fi
-  
+
   # Update dependencies
   ncu -u
   npm install
-  
+
   echo "All packages updated successfully"
 }
 
@@ -155,7 +155,7 @@ npm-audit-fix() {
     echo "No package.json found in current directory"
     return 1
   fi
-  
+
   echo "Running npm audit and fixing vulnerabilities..."
   npm audit fix
 }
@@ -175,11 +175,11 @@ npm-clean-install() {
     echo "No package.json found in current directory"
     return 1
   fi
-  
+
   echo "Cleaning node_modules and reinstalling..."
   rm -rf node_modules
   rm -f package-lock.json
   npm install
-  
+
   echo "Clean install completed"
 }

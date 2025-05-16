@@ -51,7 +51,7 @@ colortest() {
   echo
   echo "Background Colors:"
   echo "${ZSH_COLORS[bg_black]}Black${ZSH_COLORS[reset]} ${ZSH_COLORS[bg_red]}Red${ZSH_COLORS[reset]} ${ZSH_COLORS[bg_green]}Green${ZSH_COLORS[reset]} ${ZSH_COLORS[bg_yellow]}Yellow${ZSH_COLORS[reset]} ${ZSH_COLORS[bg_blue]}Blue${ZSH_COLORS[reset]} ${ZSH_COLORS[bg_magenta]}Magenta${ZSH_COLORS[reset]} ${ZSH_COLORS[bg_cyan]}Cyan${ZSH_COLORS[reset]} ${ZSH_COLORS[bg_white]}White${ZSH_COLORS[reset]}"
-  
+
   # Show 256 color palette
   echo
   echo "256 Color Mode:"
@@ -145,7 +145,7 @@ fi
 # Load current theme
 load_theme() {
   local theme_name="$1"
-  
+
   if [[ -z "$theme_name" ]]; then
     if [[ -f "$CURRENT_THEME_FILE" ]]; then
       theme_name=$(cat "$CURRENT_THEME_FILE")
@@ -153,14 +153,14 @@ load_theme() {
       theme_name="dark"  # Default theme
     fi
   fi
-  
+
   local theme_file="$THEMES_DIR/${theme_name}.theme"
-  
+
   # Create default theme if it doesn't exist
   if [[ ! -f "$THEMES_DIR/dark.theme" ]]; then
     # Create parent directory if needed
     mkdir -p "$THEMES_DIR"
-    
+
     # Create a basic dark theme
     cat > "$THEMES_DIR/dark.theme" << 'EOL'
 # Dark Theme
@@ -168,10 +168,10 @@ export BAT_THEME="ansi"
 export FZF_DEFAULT_OPTS="--color=dark"
 export THEME_MODE="dark"
 EOL
-    
+
     echo "Created default dark theme"
   fi
-  
+
   # Now use the theme
   if [[ -f "$theme_file" ]]; then
     source "$theme_file"
@@ -199,7 +199,7 @@ theme() {
     echo "Current theme: $(cat "$CURRENT_THEME_FILE" 2>/dev/null || echo "unknown")"
     return 0
   fi
-  
+
   load_theme "$1"
 }
 
@@ -220,11 +220,11 @@ auto_theme() {
     echo "Auto theme switching only works on macOS"
     return 1
   fi
-  
+
   # Check if dark mode is enabled
   local is_dark_mode
   is_dark_mode=$(defaults read -g AppleInterfaceStyle 2>/dev/null)
-  
+
   if [[ "$is_dark_mode" == "Dark" ]]; then
     load_theme "dark"
   else
@@ -235,14 +235,14 @@ auto_theme() {
 # Create a new theme
 create_theme() {
   local theme_name="$1"
-  
+
   if [[ -z "$theme_name" ]]; then
     echo "Usage: create_theme <theme_name>"
     return 1
   fi
-  
+
   local theme_file="$THEMES_DIR/${theme_name}.theme"
-  
+
   if [[ -f "$theme_file" ]]; then
     echo "Theme '${theme_name}' already exists. Overwrite? (y/n)"
     read -q response
@@ -251,7 +251,7 @@ create_theme() {
       return 1
     fi
   fi
-  
+
   cat > "$theme_file" << EOL
 # ${theme_name} Theme
 export BAT_THEME="default"
@@ -263,7 +263,7 @@ if [[ -n "\$ITERM_PROFILE" ]]; then
   echo -e "\033]50;SetProfile=${theme_name}\a"
 fi
 EOL
-  
+
   echo "Created theme '${theme_name}'"
   echo "Edit the theme at: $theme_file"
 }
@@ -271,51 +271,51 @@ EOL
 # Edit a theme
 edit_theme() {
   local theme_name="$1"
-  
+
   if [[ -z "$theme_name" ]]; then
     echo "Usage: edit_theme <theme_name>"
     return 1
   fi
-  
+
   local theme_file="$THEMES_DIR/${theme_name}.theme"
-  
+
   if [[ ! -f "$theme_file" ]]; then
     echo "Theme '${theme_name}' not found"
     return 1
   fi
-  
+
   ${EDITOR:-vim} "$theme_file"
 }
 
 # Delete a theme
 delete_theme() {
   local theme_name="$1"
-  
+
   if [[ -z "$theme_name" ]]; then
     echo "Usage: delete_theme <theme_name>"
     return 1
   fi
-  
+
   if [[ "$theme_name" == "dark" || "$theme_name" == "light" || "$theme_name" == "oceanic" ]]; then
     echo "Cannot delete built-in theme '${theme_name}'"
     return 1
   fi
-  
+
   local theme_file="$THEMES_DIR/${theme_name}.theme"
-  
+
   if [[ ! -f "$theme_file" ]]; then
     echo "Theme '${theme_name}' not found"
     return 1
   fi
-  
+
   echo -n "Are you sure you want to delete theme '${theme_name}'? (y/n) "
   read -q response
   echo
-  
+
   if [[ "$response" =~ ^[Yy]$ ]]; then
     rm "$theme_file"
     echo "Deleted theme '${theme_name}'"
-    
+
     # Reset to default theme if we just deleted the current theme
     if [[ "$(cat "$CURRENT_THEME_FILE" 2>/dev/null)" == "$theme_name" ]]; then
       echo "dark" > "$CURRENT_THEME_FILE"
@@ -332,12 +332,12 @@ delete_theme() {
 update_p10k_config() {
   local mode="$1"
   local p10k_file="${ZDOTDIR:-$HOME}/.p10k.zsh"
-  
+
   if [[ ! -f "$p10k_file" ]]; then
     echo "Powerlevel10k configuration file not found"
     return 1
   fi
-  
+
   case "$mode" in
     dark)
       sed -i '' 's/POWERLEVEL9K_COLOR_SCHEME=.*/POWERLEVEL9K_COLOR_SCHEME="dark"/' "$p10k_file"
@@ -350,7 +350,7 @@ update_p10k_config() {
       return 1
       ;;
   esac
-  
+
   echo "Updated Powerlevel10k theme to $mode mode"
   echo "Restart your shell or run 'source $p10k_file' to apply changes"
 }

@@ -1,0 +1,31 @@
+# .zshenv - ZSH environment configuration
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Skip global compinit in Ubuntu
+skip_global_compinit=1
+
+# XDG Base Directory Specification
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+# Set PATH to include user's private bins if they exist
+if [ -d "$HOME/bin" ] ; then
+    PATH="$HOME/bin:$PATH"
+fi
+
+if [ -d "$HOME/.local/bin" ] ; then
+    PATH="$HOME/.local/bin:$PATH"
+fi
+
+{{ if eq .chezmoi.os "darwin" -}}
+# macOS-specific environment variables
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_CASK_OPTS="--appdir=/Applications"
+{{ end -}}
+
+# User-specific environment variables
+export NAME="{{ .name }}"
+export EMAIL="{{ .email }}"
+export GITHUB_USERNAME="{{ .github_username }}"

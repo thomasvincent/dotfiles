@@ -17,7 +17,7 @@ if (( ${+commands[defaults]} )); then
   # Show/hide hidden files
   alias showfiles="defaults write com.apple.finder AppleShowAllFiles YES; killall Finder"
   alias hidefiles="defaults write com.apple.finder AppleShowAllFiles NO; killall Finder"
-  
+
   # Show/hide desktop icons
   alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
   alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"

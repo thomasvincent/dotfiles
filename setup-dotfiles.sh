@@ -244,17 +244,17 @@ BACKUP_DIR="\$HOME/dotfiles_backup_\$(date +%Y%m%d_%H%M%S)"
 link_file() {
     local src="\$1"
     local dst="\$2"
-    
+
     # Create the parent directory if it doesn't exist
     mkdir -p "\$(dirname "\$dst")"
-    
+
     # Backup existing file if it exists and is not a symlink
     if [[ -e "\$dst" && ! -L "\$dst" ]]; then
         mkdir -p "\$BACKUP_DIR"
         mv "\$dst" "\$BACKUP_DIR/"
         echo "Backed up \$dst to \$BACKUP_DIR/"
     fi
-    
+
     # Create symlink
     ln -sf "\$src" "\$dst"
     echo "Linked \$src to \$dst"

@@ -1,0 +1,40 @@
+#compdef claude-code
+
+# Completion script for claude-code CLI
+
+_claude-code() {
+  local -a commands
+  commands=(
+    'help:Show help information'
+    'version:Show version information'
+    'analyze:Analyze code and provide insights'
+    'refactor:Refactor code based on specified criteria'
+    'document:Generate documentation for code'
+    'test:Generate test cases for code'
+    'explain:Explain how code works'
+    'fix:Fix issues in code'
+  )
+
+  _arguments -C \
+    '1: :->command' \
+    '*:: :->args'
+
+  case $state in
+    (command)
+      _describe -t commands 'claude-code commands' commands
+      ;;
+    (args)
+      case $words[1] in
+        (analyze|refactor|document|test|explain|fix)
+          _arguments \
+            '--model=[Specify model to use]:model:(claude-3-opus claude-3-sonnet claude-3-haiku)' \
+            '--file=[Specify file to process]:file:_files' \
+            '--language=[Specify programming language]:language:(python javascript typescript java c cpp csharp go rust php ruby swift kotlin scala)' \
+            '--output=[Output format]:format:(text json markdown)'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_claude-code

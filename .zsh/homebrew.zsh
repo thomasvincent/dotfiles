@@ -57,12 +57,12 @@ brewup() {
 # Install packages from Brewfile
 brewinstall() {
   local brewfile="${1:-$HOME/dotfiles/Brewfile}"
-  
+
   if [[ ! -f "$brewfile" ]]; then
     echo "❌ Brewfile not found at $brewfile"
     return 1
   fi
-  
+
   echo "🔄 Installing packages from $brewfile..."
   brew bundle install --file="$brewfile"
 }
@@ -70,10 +70,10 @@ brewinstall() {
 # Create a Brewfile from installed packages
 brewdump() {
   local output="${1:-$HOME/dotfiles/Brewfile}"
-  
+
   echo "📝 Creating Brewfile at $output..."
   brew bundle dump --file="$output" --force
-  
+
   echo "✅ Brewfile created"
   echo "📋 Review the file to keep only what you need"
 }
@@ -82,7 +82,7 @@ brewdump() {
 brewcheck() {
   local outdated=$(brew outdated)
   local count=$(echo "$outdated" | grep -v '^$' | wc -l | tr -d ' ')
-  
+
   if [[ $count -gt 0 ]]; then
     echo "🆕 $count outdated Homebrew packages"
     echo "$outdated"
@@ -111,7 +111,7 @@ brewdeps() {
     echo "Usage: brewdeps <formula>"
     return 1
   fi
-  
+
   echo "🔄 Showing dependencies for $1..."
   brew deps --tree --installed "$1"
 }
@@ -122,7 +122,7 @@ brewuses() {
     echo "Usage: brewuses <formula>"
     return 1
   fi
-  
+
   echo "🔄 Showing packages that depend on $1..."
   brew uses --installed "$1"
 }
@@ -133,7 +133,7 @@ brew_weekly_check() {
   brew update >/dev/null 2>&1
   local outdated=$(brew outdated)
   local count=$(echo "$outdated" | grep -v '^$' | wc -l | tr -d ' ')
-  
+
   if [[ $count -gt 0 ]]; then
     if command -v terminal-notifier >/dev/null 2>&1; then
       terminal-notifier -title "Homebrew" -message "$count outdated packages" -activate "com.apple.Terminal"

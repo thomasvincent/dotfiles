@@ -2,92 +2,92 @@
     name = Thomas Vincent
     # Fill in your email here
     email = tom@4vincent.dev
-    
+
 [core]
     excludesfile = ~/.config/git/ignore
     editor = vim
     pager = less -FX
     autocrlf = input
-    
+
 [init]
     defaultBranch = main
-    
+
 [color]
     ui = auto
-    
+
 [push]
     default = current
     autoSetupRemote = true
-    
+
 [pull]
     rebase = false
-    
+
 [fetch]
     prune = true
-    
+
 [merge]
     conflictstyle = diff3
-    
+
 [diff]
     colorMoved = default
-    
+
 [alias]
     # Status
     s = status -s
     st = status
-    
+
     # Branch operations
     b = branch
     br = branch -r
     ba = branch -a
-    
+
     # Commit operations
     c = commit
     ca = commit --amend
     cm = commit -m
-    
+
     # Checkout operations
     co = checkout
     cob = checkout -b
-    
+
     # Log viewing
     l = log --oneline -10
     lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
     ll = log --pretty=format:'%C(yellow)%h%Cred%d %Creset%s%Cblue [%cn]' --decorate --numstat
-    
+
     # Diff and show
     d = diff
     ds = diff --staged
-    
+
     # Other helpful commands
     unstage = reset HEAD --
     last = log -1 HEAD
     amend = commit --amend --no-edit
     undo = reset --soft HEAD~1
     discard = checkout --
-    
+
     # Advanced helpers
     new = "!f() { git checkout -b $1; }; f"
     publish = "!f() { git push -u origin $(git branch --show-current); }; f"
     unpublish = "!f() { git push origin --delete $(git branch --show-current); }; f"
     cleanup = "!f() { git branch --merged | grep -v '\\*\\|main\\|master\\|dev' | xargs -n 1 git branch -d; }; f"
-    
+
     # Rebase helpers
     reb = "!f() { git rebase -i HEAD~$1; }; f"
     continue = "!f() { git rebase --continue; }; f"
     abort = "!f() { git rebase --abort; }; f"
-    
+
     # Find content in commits
     find = "!f() { git log -p -S \"$1\"; }; f"
     grep = "!f() { git log -p -G \"$1\"; }; f"
-    
+
     # Better stash handling
     save = stash push -m
     pop = stash pop
     list = stash list
     apply = stash apply
     drop = stash drop
-    
+
     # Advanced info
     contributors = shortlog --summary --numbered
     branches = branch -a

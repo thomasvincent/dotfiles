@@ -12,10 +12,10 @@
 # Start SSH agent if it's not already running
 if [[ -z "$SSH_AUTH_SOCK" && -z "$SSH_CONNECTION" ]]; then
   local ssh_agent_env="$HOME/.ssh/agent.env"
-  
+
   if [[ -f "$ssh_agent_env" ]]; then
     source "$ssh_agent_env" > /dev/null
-    
+
     # Check if the agent is still running
     if ! ps -p $SSH_AGENT_PID > /dev/null; then
       # Agent not running, start a new one
@@ -57,4 +57,12 @@ fi
 # Clean up temporary files on login
 if [[ -d "$HOME/tmp" ]]; then
   find "$HOME/tmp" -type f -atime +7 -delete 2>/dev/null
+fi
+
+# ====================================
+# PYENV SETUP
+# ====================================
+# Initialize pyenv
+if command -v pyenv >/dev/null; then
+  eval "$(pyenv init --path)"
 fi

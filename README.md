@@ -1,6 +1,6 @@
 # Dotfiles
 
-My personal dotfiles optimized for macOS development.
+My personal dotfiles optimized for macOS and Linux development, managed with chezmoi.
 
 ## Features
 
@@ -15,41 +15,74 @@ My personal dotfiles optimized for macOS development.
 - **Plugin Management** - Zinit for efficient plugin management
 - **Chezmoi Integration** - Dotfile management with chezmoi for cross-machine synchronization
 - **Pre-commit Hooks** - Code quality checks before commits
-
-## Components
-
-- `.zsh/` - ZSH configuration modules
-  - `lib/` - Shared library functions and utilities
-  - `functions.d/` - Individual function files 
-  - `dev/` - Development environment configurations
-- `.config/` - XDG configuration files
-- `bin/` - Executable scripts
-- `lib/` - Shared functions and utilities
-- `Brewfile` - Homebrew dependencies
-- `.github/` - GitHub configuration (workflows, CODEOWNERS)
+- **Templating** - Configuration files adapt to different environments
 
 ## Quick Start
+
+One-line installation:
+
+```bash
+sh -c "$(curl -fsLS https://raw.githubusercontent.com/thomasvincent/dotfiles/main/install.sh)"
+```
+
+Or clone and install manually:
 
 ```bash
 # Clone the repository
 git clone https://github.com/thomasvincent/dotfiles.git ~/dotfiles
 
-# Run the setup script
-cd ~/dotfiles && ./setup-dotfiles.sh
+# Run the installation script
+cd ~/dotfiles && ./install.sh
 ```
 
-## Using with Chezmoi
+## Components
 
-Chezmoi provides a more robust way to manage dotfiles across multiple machines:
+- **Templates** - Chezmoi templates for different environments
+- **.zsh/** - ZSH configuration modules
+- **.config/** - XDG configuration files
+- **bin/** - Executable scripts
+- **lib/** - Shared functions and utilities
+- **.github/** - GitHub configuration (workflows, CODEOWNERS)
+
+## Using Chezmoi
+
+After installation, manage your dotfiles with chezmoi:
 
 ```bash
-# Migrate existing dotfiles to chezmoi
-./migrate-to-chezmoi.sh
+# Edit a dotfile
+chezmoi edit ~/.zshrc
 
-# After migration, use chezmoi commands
-chezmoi edit ~/.zshrc    # Edit zshrc
-chezmoi apply            # Apply changes
-chezmoi update           # Pull and apply latest changes
+# See changes before applying
+chezmoi diff
+
+# Apply changes
+chezmoi apply
+
+# Update from repository and apply
+chezmoi update
+
+# Add a new file to chezmoi
+chezmoi add ~/.config/new-config-file
+```
+
+## Customization
+
+Chezmoi uses a config file to customize dotfiles for different environments:
+
+```toml
+# ~/.config/chezmoi/chezmoi.toml
+[data]
+    name = "Your Name"
+    email = "your.email@example.com"
+    github_username = "yourusername"
+
+    # Feature flags
+    minimal = false  # Set to true for minimal installation
+
+    # Work-specific settings
+    work = true
+    work_username = "username"
+    work_email = "work.email@company.com"
 ```
 
 ## Development Workflow
@@ -83,12 +116,6 @@ pre-commit run --all-files
 # Test shell startup for errors
 ./test_shell_startup.sh
 ```
-
-## Customization
-
-Local configurations that shouldn't be in version control:
-- `.zsh/local.zsh` - Local aliases and functions
-- `.zsh/secrets.zsh` - API keys and other secrets
 
 ## Contributing
 
