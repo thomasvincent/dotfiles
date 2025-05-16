@@ -8,7 +8,7 @@ This document summarizes all fixes made to the shell configuration to resolve st
 
 **Problem**: The error `defining function based on alias 'serve'` appeared in `/Users/thomasvincent/dotfiles/.zsh/functions.d/100_macos.zsh`
 
-**Fix**: 
+**Fix**:
 - Renamed the function from `serve()` to `serve_http()`
 - Created a proper alias `alias serve='serve_http'`
 

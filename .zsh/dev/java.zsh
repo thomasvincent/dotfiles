@@ -37,7 +37,7 @@ if command -v java >/dev/null; then
   # Spring Boot helpers (macOS optimized)
   spring_run() {
     emulate -L zsh
-    
+
     if [[ -f "gradlew" ]]; then
       print -P "%F{blue}Starting Spring Boot with Gradle...%f"
       ./gradlew bootRun
@@ -59,18 +59,18 @@ if command -v java >/dev/null; then
   java-init() {
     local project_name="${1:-java-project}"
     local build_tool="${2:-gradle}"
-    
+
     if [[ -d "$project_name" ]]; then
       echo "Directory $project_name already exists"
       return 1
     fi
-    
+
     mkdir -p "$project_name"
     cd "$project_name" || return
-    
+
     # Create standard Maven/Gradle directory structure
     mkdir -p src/{main,test}/{java,resources}
-    
+
     # Initialize build tool
     if [[ "$build_tool" == "maven" ]]; then
       # Create simple pom.xml
@@ -134,7 +134,7 @@ EOL
       # Create settings.gradle
       echo "rootProject.name = '$project_name'" > settings.gradle
     fi
-    
+
     # Create gitignore
     cat > .gitignore << 'EOL'
 # Compiled class files
@@ -165,10 +165,10 @@ EOL
 *.tar.gz
 *.rar
 EOL
-    
+
     # Initialize git repo
     git init
-    
+
     echo "Java project initialized with $build_tool in $project_name"
   }
 fi

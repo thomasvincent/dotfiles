@@ -42,17 +42,17 @@ log_command() {
   local description="$1"
   local cmd="$2"
   local log_file="${3:-/tmp/command_$(date +%Y%m%d%H%M%S).log}"
-  
+
   info "$description..."
   eval "$cmd" > "$log_file" 2>&1
   local status=$?
-  
+
   if [ $status -eq 0 ]; then
     success "$description completed successfully"
   else
     error "$description failed (see $log_file for details)"
   fi
-  
+
   return $status
 }
 
@@ -65,21 +65,21 @@ is_root() {
 confirm() {
   local prompt="${1:-Are you sure?}"
   local default="${2:-y}"
-  
+
   local options="y/n"
   if [ "$default" = "y" ]; then
     options="[Y/n]"
   else
     options="[y/N]"
   fi
-  
+
   local answer
   read -r -p "$(echo -e "${BOLD_YELLOW}$prompt $options${RESET} ")" answer
-  
+
   [ -z "$answer" ] && answer="$default"
-  
+
   case "$answer" in
-    [yY][eE][sS]|[yY]) 
+    [yY][eE][sS]|[yY])
       return 0
       ;;
     *)
@@ -102,26 +102,26 @@ slugify() {
 # Usage: parse_config_file "/path/to/config"
 parse_config_file() {
   local config_file="$1"
-  
+
   if [ ! -f "$config_file" ]; then
     error "Config file does not exist: $config_file"
     return 1
   fi
-  
+
   while IFS='=' read -r key value; do
     # Skip comments and empty lines
     [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
-    
+
     # Trim whitespace
     key="$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
     value="$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-    
+
     # Remove quotes if present
     value="${value%\"}"
     value="${value#\"}"
     value="${value%\'}"
     value="${value#\'}"
-    
+
     # Export the variable
     export "$key"="$value"
   done < "$config_file"
@@ -176,7 +176,7 @@ spinner() {
   local message="$2"
   local spin='-\|/'
   local i=0
-  
+
   while kill -0 "$pid" 2>/dev/null; do
     i=$(( (i+1) % 4 ))
     printf "\r${BOLD_BLUE}%s${RESET} ${spin:$i:1}" "$message"
@@ -189,11 +189,11 @@ spinner() {
 create_temp_file() {
   local prefix="${1:-tmp}"
   local temp_file
-  
+
   temp_file="$(mktemp "/tmp/${prefix}.XXXXXX")"
-  
+
   # Register cleanup handler
   trap 'rm -f "$temp_file"' EXIT
-  
+
   echo "$temp_file"
 }

@@ -50,27 +50,27 @@ if command -v php >/dev/null; then
   php-init() {
     emulate -L zsh
     setopt local_options err_return
-    
+
     local project_name="${1:-php-project}"
     if [[ -d "$project_name" ]]; then
       print -P "%F{red}Directory $project_name already exists%f"
       return 1
     fi
-    
+
     print -P "%F{blue}Creating PHP project: %F{green}$project_name%f"
-    
+
     # Use macOS-style command flags
     mkdir -p "$project_name"
     cd "$project_name" || return
-    
+
     # Initialize composer
     print -P "%F{blue}Initializing Composer...%f"
     composer init --name="$USER/$project_name" --type=project --require="php:^8.0" --require-dev="phpunit/phpunit:^9.0" -n
-    
+
     # Create basic structure
     print -P "%F{blue}Creating project structure...%f"
     mkdir -p src tests
-    
+
     # Create gitignore with macOS specifics
     cat > .gitignore << 'EOL'
 # PHP dependencies
@@ -100,11 +100,11 @@ Icon
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 EOL
-    
+
     # Initialize git repo
     print -P "%F{blue}Initializing git repository...%f"
     git init -q
-    
+
     print -P "%F{green}✓ PHP project initialized in %F{blue}$project_name%f"
   }
 fi

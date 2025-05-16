@@ -57,7 +57,7 @@ done
 if [ -s "$TMP_ERR" ]; then
   echo -e "\n${YELLOW}There are still some errors or warnings in the shell startup:${RESET}"
   cat "$TMP_ERR"
-  
+
   echo -e "\n${YELLOW}These may be warnings that can be safely ignored.${RESET}"
   echo -e "${YELLOW}If you want a completely clean startup, you might need to fix these as well.${RESET}"
 else

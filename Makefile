@@ -61,6 +61,8 @@ help:
 	@echo -e "  $(YELLOW)backup$(RESET)        - Backup existing dotfiles"
 	@echo -e "  $(YELLOW)dev-setup$(RESET)     - Set up development environment"
 	@echo -e "  $(YELLOW)cloud-setup$(RESET)   - Configure cloud provider tools"
+	@echo -e "  $(YELLOW)workflow-setup$(RESET) - Set up workflow automation tools"
+	@echo -e "  $(YELLOW)productivity-setup$(RESET) - Set up productivity tools"
 	@echo -e "  $(YELLOW)brew-install$(RESET)  - Install Homebrew packages"
 	@echo -e "  $(YELLOW)test$(RESET)          - Test shell startup"
 	@echo -e "  $(YELLOW)lint$(RESET)          - Run linters"
@@ -271,6 +273,67 @@ functions:
 		fi; \
 	done
 	$(call print_success,Function files created)
+
+.PHONY: workflow-setup
+workflow-setup:
+	$(call print_header,Setting up workflow automation)
+	@mkdir -p "$(HOME)/Projects"
+	@if command -v gh >/dev/null 2>&1; then \
+		echo "GitHub CLI already installed."; \
+	elif [ "$(PLATFORM)" = "macos" ]; then \
+		echo "Installing GitHub CLI..."; \
+		brew install gh; \
+	elif command -v apt-get >/dev/null 2>&1; then \
+		echo "Installing GitHub CLI..."; \
+		curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/etc/apt/trusted.gpg.d/githubcli-archive-keyring.gpg; \
+		echo "deb [arch=$$(dpkg --print-architecture)] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list; \
+		sudo apt-get update; \
+		sudo apt-get install -y gh; \
+	elif command -v dnf >/dev/null 2>&1; then \
+		echo "Installing GitHub CLI..."; \
+		sudo dnf install -y 'dnf-command(config-manager)'; \
+		sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo; \
+		sudo dnf install -y gh; \
+	fi
+	@if ! command -v tmux >/dev/null 2>&1; then \
+		echo "Installing tmux..."; \
+		if [ "$(PLATFORM)" = "macos" ]; then \
+			brew install tmux; \
+		elif command -v apt-get >/dev/null 2>&1; then \
+			sudo apt-get install -y tmux; \
+		elif command -v dnf >/dev/null 2>&1; then \
+			sudo dnf install -y tmux; \
+		fi; \
+	fi
+	@echo "Linking workflow functions..."
+	@mkdir -p "$(ZSH_DIR)"
+	@if [ -f "$(DOTFILES_DIR)/home/dot_zsh/workflows.zsh.tmpl" ]; then \
+		cp "$(DOTFILES_DIR)/home/dot_zsh/workflows.zsh.tmpl" "$(ZSH_DIR)/workflows.zsh"; \
+	fi
+	$(call print_success,Workflow automation setup complete)
+
+.PHONY: productivity-setup
+productivity-setup:
+	$(call print_header,Setting up productivity tools)
+	@mkdir -p "$(HOME)/.tasks"
+	@mkdir -p "$(HOME)/.notes/meetings"
+	@mkdir -p "$(HOME)/.timetrack"
+	@echo "Linking productivity functions..."
+	@mkdir -p "$(ZSH_DIR)"
+	@if [ -f "$(DOTFILES_DIR)/home/dot_zsh/productivity.zsh.tmpl" ]; then \
+		cp "$(DOTFILES_DIR)/home/dot_zsh/productivity.zsh.tmpl" "$(ZSH_DIR)/productivity.zsh"; \
+	fi
+	@if [ "$(PLATFORM)" = "macos" ]; then \
+		echo "Creating a small helper for macOS notifications..."; \
+		mkdir -p "$(LOCAL_BIN_DIR)"; \
+		echo '#!/bin/bash' > "$(LOCAL_BIN_DIR)/notify"; \
+		echo 'osascript -e "display notification \"$2\" with title \"$1\" sound name \"Glass\""' >> "$(LOCAL_BIN_DIR)/notify"; \
+		chmod +x "$(LOCAL_BIN_DIR)/notify"; \
+	elif command -v apt-get >/dev/null 2>&1; then \
+		echo "Installing libnotify..."; \
+		sudo apt-get install -y libnotify-bin; \
+	fi
+	$(call print_success,Productivity tools setup complete)
 
 .PHONY: clean
 clean:

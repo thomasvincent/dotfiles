@@ -8,4 +8,3 @@
 
 # This is a placeholder file to prevent errors during shell startup
 # Add your custom functions below
-

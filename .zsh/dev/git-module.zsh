@@ -100,7 +100,7 @@ gclean() {
   if ! git show-ref --verify --quiet refs/heads/main; then
     main_branch="master"
   fi
-  
+
   echo "Deleting branches that have been merged to $main_branch..."
   git branch --merged "$main_branch" | grep -v "^\*" | grep -v "$main_branch" | xargs -n 1 git branch -d
   echo "Done"
@@ -143,7 +143,7 @@ gsquash() {
     echo "Usage: gsquash <number-of-commits>"
     return 1
   fi
-  
+
   git reset --soft HEAD~"$1" && git commit
 }
 
@@ -153,7 +153,7 @@ gfind() {
     echo "Usage: gfind <search-term>"
     return 1
   fi
-  
+
   git log --oneline --grep="$1"
 }
 
@@ -196,7 +196,7 @@ gfetchall() {
 # Display a repository's GitHub URL
 ghuburl() {
   local remote_url=$(git config --get remote.origin.url)
-  
+
   if [[ "$remote_url" == *"github.com"* ]]; then
     if [[ "$remote_url" == git@* ]]; then
       echo "$remote_url" | sed -E 's/git@github.com:(.+)\.git/https:\/\/github.com\/\1/'
@@ -213,7 +213,7 @@ gblame() {
   if command -v pygmentize &>/dev/null; then
     git blame "$@" | pygmentize -l ruby 2>/dev/null
   else
-    git blame "$@" 
+    git blame "$@"
   fi
 }
 
@@ -224,12 +224,12 @@ gblame() {
 # Initialize a new git repository with sensible defaults
 ginit() {
   local branch_name="${1:-main}"
-  
+
   git init
-  
+
   # Set default branch name
   git checkout -b "$branch_name"
-  
+
   # Create a basic .gitignore
   cat > .gitignore << 'EOF'
 # OS generated files
@@ -266,7 +266,7 @@ venv/
 ENV/
 env/
 EOF
-  
+
   # Create a README
   cat > README.md << EOF
 # Project Name
@@ -285,11 +285,11 @@ Instructions for using the project.
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 EOF
-  
+
   # Create initial commit
   git add .
   git commit -m "Initial commit"
-  
+
   echo "Git repository initialized with $branch_name branch"
 }
 
@@ -297,22 +297,22 @@ EOF
 gpr() {
   local current_branch=$(git rev-parse --abbrev-ref HEAD)
   local target_branch="${1:-main}"
-  
+
   # Check if gh CLI is installed
   if ! command -v gh &> /dev/null; then
     echo "GitHub CLI (gh) is not installed. Install it first."
     return 1
   fi
-  
+
   # Ensure we're working with latest
   git fetch origin "$target_branch"
-  
+
   # Check if there are any differences
   if git diff --quiet "origin/$target_branch" "$current_branch"; then
     echo "No differences between $current_branch and origin/$target_branch"
     return 1
   fi
-  
+
   # Create PR
   gh pr create --base "$target_branch" --head "$current_branch"
 }
