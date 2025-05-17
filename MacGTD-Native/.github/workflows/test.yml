@@ -1,0 +1,45 @@
+name: Test Workflows
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-xml:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check workflow file existence
+        run: |
+          if [ ! -f "GTD-QuickCapture.workflow/Contents/info.plist" ] || [ ! -f "GTD-QuickCapture.workflow/Contents/document.wflow" ]; then
+            echo "Error: Workflow files not found"
+            exit 1
+          fi
+
+      - name: Install xmllint
+        run: brew install libxml2
+
+      - name: Validate XML syntax
+        run: xmllint --noout "GTD-QuickCapture.workflow/Contents/document.wflow"
+
+      - name: Check Reminders integration
+        run: |
+          if ! grep -q "tell application \"Reminders\"" "GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing Reminders integration"
+            exit 1
+          fi
+
+      - name: Check notification functionality
+        run: |
+          if ! grep -q "display notification" "GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing notification functionality"
+            exit 1
+          fi
+
+      - name: Run test script
+        run: |
+          chmod +x tests/test_workflow.sh
+          cd tests && ./test_workflow.sh

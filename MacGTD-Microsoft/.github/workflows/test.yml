@@ -1,0 +1,59 @@
+name: Test Workflows
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-xml:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check workflow file existence
+        run: |
+          if [ ! -f "MS-GTD-QuickCapture.workflow/Contents/info.plist" ] || [ ! -f "MS-GTD-QuickCapture.workflow/Contents/document.wflow" ]; then
+            echo "Error: Workflow files not found"
+            exit 1
+          fi
+
+      - name: Install xmllint
+        run: brew install libxml2
+
+      - name: Validate XML syntax
+        run: xmllint --noout "MS-GTD-QuickCapture.workflow/Contents/document.wflow"
+
+      - name: Check Microsoft To Do integration
+        run: |
+          if ! grep -q "Microsoft To Do" "MS-GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing Microsoft To Do integration"
+            exit 1
+          fi
+
+      - name: Check URL encoding functionality
+        run: |
+          if ! grep -q "encodeText" "MS-GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing URL encoding functionality"
+            exit 1
+          fi
+
+      - name: Check web fallback option
+        run: |
+          if ! grep -q "to-do.microsoft.com" "MS-GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing web fallback option"
+            exit 1
+          fi
+
+      - name: Check notification functionality
+        run: |
+          if ! grep -q "display notification" "MS-GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing notification functionality"
+            exit 1
+          fi
+
+      - name: Run test script
+        run: |
+          chmod +x tests/test_workflow.sh
+          cd tests && ./test_workflow.sh
