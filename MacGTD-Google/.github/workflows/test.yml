@@ -1,0 +1,59 @@
+name: Test Workflows
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-xml:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check workflow file existence
+        run: |
+          if [ ! -f "Google-GTD-QuickCapture.workflow/Contents/info.plist" ] || [ ! -f "Google-GTD-QuickCapture.workflow/Contents/document.wflow" ]; then
+            echo "Error: Workflow files not found"
+            exit 1
+          fi
+
+      - name: Install xmllint
+        run: brew install libxml2
+
+      - name: Validate XML syntax
+        run: xmllint --noout "Google-GTD-QuickCapture.workflow/Contents/document.wflow"
+
+      - name: Check Google Keep integration
+        run: |
+          if ! grep -q "keep.google.com" "Google-GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing Google Keep integration"
+            exit 1
+          fi
+
+      - name: Check URL encoding functionality
+        run: |
+          if ! grep -q "encodeText" "Google-GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing URL encoding functionality"
+            exit 1
+          fi
+
+      - name: Check browser integration
+        run: |
+          if ! grep -q 'tell application "Safari"' "Google-GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing browser integration"
+            exit 1
+          fi
+
+      - name: Check notification functionality
+        run: |
+          if ! grep -q "display notification" "Google-GTD-QuickCapture.workflow/Contents/document.wflow"; then
+            echo "Error: Missing notification functionality"
+            exit 1
+          fi
+
+      - name: Run test script
+        run: |
+          chmod +x tests/test_workflow.sh
+          cd tests && ./test_workflow.sh
