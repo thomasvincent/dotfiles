@@ -6,10 +6,22 @@ on:
   pull_request:
     branches: [ main ]
 
+# Cancel previous runs on the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
+
+# Minimal permissions by default
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # Prevent hung jobs
 
     steps:
     - uses: actions/checkout@v6
@@ -18,6 +30,7 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: '3.10'
+        cache: 'pip'  # Cache dependencies
 
     - name: Install dependencies
       run: |
@@ -30,6 +43,7 @@ jobs:
   test-linux:
     name: Test on Linux
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # Prevent hung jobs
 
     steps:
     - uses: actions/checkout@v6
@@ -52,6 +66,7 @@ jobs:
   test-macos:
     name: Test on macOS
     runs-on: macos-latest
+    timeout-minutes: 15  # Prevent hung jobs
 
     steps:
     - uses: actions/checkout@v6
@@ -69,6 +84,7 @@ jobs:
   verify-templates:
     name: Verify Chezmoi Templates
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # Prevent hung jobs
 
     steps:
     - uses: actions/checkout@v6
