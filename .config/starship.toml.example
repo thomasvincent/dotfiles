@@ -1,0 +1,118 @@
+# =============================================================================
+# Starship Prompt Configuration
+# =============================================================================
+#
+# Starship is a fast, customizable prompt for any shell.
+# Install: brew install starship
+# Add to .zshrc: eval "$(starship init zsh)"
+#
+# Copy to: ~/.config/starship.toml
+#
+# =============================================================================
+
+# Timeout for commands (in milliseconds)
+command_timeout = 500
+
+# Newline between prompts
+add_newline = true
+
+# =============================================================================
+# PROMPT FORMAT
+# =============================================================================
+
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$kubernetes\
+$terraform\
+$aws\
+$docker_context\
+$python\
+$nodejs\
+$rust\
+$golang\
+$cmd_duration\
+$line_break\
+$character"""
+
+# =============================================================================
+# MODULES
+# =============================================================================
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+[directory]
+truncation_length = 4
+truncate_to_repo = true
+format = "[$path]($style)[$read_only]($read_only_style) "
+style = "bold cyan"
+
+[git_branch]
+format = "[$symbol$branch(:$remote_branch)]($style) "
+symbol = " "
+style = "bold purple"
+
+[git_status]
+format = '([$all_status$ahead_behind]($style) )'
+style = "bold red"
+
+[kubernetes]
+format = '[$symbol$context( \($namespace\))]($style) '
+symbol = "☸ "
+style = "bold blue"
+disabled = false
+
+[terraform]
+format = '[$symbol$workspace]($style) '
+symbol = "🗂 "
+style = "bold 105"
+
+[aws]
+format = '[$symbol($profile )(\($region\) )]($style)'
+symbol = "☁️ "
+style = "bold yellow"
+
+[docker_context]
+format = '[$symbol$context]($style) '
+symbol = "🐳 "
+style = "bold blue"
+
+[python]
+format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+symbol = "🐍 "
+style = "bold yellow"
+
+[nodejs]
+format = '[$symbol($version )]($style)'
+symbol = "⬢ "
+style = "bold green"
+
+[rust]
+format = '[$symbol($version )]($style)'
+symbol = "🦀 "
+style = "bold red"
+
+[golang]
+format = '[$symbol($version )]($style)'
+symbol = "🐹 "
+style = "bold cyan"
+
+[cmd_duration]
+min_time = 2_000
+format = '[$duration]($style) '
+style = "bold yellow"
+
+[username]
+show_always = false
+format = '[$user]($style)@'
+style_user = "bold green"
+
+[hostname]
+ssh_only = true
+format = '[$hostname]($style):'
+style = "bold green"

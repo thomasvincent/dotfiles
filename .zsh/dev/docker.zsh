@@ -1,261 +1,282 @@
 #!/usr/bin/env zsh
-# Docker development environment setup
+# =============================================================================
+# Docker Workflows and Aliases
+# =============================================================================
+#
+# File: ~/.zsh/dev/docker.zsh
+# Purpose: Docker and container management shortcuts
+# Dependencies: docker, docker-compose, fzf (optional)
+#
+# =============================================================================
 
-# === Docker Utilities ===
+# =============================================================================
+# DOCKER ALIASES
+# =============================================================================
 
-# Start a quick interactive container
-# Usage: drun [image] [command]
-drun() {
-  local image="${1:-ubuntu}"
-  local cmd="${2:-bash}"
+if command -v docker &>/dev/null; then
+  # ---------------------------------------------------------------------------
+  # Core Commands
+  # ---------------------------------------------------------------------------
+  alias d='docker'
+  alias dc='docker compose'               # Docker Compose v2 (built-in)
+  alias dco='docker-compose'              # Docker Compose v1 (standalone)
+  
+  # ---------------------------------------------------------------------------
+  # Container Management
+  # ---------------------------------------------------------------------------
+  alias dps='docker ps'                   # List running containers
+  alias dpsa='docker ps -a'               # List all containers
+  alias dstart='docker start'             # Start container
+  alias dstop='docker stop'               # Stop container
+  alias drestart='docker restart'         # Restart container
+  alias drm='docker rm'                   # Remove container
+  alias drmf='docker rm -f'               # Force remove container
+  
+  # ---------------------------------------------------------------------------
+  # Image Management
+  # ---------------------------------------------------------------------------
+  alias di='docker images'                # List images
+  alias drmi='docker rmi'                 # Remove image
+  alias dpull='docker pull'               # Pull image
+  alias dpush='docker push'               # Push image
+  alias dbuild='docker build'             # Build image
+  alias dtag='docker tag'                 # Tag image
+  
+  # ---------------------------------------------------------------------------
+  # Logs and Exec
+  # ---------------------------------------------------------------------------
+  alias dlogs='docker logs'               # View logs
+  alias dlogsf='docker logs -f'           # Follow logs
+  alias dlogst='docker logs --tail 100'   # Last 100 lines
+  alias dexec='docker exec -it'           # Interactive exec
+  alias dsh='docker exec -it /bin/sh'     # Shell into container
+  alias dbash='docker exec -it /bin/bash' # Bash into container
+  
+  # ---------------------------------------------------------------------------
+  # System Management
+  # ---------------------------------------------------------------------------
+  alias dprune='docker system prune -a'   # Clean everything
+  alias ddf='docker system df'            # Disk usage
+  alias dinfo='docker info'               # System info
+  alias dstats='docker stats'             # Live resource usage
+  
+  # ---------------------------------------------------------------------------
+  # Network
+  # ---------------------------------------------------------------------------
+  alias dnet='docker network'             # Network commands
+  alias dnetls='docker network ls'        # List networks
+  
+  # ---------------------------------------------------------------------------
+  # Volume
+  # ---------------------------------------------------------------------------
+  alias dvol='docker volume'              # Volume commands
+  alias dvolls='docker volume ls'         # List volumes
+  alias dvolrm='docker volume rm'         # Remove volume
+fi
 
-  echo "Starting interactive container from $image..."
-  docker run --rm -it "$image" "$cmd"
-}
+# =============================================================================
+# DOCKER COMPOSE ALIASES
+# =============================================================================
 
-# List all containers with formatted output
-dlist() {
-  docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Ports}}"
-}
+if command -v docker &>/dev/null; then
+  alias dcup='docker compose up'          # Start services
+  alias dcupd='docker compose up -d'      # Start detached
+  alias dcupl='docker compose up -d && docker compose logs -f'  # Start and follow
+  alias dcdown='docker compose down'      # Stop services
+  alias dcdownv='docker compose down -v'  # Stop and remove volumes
+  alias dcps='docker compose ps'          # List services
+  alias dclogs='docker compose logs'      # View logs
+  alias dclogsf='docker compose logs -f'  # Follow logs
+  alias dcexec='docker compose exec'      # Exec into service
+  alias dcbuild='docker compose build'    # Build services
+  alias dcpull='docker compose pull'      # Pull images
+  alias dcrestart='docker compose restart' # Restart services
+fi
 
-# List all images with formatted output
-dimages() {
-  docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}"
-}
+# =============================================================================
+# DOCKER FUNCTIONS
+# =============================================================================
 
-# Quick docker-compose up with detached mode
-dcup() {
-  docker-compose up -d "$@"
-}
-
-# Check container logs (avoiding conflict with alias)
-function docker_logs() {
-  if [[ -z "$1" ]]; then
-    echo "Usage: docker_logs <container_name> [--follow]"
+# -----------------------------------------------------------------------------
+# docker-shell: Interactive container selection and shell
+# -----------------------------------------------------------------------------
+#
+# Usage:
+#   docker-shell              # Select container, use sh
+#   docker-shell /bin/bash    # Select container, use bash
+#
+# -----------------------------------------------------------------------------
+docker-shell() {
+  local shell="${1:-/bin/sh}"
+  
+  if ! command -v fzf &>/dev/null; then
+    echo "Usage: docker-shell <container-id> [shell]"
+    docker ps
     return 1
   fi
+  
+  local container
+  container=$(docker ps --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' | fzf --header-lines=1 --height 40% | awk '{print $1}')
+  
+  if [[ -n "$container" ]]; then
+    echo "💻 Connecting to: $container"
+    docker exec -it "$container" "$shell"
+  fi
+}
+alias dshell='docker-shell'
 
-  local container="$1"
-  local follow="${2:---follow}"
+# -----------------------------------------------------------------------------
+# docker-logs-select: Tail logs from selected container
+# -----------------------------------------------------------------------------
+docker-logs-select() {
+  if ! command -v fzf &>/dev/null; then
+    echo "Usage: docker-logs-select"
+    docker ps
+    return 1
+  fi
+  
+  local container
+  container=$(docker ps --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}' | fzf --header-lines=1 --height 40% | awk '{print $1}')
+  
+  if [[ -n "$container" ]]; then
+    docker logs -f --tail 100 "$container"
+  fi
+}
+alias dlf='docker-logs-select'
 
-  if [[ "$follow" == "--follow" ]] || [[ "$follow" == "-f" ]]; then
-    docker logs --follow "$container"
+# -----------------------------------------------------------------------------
+# docker-stop-all: Stop all running containers
+# -----------------------------------------------------------------------------
+docker-stop-all() {
+  local containers=$(docker ps -q)
+  if [[ -n "$containers" ]]; then
+    echo "🛑 Stopping all containers..."
+    docker stop $containers
+    echo "✅ All containers stopped"
   else
-    docker logs "$container"
+    echo "No running containers"
   fi
 }
-alias dlogs='docker_logs'
+alias dstopall='docker-stop-all'
 
-# Remove all stopped containers
-dclean() {
-  echo "Removing all stopped containers..."
-  docker container prune -f
-}
-
-# Clean up unused images
-dimgclean() {
-  echo "Removing unused images..."
-  docker image prune -f
-}
-
-# Clean up everything
-dcleanall() {
-  echo "Removing all stopped containers, unused images, networks, and volumes..."
-  docker system prune -f
-}
-
-# Get inside a running container
-function docker_exec() {
-  if [[ -z "$1" ]]; then
-    echo "Usage: docker_exec <container_name> [command]"
-    return 1
+# -----------------------------------------------------------------------------
+# docker-rm-all: Remove all stopped containers
+# -----------------------------------------------------------------------------
+docker-rm-all() {
+  local containers=$(docker ps -aq)
+  if [[ -n "$containers" ]]; then
+    echo "🗑️  Removing all containers..."
+    docker rm $containers
+    echo "✅ All containers removed"
+  else
+    echo "No containers to remove"
   fi
+}
+alias drmall='docker-rm-all'
 
+# -----------------------------------------------------------------------------
+# docker-rmi-dangling: Remove dangling images
+# -----------------------------------------------------------------------------
+docker-rmi-dangling() {
+  local images=$(docker images -f "dangling=true" -q)
+  if [[ -n "$images" ]]; then
+    echo "🧹 Removing dangling images..."
+    docker rmi $images
+    echo "✅ Dangling images removed"
+  else
+    echo "No dangling images"
+  fi
+}
+alias drmid='docker-rmi-dangling'
+
+# -----------------------------------------------------------------------------
+# docker-clean: Full cleanup (containers, images, volumes, networks)
+# -----------------------------------------------------------------------------
+docker-clean() {
+  echo "🧹 Docker Cleanup"
+  echo "==============="
+  echo ""
+  echo "This will remove:"
+  echo "  - All stopped containers"
+  echo "  - All dangling images"
+  echo "  - All unused volumes"
+  echo "  - All unused networks"
+  echo ""
+  echo -n "Continue? (y/n) "
+  read confirm
+  
+  if [[ "$confirm" == "y" ]]; then
+    docker system prune -a --volumes
+    echo "✅ Cleanup complete"
+  else
+    echo "Cancelled"
+  fi
+}
+
+# -----------------------------------------------------------------------------
+# docker-ip: Get container IP address
+# -----------------------------------------------------------------------------
+docker-ip() {
   local container="$1"
-  local cmd="${2:-bash}"
-
-  docker exec -it "$container" "$cmd"
-}
-alias dexec='docker_exec'
-
-# Show container stats
-dstats() {
-  docker stats
-}
-
-# Pull and update all images
-dupdate() {
-  echo "Updating all Docker images..."
-
-  # Get all unique images
-  local images=$(docker image ls --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>")
-
-  if [[ -z "$images" ]]; then
-    echo "No images found"
-    return 0
-  fi
-
-  echo "Found the following images:"
-  echo "$images"
-  echo
-
-  echo -n "Pull updates for all images? [y/N] "
-  read -q response
-  echo
-
-  if [[ "$response" =~ ^[Yy]$ ]]; then
-    echo "$images" | while read -r image; do
-      echo "Updating $image..."
-      docker pull "$image"
-    done
-    echo "All images updated"
-  fi
-}
-
-# Kill and remove all running containers
-dkill() {
-  echo -n "Kill and remove all running containers? [y/N] "
-  read -q response
-  echo
-
-  if [[ "$response" =~ ^[Yy]$ ]]; then
-    echo "Killing all running containers..."
-    docker kill $(docker ps -q) 2>/dev/null || true
-    echo "Removing all containers..."
-    docker rm $(docker ps -a -q) 2>/dev/null || true
-    echo "Done"
-  fi
-}
-
-# Create a new Dockerfile
-dcreate() {
-  local filename="${1:-Dockerfile}"
-
-  if [[ -f "$filename" ]]; then
-    echo "File $filename already exists. Overwrite? [y/N] "
-    read -q response
-    echo
-
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-      return 1
-    fi
-  fi
-
-  cat > "$filename" << 'EOF'
-FROM ubuntu:latest
-
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    git \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
-WORKDIR /app
-
-# Copy application files
-COPY . .
-
-# Default command
-CMD ["bash"]
-EOF
-
-  echo "Created Dockerfile at $filename"
-}
-
-# Create a new docker-compose.yml
-dccompose() {
-  local filename="${1:-docker-compose.yml}"
-
-  if [[ -f "$filename" ]]; then
-    echo "File $filename already exists. Overwrite? [y/N] "
-    read -q response
-    echo
-
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-      return 1
-    fi
-  fi
-
-  cat > "$filename" << 'EOF'
-version: '3.8'
-
-services:
-  app:
-    build: .
-    container_name: my-app
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
-    environment:
-      - NODE_ENV=development
-    command: bash
-
-  # Uncomment to add a database
-  # db:
-  #   image: postgres:latest
-  #   container_name: my-db
-  #   volumes:
-  #     - postgres-data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
-  #   environment:
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #     - POSTGRES_DB=myapp
-
-volumes:
-  postgres-data:
-EOF
-
-  echo "Created docker-compose.yml at $filename"
-}
-
-# Show container IPs
-dips() {
-  docker ps -q | xargs -n 1 docker inspect --format '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' | sed 's#^/##'
-}
-
-# Inspect a container or image
-dinspect() {
-  if [[ -z "$1" ]]; then
-    echo "Usage: dinspect <container_or_image>"
+  if [[ -z "$container" ]]; then
+    echo "Usage: docker-ip <container>"
     return 1
   fi
-
-  docker inspect "$1" | jq
+  docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$container"
 }
 
-# Generate YAML file for Kubernetes from Docker Compose
-dcompose2kube() {
-  if ! command -v kompose &> /dev/null; then
-    echo "kompose not found. Install it first."
+# -----------------------------------------------------------------------------
+# docker-ports: Show exposed ports for a container
+# -----------------------------------------------------------------------------
+docker-ports() {
+  local container="$1"
+  if [[ -z "$container" ]]; then
+    echo "Usage: docker-ports <container>"
     return 1
   fi
-
-  local compose_file="${1:-docker-compose.yml}"
-
-  if [[ ! -f "$compose_file" ]]; then
-    echo "Compose file $compose_file not found"
-    return 1
-  fi
-
-  echo "Converting $compose_file to Kubernetes manifests..."
-  kompose convert -f "$compose_file"
+  docker port "$container"
 }
 
-# Run command with Docker Buildx
-dbuildx() {
-  if ! docker buildx version &>/dev/null; then
-    echo "Docker Buildx not available"
+# -----------------------------------------------------------------------------
+# docker-size: Show image sizes sorted by size
+# -----------------------------------------------------------------------------
+docker-size() {
+  docker images --format '{{.Size}}\t{{.Repository}}:{{.Tag}}' | sort -hr
+}
+
+# -----------------------------------------------------------------------------
+# docker-run-here: Run image with current directory mounted
+# -----------------------------------------------------------------------------
+#
+# Usage:
+#   docker-run-here node:18      # Mount cwd as /app, run bash
+#   docker-run-here python:3.11  # Mount cwd as /app, run bash
+#
+# -----------------------------------------------------------------------------
+docker-run-here() {
+  local image="$1"
+  local shell="${2:-/bin/bash}"
+  
+  if [[ -z "$image" ]]; then
+    echo "Usage: docker-run-here <image> [shell]"
     return 1
   fi
+  
+  echo "📦 Running $image with $(pwd) mounted as /app"
+  docker run -it --rm -v "$(pwd):/app" -w /app "$image" "$shell"
+}
+alias drun='docker-run-here'
 
-  docker buildx "$@"
+# -----------------------------------------------------------------------------
+# dockerfile-lint: Lint Dockerfile
+# -----------------------------------------------------------------------------
+dockerfile-lint() {
+  local file="${1:-Dockerfile}"
+  
+  if command -v hadolint &>/dev/null; then
+    hadolint "$file"
+  else
+    echo "hadolint not installed. Install with: brew install hadolint"
+    return 1
+  fi
 }

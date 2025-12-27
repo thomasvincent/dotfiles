@@ -1,0 +1,154 @@
+# =============================================================================
+# Tmux Configuration
+# =============================================================================
+#
+# A developer-friendly tmux configuration with sensible defaults.
+# Copy to ~/.tmux.conf
+#
+# Install tmux: brew install tmux
+#
+# =============================================================================
+
+# =============================================================================
+# GENERAL SETTINGS
+# =============================================================================
+
+# Use 256 colors and enable true color
+set -g default-terminal "screen-256color"
+set -ga terminal-overrides ",xterm-256color:Tc"
+
+# Enable mouse support
+set -g mouse on
+
+# Start windows and panes at 1, not 0
+set -g base-index 1
+setw -g pane-base-index 1
+
+# Renumber windows when one is closed
+set -g renumber-windows on
+
+# Increase scrollback buffer
+set -g history-limit 50000
+
+# Faster command sequences
+set -s escape-time 0
+
+# Increase repeat time for repeatable commands
+set -g repeat-time 1000
+
+# Enable focus events
+set -g focus-events on
+
+# =============================================================================
+# KEY BINDINGS
+# =============================================================================
+
+# Change prefix from C-b to C-a (easier to reach)
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# Reload config with prefix + r
+bind r source-file ~/.tmux.conf \; display "Config reloaded!"
+
+# Split panes with | and -
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+unbind '"'
+unbind %
+
+# Navigate panes with vim keys
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# Resize panes with vim keys
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+
+# Quick window switching
+bind -r C-h previous-window
+bind -r C-l next-window
+
+# Create new window in current path
+bind c new-window -c "#{pane_current_path}"
+
+# Kill pane without confirmation
+bind x kill-pane
+
+# Kill window without confirmation
+bind X kill-window
+
+# =============================================================================
+# COPY MODE
+# =============================================================================
+
+# Use vim keybindings in copy mode
+setw -g mode-keys vi
+
+# Enter copy mode with prefix + [
+bind [ copy-mode
+
+# Vim-style copy
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"
+bind -T copy-mode-vi r send-keys -X rectangle-toggle
+
+# Paste with prefix + p
+bind p paste-buffer
+
+# =============================================================================
+# STATUS BAR
+# =============================================================================
+
+# Status bar position
+set -g status-position bottom
+
+# Update status every 5 seconds
+set -g status-interval 5
+
+# Status bar colors
+set -g status-style "bg=#1e1e2e,fg=#cdd6f4"
+
+# Left side: session name
+set -g status-left-length 50
+set -g status-left "#[fg=#89b4fa,bold] #S #[fg=#6c7086]|"
+
+# Right side: date and time
+set -g status-right-length 100
+set -g status-right "#[fg=#6c7086]| #[fg=#a6e3a1]%H:%M #[fg=#6c7086]| #[fg=#f9e2af]%d %b"
+
+# Window status
+setw -g window-status-format " #I:#W "
+setw -g window-status-current-format " #I:#W "
+setw -g window-status-current-style "fg=#89b4fa,bold"
+setw -g window-status-style "fg=#6c7086"
+
+# =============================================================================
+# PANE BORDERS
+# =============================================================================
+
+set -g pane-border-style "fg=#313244"
+set -g pane-active-border-style "fg=#89b4fa"
+
+# =============================================================================
+# PLUGINS (requires TPM)
+# =============================================================================
+#
+# Install TPM: git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+# Install plugins: prefix + I
+#
+# =============================================================================
+
+# List of plugins
+# set -g @plugin 'tmux-plugins/tpm'
+# set -g @plugin 'tmux-plugins/tmux-sensible'
+# set -g @plugin 'tmux-plugins/tmux-resurrect'
+# set -g @plugin 'tmux-plugins/tmux-continuum'
+# set -g @plugin 'catppuccin/tmux'
+
+# Initialize TPM (keep at bottom)
+# run '~/.tmux/plugins/tpm/tpm'
