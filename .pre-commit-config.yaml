@@ -1,52 +1,112 @@
----
+# =============================================================================
+# Pre-commit Configuration
+# =============================================================================
+#
+# Pre-commit hooks run automatically before each commit to catch issues early.
+# This helps maintain code quality and prevents committing sensitive data.
+#
+# Setup:
+#   brew install pre-commit
+#   pre-commit install
+#
+# Manual run:
+#   pre-commit run --all-files
+#
+# =============================================================================
+
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  # ---------------------------------------------------------------------------
+  # General file fixes
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-added-large-files
-    -   id: check-merge-conflict
-    -   id: check-executables-have-shebangs
-        exclude: '.*\.zsh$'
-    -   id: check-shebang-scripts-are-executable
-        exclude: '.*\.zsh$'
-    -   id: mixed-line-ending
+      # Fix trailing whitespace
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+      
+      # Check for merge conflicts
+      - id: check-merge-conflict
+      
+      # Validate YAML syntax
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      
+      # Validate JSON syntax
+      - id: check-json
+      
+      # Check for large files
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      
+      # Detect private keys
+      - id: detect-private-key
+      
+      # Check executables have shebangs
+      - id: check-executables-have-shebangs
+      
+      # Check for broken symlinks
+      - id: check-symlinks
+      
+      # Mixed line endings
+      - id: mixed-line-ending
         args: [--fix=lf]
-    -   id: detect-private-key
 
--   repo: https://github.com/shellcheck-py/shellcheck-py
+  # ---------------------------------------------------------------------------
+  # Shell script linting
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.9.0.6
     hooks:
-    -   id: shellcheck
+      - id: shellcheck
         args: [--severity=warning]
-        exclude: '.*\.zsh$'
+        types: [shell]
 
--   repo: https://github.com/adrienverge/yamllint.git
+  # ---------------------------------------------------------------------------
+  # Secret detection
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package.lock.json
+
+  # ---------------------------------------------------------------------------
+  # Markdown linting
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.38.0
+    hooks:
+      - id: markdownlint
+        args: [--fix, --disable, MD013, MD033, MD041]
+
+  # ---------------------------------------------------------------------------
+  # YAML linting
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/adrienverge/yamllint
     rev: v1.33.0
     hooks:
-    -   id: yamllint
-        args: [--strict]
+      - id: yamllint
+        args: [-c, .yamllint.yml]
 
--   repo: https://github.com/zricethezav/gitleaks
-    rev: v8.18.1
-    hooks:
-    -   id: gitleaks
+# =============================================================================
+# Configuration
+# =============================================================================
 
--   repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 3.0.0
-    hooks:
-    -   id: forbid-binary
-        exclude: '.*\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf)$'
-    -   id: git-check
+# Files to exclude from all hooks
+exclude: |
+  (?x)^(
+    .git/|
+    .pre-commit-config.yaml|
+    *.min.js|
+    *.min.css
+  )$
 
--   repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.4
-    hooks:
-    -   id: forbid-crlf
-    -   id: remove-crlf
-    -   id: forbid-tabs
-        exclude: '^(Makefile|\.git)'
-    -   id: remove-tabs
-        exclude: '^(Makefile|\.git)'
+# CI configuration
+ci:
+  autofix_prs: true
+  autoupdate_schedule: weekly
