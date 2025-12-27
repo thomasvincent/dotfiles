@@ -1,0 +1,168 @@
+# =============================================================================
+# Brewfile.devops - DevOps and Infrastructure Tools
+# =============================================================================
+#
+# Install with: brew bundle install --file=~/dotfiles/Brewfile.devops
+#
+# This file contains DevOps-specific tools that complement the base Brewfile.
+# Organized by category for easy customization.
+#
+# =============================================================================
+
+# =============================================================================
+# INFRASTRUCTURE AS CODE
+# =============================================================================
+
+# Terraform ecosystem
+brew "terraform"              # Infrastructure as Code
+brew "terragrunt"             # Terraform wrapper for DRY configs
+brew "tflint"                 # Terraform linter
+brew "terraform-docs"         # Generate documentation from Terraform
+brew "infracost"              # Cloud cost estimation
+brew "tfenv"                  # Terraform version manager
+
+# Alternative/complementary IaC tools
+brew "pulumi"                 # IaC with real programming languages
+brew "cdktf"                  # CDK for Terraform
+
+# =============================================================================
+# KUBERNETES ECOSYSTEM
+# =============================================================================
+
+# Core tools
+brew "kubectl"                # Kubernetes CLI
+brew "kubectx"                # Context/namespace switcher
+brew "helm"                   # Kubernetes package manager
+brew "kustomize"              # Kubernetes configuration management
+
+# Cluster management
+brew "k9s"                    # Terminal UI for Kubernetes
+brew "stern"                  # Multi-pod log tailing
+brew "kubetail"               # Tail logs from multiple pods
+brew "kube-ps1"               # Kubernetes prompt for zsh
+
+# Security and policy
+brew "kubesec"                # Security risk analysis
+brew "kube-linter"            # Static analysis for Kubernetes
+brew "trivy"                  # Vulnerability scanner
+
+# Development
+brew "kind"                   # Kubernetes in Docker (local clusters)
+brew "minikube"               # Local Kubernetes
+brew "skaffold"               # Local Kubernetes development
+brew "tilt"                   # Local Kubernetes development
+
+# GitOps
+brew "argocd"                 # ArgoCD CLI
+brew "flux"                   # Flux CD CLI
+
+# =============================================================================
+# CLOUD PROVIDER TOOLS
+# =============================================================================
+
+# AWS
+brew "awscli"                 # AWS CLI v2
+brew "aws-vault"              # Secure AWS credential storage
+brew "aws-iam-authenticator"  # EKS authentication
+brew "eksctl"                 # EKS cluster management
+brew "chamber"                # AWS Parameter Store secrets
+brew "aws-sam-cli"            # Serverless Application Model
+
+# Google Cloud
+brew "google-cloud-sdk"       # GCP CLI
+
+# Azure
+brew "azure-cli"              # Azure CLI
+
+# Multi-cloud
+brew "doctl"                  # DigitalOcean CLI
+brew "linode-cli"             # Linode CLI
+
+# =============================================================================
+# CONTAINERS
+# =============================================================================
+
+brew "docker"                 # Container runtime
+brew "docker-compose"         # Multi-container applications
+brew "docker-credential-helper" # Credential management
+brew "dive"                   # Docker image explorer
+brew "hadolint"               # Dockerfile linter
+brew "lazydocker"             # Docker TUI
+brew "ctop"                   # Container metrics
+
+# =============================================================================
+# SECRETS MANAGEMENT
+# =============================================================================
+
+brew "vault"                  # HashiCorp Vault
+brew "sops"                   # Secrets encryption
+brew "age"                    # Modern encryption tool
+brew "1password-cli"          # 1Password CLI
+
+# =============================================================================
+# CI/CD TOOLS
+# =============================================================================
+
+brew "gh"                     # GitHub CLI
+brew "act"                    # Run GitHub Actions locally
+brew "jenkins"                # Jenkins (for local testing)
+brew "circleci"               # CircleCI CLI
+
+# =============================================================================
+# MONITORING & OBSERVABILITY
+# =============================================================================
+
+brew "prometheus"             # Metrics collection
+brew "grafana"                # Visualization
+
+# =============================================================================
+# NETWORKING & SECURITY
+# =============================================================================
+
+brew "nmap"                   # Network scanner
+brew "mtr"                    # Better traceroute
+brew "httpie"                 # HTTP client
+brew "curlie"                 # curl with httpie UI
+brew "grpcurl"                # gRPC CLI
+brew "websocat"               # WebSocket client
+
+# Security scanning
+brew "trivy"                  # Vulnerability scanner
+brew "grype"                  # Container vulnerability scanner
+brew "syft"                   # SBOM generator
+brew "cosign"                 # Container signing
+
+# =============================================================================
+# HASHICORP SUITE
+# =============================================================================
+
+brew "terraform"              # Infrastructure as Code
+brew "vault"                  # Secrets management
+brew "consul"                 # Service discovery
+brew "nomad"                  # Workload orchestration
+brew "packer"                 # Image building
+brew "boundary"               # Secure access
+brew "waypoint"               # Application deployment
+
+# =============================================================================
+# DATABASE TOOLS
+# =============================================================================
+
+brew "postgresql"             # PostgreSQL
+brew "mysql-client"           # MySQL client
+brew "redis"                  # Redis
+brew "pgcli"                  # Better PostgreSQL CLI
+brew "mycli"                  # Better MySQL CLI
+brew "usql"                   # Universal SQL CLI
+
+# =============================================================================
+# CASK APPLICATIONS
+# =============================================================================
+
+cask "docker"                 # Docker Desktop
+cask "lens"                   # Kubernetes IDE
+cask "postman"                # API development
+cask "insomnia"               # API client (alternative)
+cask "pgadmin4"               # PostgreSQL GUI
+cask "mongodb-compass"        # MongoDB GUI
+cask "aws-vpn-client"         # AWS VPN
