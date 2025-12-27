@@ -83,16 +83,10 @@ if [[ -d "$ZSH_CONFIG_DIR/functions.d" ]]; then
   # Add to fpath
   fpath=("$ZSH_CONFIG_DIR/functions.d" $fpath)
 
-  # Load all function files from our dotfiles repo
-  for func_file in "/Users/thomasvincent/dotfiles/.zsh/functions.d/"*.zsh(N); do
-    # Skip loading function files that might cause errors during startup
-    if [[ -r "$func_file" ]]; then
-      source "$func_file"
-    fi
+  # Load all function files dynamically (no hardcoded paths)
+  for func_file in "$ZSH_CONFIG_DIR/functions.d/"*.zsh(N); do
+    [[ -r "$func_file" ]] && source "$func_file"
   done
-
-  # Skip loading any function files that aren't managed by our dotfiles repo
-  # This prevents errors from legacy or system-installed function files
 fi
 
 # ====================================
@@ -114,9 +108,12 @@ fi
 # ====================================
 # Key bindings are now configured in core.zsh
 
-# FZF key bindings if installed
-[[ -f "/opt/homebrew/opt/fzf/shell/key-bindings.zsh" ]] && source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
-[[ -f "/usr/local/opt/fzf/shell/key-bindings.zsh" ]] && source "/usr/local/opt/fzf/shell/key-bindings.zsh"
+# FZF key bindings if installed (check both Apple Silicon and Intel paths)
+if [[ -f "/opt/homebrew/opt/fzf/shell/key-bindings.zsh" ]]; then
+  source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
+elif [[ -f "/usr/local/opt/fzf/shell/key-bindings.zsh" ]]; then
+  source "/usr/local/opt/fzf/shell/key-bindings.zsh"
+fi
 
 # ====================================
 # 10. TOOL INTEGRATIONS
@@ -138,6 +135,11 @@ elif command -v brew >/dev/null && [[ -f "$(brew --prefix asdf 2>/dev/null)/libe
   source "$(brew --prefix asdf)/libexec/asdf.sh"
 fi
 
+# pyenv - Python version manager
+if command -v pyenv >/dev/null 2>&1; then
+  eval "$(pyenv init -)"
+fi
+
 # iTerm2 integration
 [[ -e "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
 
@@ -152,8 +154,6 @@ fi
 # ====================================
 # Ensure path arrays don't contain duplicates
 typeset -U PATH path fpath
-
-# Terraform completion will be handled at the end of the file
 
 # Build BAT cache if needed
 if command -v bat &>/dev/null && [[ ! -f "$HOME/.cache/bat/themes.bin" ]]; then
@@ -171,24 +171,16 @@ fi
 # Welcome message only (no error-prone reporting functions)
 echo "👋 Welcome back, ${USER}! Running on $(uname) - Platform: ${PLATFORM:=unknown}"
 
-# Bash completions and Terraform integration
-# ==============================================
-# Load bash completion system (only once)
-(( ${+functions[bashcompinit]} )) && unfunction bashcompinit
+# ====================================
+# 13. BASH COMPLETIONS (Load once)
+# ====================================
+# Initialize bash completions system (only once)
 autoload -U +X bashcompinit && bashcompinit 2>/dev/null
 
 # Add Terraform completion if available
 if command -v terraform >/dev/null 2>&1; then
-  terraform_bin=$(which terraform 2>/dev/null)
-  if [[ -n "$terraform_bin" && -x "$terraform_bin" ]]; then
-    complete -o nospace -C "$terraform_bin" terraform 2>/dev/null || true
-  fi
+  complete -o nospace -C terraform terraform 2>/dev/null || true
 fi
-eval "$(pyenv init -)"
-export PATH="$HOME/.npm/bin:$PATH"
-alias claude="/Users/thomasvincent/.npm/bin/claude"
 
-# Clean up any additional completions to prevent duplicates
-
-autoload -U +X bashcompinit && bashcompinit
-complete -o nospace -C /opt/homebrew/bin/terraform terraform
+# Add npm global bin to path if exists
+[[ -d "$HOME/.npm/bin" ]] && export PATH="$HOME/.npm/bin:$PATH"
