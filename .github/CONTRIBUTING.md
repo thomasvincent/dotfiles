@@ -1,70 +1,93 @@
 # Contributing to Dotfiles
 
-Thank you for considering contributing to this dotfiles repository\! Your input and improvements are valuable to make this configuration better for everyone.
+Thank you for considering contributing! This document outlines the process.
 
-## How to Contribute
+## Quick Start
 
-### Reporting Issues
+```bash
+# Fork and clone
+git clone https://github.com/YOUR-USERNAME/dotfiles.git
+cd dotfiles
 
-If you encounter any issues or have suggestions for improvements, please open an issue with a clear description of:
+# Install pre-commit hooks
+brew install pre-commit
+pre-commit install
 
-- What the problem is
-- Steps to reproduce the issue
-- Expected behavior
-- Your environment (OS, shell version, etc.)
+# Make your changes
+git checkout -b feature/my-improvement
 
-### Pull Requests
+# Test
+make test
+make lint
 
-1. Fork the repository
-2. Create a new branch for your changes (`git checkout -b feature/your-feature-name`)
-3. Make your changes
-4. Run the tests: `make test` and `make lint`
-5. Commit your changes with a meaningful commit message using conventional commit format
-6. Push to your fork and submit a pull request
+# Commit with conventional commits
+git commit -m "feat: add awesome feature"
 
-### Code Style
+# Push and create PR
+git push origin feature/my-improvement
+```
 
-- Follow the existing code style in the project
-- Use meaningful function and variable names
+## Commit Convention
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+
+| Type | Description |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation |
+| `style` | Formatting |
+| `refactor` | Code restructuring |
+| `test` | Tests |
+| `chore` | Maintenance |
+
+**Examples:**
+```
+feat: add kubectl fuzzy pod selection
+fix(aws): correct profile switching logic
+docs: update installation guide
+chore: update pre-commit hooks
+```
+
+## Code Style
+
+### Shell Scripts
+
+- Use `#!/usr/bin/env zsh` for zsh scripts
+- Use `#!/bin/bash` for portable scripts
+- Include file header with purpose
 - Add comments for complex logic
-- Keep functions focused on a single responsibility
-- For shell scripts, follow [Google's Shell Style Guide](https://google.github.io/styleguide/shellguide.html)
+- Use meaningful variable names
+- Quote variables: `"$var"` not `$var`
 
-### Commit Messages
+### Documentation
 
-Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages:
+- Every function needs a description
+- Include usage examples
+- Document dependencies
 
+## Testing
+
+Before submitting:
+
+```bash
+# Test shell startup
+make test
+
+# Run linters
+make lint
+
+# Test on fresh shell
+zsh -i -c 'exit'
 ```
-<type>(<scope>): <description>
 
-[optional body]
+## Pull Request Process
 
-[optional footer]
-```
+1. Update documentation if needed
+2. Add entry to CHANGELOG.md
+3. Ensure CI passes
+4. Request review
 
-Types include:
-- `feat`: A new feature
-- `fix`: A bug fix
-- `docs`: Documentation changes
-- `style`: Changes that don't affect code functionality (formatting, etc.)
-- `refactor`: Code changes that neither fix bugs nor add features
-- `perf`: Performance improvements
-- `test`: Adding or fixing tests
-- `chore`: Changes to build process or auxiliary tools
+## Questions?
 
-### Testing
-
-Before submitting a PR, please:
-
-1. Test your changes on both macOS and Linux if applicable
-2. Run `make test` to ensure your changes don't break shell startup
-3. Run `make lint` to check code quality
-
-## Code of Conduct
-
-Please be respectful and considerate when contributing. We aim to foster an inclusive and welcoming community.
-
-## License
-
-By contributing to this repository, you agree that your contributions will be licensed under the same license as the project.
-EOF < /dev/null
+Open an issue for discussion before major changes.
