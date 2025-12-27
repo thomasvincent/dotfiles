@@ -2,89 +2,123 @@
 
 All notable changes to this dotfiles repository will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
 ### Added
-- **Terraform module** (`.zsh/dev/terraform.zsh`)
-  - Complete alias set for terraform commands (`tf`, `tfi`, `tfp`, `tfa`, etc.)
-  - `tf-init-backend` - Initialize with environment-specific backend configs
-  - `tf-plan-env` / `tf-apply-env` - Environment-aware plan/apply
-  - `tf-project` - Create new Terraform project structure
-  - `tf-module` - Create new Terraform module
-  - `tf-docs` - Generate terraform-docs documentation
+
+#### DevOps Modules
+- **terraform.zsh** - Comprehensive Terraform workflows
+  - `tf-project` - Scaffold new Terraform projects with best-practice structure
+  - `tf-module` - Create reusable Terraform modules
   - `tf-check` - Run validation, tflint, tfsec, and checkov
-  - `tf-cost` - Infracost integration for cost estimation
-  - `tf-export` - Export outputs to environment variables
+  - `tf-cost` - Estimate costs with Infracost
   - `tf-destroy-safe` - Double confirmation for destroy operations
+  - Environment-aware plan/apply functions
 
-- **Kubernetes module** (`.zsh/dev/kubernetes.zsh`)
-  - Comprehensive kubectl aliases (`k`, `kg`, `kgp`, `kd`, `kl`, etc.)
-  - Helm aliases (`h`, `hi`, `hu`, `hui`, `hl`, etc.)
-  - `kctx-switch` / `kns-switch` - Fuzzy context/namespace switching
-  - `kpod` / `kexec` / `klogs` - Fuzzy pod selection
-  - `kwatch` - Watch pods in real-time
-  - `kall` - List all resources in namespace
-  - `kdebug` - Launch debug container
-  - `kres` - Show resource usage
-  - `krestart` - Restart deployment with status
-  - `kns-create` - Create namespace with resource quota
+- **kubernetes.zsh** - Kubernetes and Helm tooling
+  - Extensive kubectl aliases (40+)
+  - Helm aliases for chart management
+  - `kexec`, `klogs`, `kdesc` - Fuzzy pod selection
+  - `kctx-switch`, `kns-switch` - Interactive context/namespace switching
+  - `kdebug` - Launch debug containers
   - `ksec-view` - Decode and view secrets
+  - `krestart` - Restart deployments with status
 
-- **AWS module** (`.zsh/dev/aws.zsh`)
-  - Comprehensive AWS CLI aliases for EC2, S3, ECS, EKS, Lambda, RDS, IAM, etc.
-  - `aws-profiles` / `aws-profile` - Profile management with fuzzy selection
-  - `aws-sso-login` - SSO authentication helper
-  - `ec2-by-name` - Find EC2 instances by name tag
-  - `ec2-ssm` - SSM session with instance selection
-  - `s3-size` - Get bucket size
-  - `cw-logs` - Tail CloudWatch logs
-  - `eks-config` - Update kubeconfig for EKS clusters
-  - `lambda-logs` - Tail Lambda function logs
-  - `aws-resources` - List all resources in region
+- **aws.zsh** - AWS CLI workflows
+  - Profile management with fuzzy selection
+  - SSO authentication helpers
+  - `ec2-ssm` - Interactive SSM session
+  - `eks-config` - Update kubeconfig for EKS
+  - `cw-logs`, `lambda-logs` - CloudWatch log tailing
   - `aws-cost` - Cost explorer summary
-  - AWS Vault aliases if installed
 
-- **ArgoCD module** (`.zsh/dev/argocd.zsh`)
-  - Full ArgoCD CLI aliases
-  - `argo-login` - Login helper
-  - `argo-init-password` - Get initial admin password
-  - `argo-port-forward` - Port forward to ArgoCD server
-  - `argo-sync-select` / `argo-status` - Fuzzy app selection
-  - `argo-watch` - Watch application status
-  - `argo-create-app` - Create application from Git repo
-  - `argo-rollback` - Rollback with history display
-  - `argo-out-of-sync` / `argo-unhealthy` - List problem apps
-  - `argo-dashboard` - Summary of all apps/clusters/repos
+- **argocd.zsh** - ArgoCD GitOps workflows
+  - Application management aliases
+  - `argo-sync-select` - Fuzzy app selection
+  - `argo-dashboard` - Summary view
+  - `argo-rollback` - Interactive rollback
+  - `argo-out-of-sync`, `argo-unhealthy` - Problem detection
 
-- **Enhanced dev/index.zsh**
-  - `devops-status` - Quick verification of all DevOps tools
-  - Added terraform to `init-project` types
-  - Added k8s/terraform environments to `dev-env`
-  - Expanded `docs` function with DevOps documentation links
+- **docker.zsh** - Docker and container management
+  - Container lifecycle aliases
+  - `docker-shell` - Interactive container selection
+  - `docker-clean` - Full cleanup with confirmation
+  - `docker-run-here` - Run with current directory mounted
 
-### Fixed
-- **`.zshrc` cleanup**
-  - Removed hardcoded `/Users/thomasvincent/dotfiles` path - now uses `$ZSH_CONFIG_DIR`
-  - Removed duplicate `bashcompinit` calls (was called 3 times)
-  - Consolidated Terraform completion setup
-  - Added pyenv existence check before initialization
-  - Fixed FZF path detection for both Intel and Apple Silicon Macs
-  - Moved machine-specific aliases to `local.zsh`
+- **network.zsh** - Network debugging and API utilities
+  - `myip` - Internal and external IP addresses
+  - `http-headers`, `http-status`, `http-time` - HTTP debugging
+  - `api-get`, `api-post`, `api-put`, `api-delete` - API testing
+  - `ssl-check`, `ssl-expiry` - Certificate inspection
+  - `dns-lookup`, `flush-dns` - DNS utilities
+  - `jwt-decode` - JWT token decoding
+
+- **git-extras.zsh** - Advanced Git workflows
+  - `git-branch-clean` - Delete merged branches
+  - Conventional commit helpers (`gcf`, `gcx`, `gci`)
+  - `git-pr-create`, `git-pr-checkout` - PR workflows
+  - `git-stats`, `git-standup`, `git-fame` - Repository statistics
+  - `git-sync`, `git-undo`, `git-amend` - Workflow helpers
+
+#### Documentation
+- **docs/INSTALLATION.md** - Comprehensive installation guide
+- **docs/DEVOPS.md** - Complete DevOps tools reference
+- **docs/WORKFLOWS.md** - Development workflow documentation
+- **docs/GTD.md** - Getting Things Done integration guide
+- **docs/CUSTOMIZATION.md** - Personalization guide
+- **SECURITY.md** - Security policy and best practices
+
+#### Scripts
+- **scripts/macos-defaults.sh** - macOS system preferences for developers
+- **scripts/backup-dotfiles.sh** - Backup script with rotation
+- **scripts/health-check.sh** - Verify all tools are installed
+
+#### Configuration Templates
+- **.ssh/config.example** - Secure SSH configuration
+- **.config/starship.toml.example** - Starship prompt configuration
+- **.tmux.conf.example** - Tmux configuration
+- **.zsh/dev/local.zsh.example** - Machine-specific settings template
+
+#### GitHub Integration
+- **.github/CONTRIBUTING.md** - Contribution guidelines
+- **.github/ISSUE_TEMPLATE/bug_report.md** - Bug report template
+- **.github/ISSUE_TEMPLATE/feature_request.md** - Feature request template
+- **.github/PULL_REQUEST_TEMPLATE.md** - PR template
+
+#### Quality Assurance
+- **.pre-commit-config.yaml** - Pre-commit hooks with secret detection
+- **.yamllint.yml** - YAML linting configuration
+- **Brewfile.devops** - Comprehensive DevOps tool list
 
 ### Changed
-- Improved module loading order in `dev/index.zsh`
-- Better organization of container/orchestration tool loading
 
-## [1.0.0] - 2025-04-21
+- **README.md** - Streamlined with badges, linking to detailed docs
+- **.zshrc** - Fixed hardcoded paths, removed duplicate bashcompinit calls
+- **.github/workflows/ci.yml** - Enhanced with comprehensive comments
+- **.gitignore** - Organized with section headers and comments
+- **.zsh/aliases.zsh** - Complete rewrite with 10 organized sections
+- **.zsh/dev/index.zsh** - Enhanced module loading with documentation
+
+### Fixed
+
+- Hardcoded `/Users/thomasvincent/dotfiles` path in .zshrc
+- Duplicate `bashcompinit` calls causing slow startup
+- FZF path detection for Apple Silicon Macs
+- Missing pyenv existence check
+
+### Moved
+
+- Test files from root to `tests/` directory
+
+## [1.0.0] - Initial Release
 
 ### Added
-- Initial dotfiles setup with chezmoi
-- ZSH configuration with Powerlevel10k
-- Modular configuration structure
-- Homebrew package management with Brewfiles
-- Pre-commit hooks for code quality
-- GitHub Actions CI/CD
-- Comprehensive documentation
+
+- Initial dotfiles structure
+- Zsh configuration with Powerlevel10k
+- Chezmoi management
+- Core aliases and functions
+- Homebrew Brewfiles
+- CI/CD with GitHub Actions
