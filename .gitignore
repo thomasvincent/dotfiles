@@ -1,19 +1,130 @@
-# Local configuration files that shouldn't be committed
-.zsh/local.zsh
-.zsh/secrets.zsh
+# =============================================================================
+# Dotfiles .gitignore
+# =============================================================================
+#
+# This file specifies which files Git should ignore.
+# Organized by category for easy maintenance.
+#
+# =============================================================================
 
-# Backup directories
-*_backup_*/
-
-# macOS system files
+# -----------------------------------------------------------------------------
+# Operating System Files
+# -----------------------------------------------------------------------------
+# macOS
 .DS_Store
-.AppleDouble
-.LSOverride
+.DS_Store?
 ._*
+.Spotlight-V100
+.Trashes
 
-# Cache and temp files
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.directory
+
+# -----------------------------------------------------------------------------
+# Editor and IDE Files
+# -----------------------------------------------------------------------------
+# Vim
+*.swp
+*.swo
+*.swn
+*.un~
+Session.vim
+.netrwhist
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# -----------------------------------------------------------------------------
+# Shell and Environment
+# -----------------------------------------------------------------------------
+# Local configuration (machine-specific, contains secrets)
+.zsh/local.zsh
+.zsh/dev/local.zsh
+
+# Zsh compiled files
+*.zwc
+*.zwc.old
+
+# Zsh cache
 .zsh/cache/
-.zsh/logs/
+.zcompdump*
 
-# Environment-specific files
+# History files
+.zsh_history
+.bash_history
+
+# -----------------------------------------------------------------------------
+# Secrets and Credentials
+# -----------------------------------------------------------------------------
+# Never commit these!
+*.pem
+*.key
+*.crt
 .env
+.env.*
+!.env.example
+
+# AWS
+.aws/credentials
+.aws/config
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# -----------------------------------------------------------------------------
+# Build and Cache Directories
+# -----------------------------------------------------------------------------
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# Homebrew
+.homebrew/
+
+# -----------------------------------------------------------------------------
+# Backup Files
+# -----------------------------------------------------------------------------
+*.bak
+*.backup
+*.old
+*_backup_*
+
+# -----------------------------------------------------------------------------
+# Temporary Files
+# -----------------------------------------------------------------------------
+*.tmp
+*.temp
+*.log
+tmp/
+temp/
+
+# -----------------------------------------------------------------------------
+# Accidentally Committed Directories
+# -----------------------------------------------------------------------------
+# These should never be in the repo
+~/
+~/*
+Documents/
+Downloads/
+Desktop/
+Projects/
