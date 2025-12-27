@@ -1,212 +1,360 @@
 #!/usr/bin/env zsh
-# ~/.zsh/dev/kubernetes.zsh - Kubernetes workflows and aliases
+# =============================================================================
+# Kubernetes Workflows and Aliases
+# =============================================================================
 #
-# Comprehensive Kubernetes tooling for container orchestration
+# File: ~/.zsh/dev/kubernetes.zsh
+# Purpose: Comprehensive tooling for Kubernetes and Helm
+# Dependencies: kubectl, helm (optional), fzf (optional, for fuzzy selection)
 #
+# This module provides:
+#   - Extensive kubectl aliases for common operations
+#   - Helm aliases for chart management
+#   - Interactive functions using fzf for pod/resource selection
+#   - Utility functions for debugging and troubleshooting
+#
+# =============================================================================
 
-# ====================================
+# =============================================================================
 # KUBECTL ALIASES
-# ====================================
+# =============================================================================
+#
+# Organized by operation type. All aliases start with 'k' for kubectl.
+# Naming convention:
+#   k   = kubectl
+#   kg  = kubectl get
+#   kd  = kubectl describe
+#   kdel = kubectl delete
+#   etc.
+#
+# =============================================================================
+
 if command -v kubectl &>/dev/null; then
-  alias k='kubectl'
-  alias kx='kubectx'
-  alias kn='kubens'
+  # ---------------------------------------------------------------------------
+  # Base Commands
+  # ---------------------------------------------------------------------------
+  alias k='kubectl'                       # Base kubectl command
+  alias kx='kubectx'                      # Switch contexts (if installed)
+  alias kn='kubens'                       # Switch namespaces (if installed)
   
-  # Get commands
-  alias kg='kubectl get'
-  alias kgp='kubectl get pods'
-  alias kgpa='kubectl get pods --all-namespaces'
-  alias kgpw='kubectl get pods -o wide'
-  alias kgd='kubectl get deployments'
-  alias kgs='kubectl get services'
-  alias kgn='kubectl get nodes'
-  alias kgns='kubectl get namespaces'
-  alias kgcm='kubectl get configmaps'
-  alias kgsec='kubectl get secrets'
-  alias kging='kubectl get ingress'
-  alias kgpv='kubectl get pv'
-  alias kgpvc='kubectl get pvc'
-  alias kgj='kubectl get jobs'
-  alias kgcj='kubectl get cronjobs'
-  alias kgsa='kubectl get serviceaccounts'
-  alias kgr='kubectl get roles'
-  alias kgrb='kubectl get rolebindings'
-  alias kgcr='kubectl get clusterroles'
-  alias kgcrb='kubectl get clusterrolebindings'
-  alias kgall='kubectl get all'
-  alias kgalla='kubectl get all --all-namespaces'
+  # ---------------------------------------------------------------------------
+  # GET Commands - Retrieve resources
+  # ---------------------------------------------------------------------------
+  alias kg='kubectl get'                  # Get any resource
+  alias kgp='kubectl get pods'            # Get pods in current namespace
+  alias kgpa='kubectl get pods --all-namespaces'  # Get ALL pods
+  alias kgpw='kubectl get pods -o wide'   # Get pods with extra info (node, IP)
+  alias kgd='kubectl get deployments'     # Get deployments
+  alias kgs='kubectl get services'        # Get services
+  alias kgn='kubectl get nodes'           # Get cluster nodes
+  alias kgns='kubectl get namespaces'     # Get namespaces
+  alias kgcm='kubectl get configmaps'     # Get configmaps
+  alias kgsec='kubectl get secrets'       # Get secrets
+  alias kging='kubectl get ingress'       # Get ingress resources
+  alias kgpv='kubectl get pv'             # Get persistent volumes
+  alias kgpvc='kubectl get pvc'           # Get persistent volume claims
+  alias kgj='kubectl get jobs'            # Get jobs
+  alias kgcj='kubectl get cronjobs'       # Get cronjobs
+  alias kgsa='kubectl get serviceaccounts' # Get service accounts
+  alias kgr='kubectl get roles'           # Get roles
+  alias kgrb='kubectl get rolebindings'   # Get role bindings
+  alias kgcr='kubectl get clusterroles'   # Get cluster roles
+  alias kgcrb='kubectl get clusterrolebindings' # Get cluster role bindings
+  alias kgall='kubectl get all'           # Get common resources
+  alias kgalla='kubectl get all --all-namespaces' # Get all across namespaces
   
-  # Describe commands
-  alias kd='kubectl describe'
-  alias kdp='kubectl describe pod'
-  alias kdd='kubectl describe deployment'
-  alias kds='kubectl describe service'
-  alias kdn='kubectl describe node'
+  # ---------------------------------------------------------------------------
+  # DESCRIBE Commands - Detailed resource information
+  # ---------------------------------------------------------------------------
+  alias kd='kubectl describe'             # Describe any resource
+  alias kdp='kubectl describe pod'        # Describe pod
+  alias kdd='kubectl describe deployment' # Describe deployment
+  alias kds='kubectl describe service'    # Describe service
+  alias kdn='kubectl describe node'       # Describe node
   
-  # Delete commands
-  alias kdel='kubectl delete'
-  alias kdelp='kubectl delete pod'
-  alias kdeld='kubectl delete deployment'
-  alias kdels='kubectl delete service'
+  # ---------------------------------------------------------------------------
+  # DELETE Commands - Remove resources (use with caution!)
+  # ---------------------------------------------------------------------------
+  alias kdel='kubectl delete'             # Delete any resource
+  alias kdelp='kubectl delete pod'        # Delete pod
+  alias kdeld='kubectl delete deployment' # Delete deployment
+  alias kdels='kubectl delete service'    # Delete service
   
-  # Log commands
-  alias kl='kubectl logs'
-  alias klf='kubectl logs -f'
-  alias klt='kubectl logs --tail=100'
-  alias klft='kubectl logs -f --tail=100'
+  # ---------------------------------------------------------------------------
+  # LOG Commands - View container logs
+  # ---------------------------------------------------------------------------
+  alias kl='kubectl logs'                 # Get logs
+  alias klf='kubectl logs -f'             # Follow logs (stream)
+  alias klt='kubectl logs --tail=100'     # Last 100 lines
+  alias klft='kubectl logs -f --tail=100' # Follow last 100 lines
   
-  # Exec commands
-  alias ke='kubectl exec -it'
-  alias kesh='kubectl exec -it -- /bin/sh'
-  alias kebash='kubectl exec -it -- /bin/bash'
+  # ---------------------------------------------------------------------------
+  # EXEC Commands - Run commands in containers
+  # ---------------------------------------------------------------------------
+  alias ke='kubectl exec -it'             # Interactive exec
+  alias kesh='kubectl exec -it -- /bin/sh'    # Exec into shell
+  alias kebash='kubectl exec -it -- /bin/bash' # Exec into bash
   
-  # Apply/Create commands
-  alias ka='kubectl apply -f'
-  alias kc='kubectl create'
-  alias kcf='kubectl create -f'
-  alias kaf='kubectl apply -f'
-  alias kar='kubectl apply -R -f'
+  # ---------------------------------------------------------------------------
+  # APPLY/CREATE Commands - Create resources
+  # ---------------------------------------------------------------------------
+  alias ka='kubectl apply -f'             # Apply from file
+  alias kc='kubectl create'               # Create resource
+  alias kcf='kubectl create -f'           # Create from file
+  alias kaf='kubectl apply -f'            # Apply from file
+  alias kar='kubectl apply -R -f'         # Apply recursively
   
-  # Edit commands
-  alias ked='kubectl edit'
-  alias kedp='kubectl edit pod'
-  alias kedd='kubectl edit deployment'
+  # ---------------------------------------------------------------------------
+  # EDIT Commands - Modify resources
+  # ---------------------------------------------------------------------------
+  alias ked='kubectl edit'                # Edit resource
+  alias kedp='kubectl edit pod'           # Edit pod
+  alias kedd='kubectl edit deployment'    # Edit deployment
   
-  # Scale commands
-  alias ksc='kubectl scale'
-  alias ksd='kubectl scale deployment'
+  # ---------------------------------------------------------------------------
+  # SCALE Commands - Scale resources
+  # ---------------------------------------------------------------------------
+  alias ksc='kubectl scale'               # Scale resource
+  alias ksd='kubectl scale deployment'    # Scale deployment
   
-  # Port forward
-  alias kpf='kubectl port-forward'
+  # ---------------------------------------------------------------------------
+  # MISC Commands
+  # ---------------------------------------------------------------------------
+  alias kpf='kubectl port-forward'        # Port forward
+  alias ktop='kubectl top'                # Resource usage
+  alias ktopp='kubectl top pods'          # Pod resource usage
+  alias ktopn='kubectl top nodes'         # Node resource usage
   
-  # Top/Resource usage
-  alias ktop='kubectl top'
-  alias ktopp='kubectl top pods'
-  alias ktopn='kubectl top nodes'
+  # ---------------------------------------------------------------------------
+  # CONTEXT/CONFIG Commands
+  # ---------------------------------------------------------------------------
+  alias kctx='kubectl config current-context'  # Current context
+  alias kctxs='kubectl config get-contexts'    # List contexts
+  alias kuse='kubectl config use-context'      # Switch context
+  alias kns='kubectl config set-context --current --namespace'  # Set namespace
   
-  # Context and config
-  alias kctx='kubectl config current-context'
-  alias kctxs='kubectl config get-contexts'
-  alias kuse='kubectl config use-context'
-  alias kns='kubectl config set-context --current --namespace'
-  
-  # Rollout
-  alias kro='kubectl rollout'
-  alias kros='kubectl rollout status'
-  alias kroh='kubectl rollout history'
-  alias krou='kubectl rollout undo'
-  alias kror='kubectl rollout restart'
+  # ---------------------------------------------------------------------------
+  # ROLLOUT Commands - Manage deployments
+  # ---------------------------------------------------------------------------
+  alias kro='kubectl rollout'             # Rollout commands
+  alias kros='kubectl rollout status'     # Rollout status
+  alias kroh='kubectl rollout history'    # Rollout history
+  alias krou='kubectl rollout undo'       # Rollback
+  alias kror='kubectl rollout restart'    # Restart deployment
 fi
 
-# ====================================
+# =============================================================================
 # HELM ALIASES
-# ====================================
+# =============================================================================
+#
+# Helm is the package manager for Kubernetes. These aliases make
+# chart management faster.
+#
+# =============================================================================
+
 if command -v helm &>/dev/null; then
-  alias h='helm'
-  alias hi='helm install'
-  alias hu='helm upgrade'
-  alias hui='helm upgrade --install'
-  alias hd='helm delete'
-  alias hl='helm list'
-  alias hla='helm list --all'
-  alias hlan='helm list --all-namespaces'
-  alias hs='helm search'
-  alias hsr='helm search repo'
-  alias hsh='helm search hub'
-  alias hr='helm repo'
-  alias hra='helm repo add'
-  alias hru='helm repo update'
-  alias hrl='helm repo list'
-  alias hg='helm get'
-  alias hgv='helm get values'
-  alias hga='helm get all'
-  alias hgm='helm get manifest'
-  alias ht='helm template'
-  alias hh='helm history'
-  alias hrb='helm rollback'
-  alias hst='helm status'
-  alias hdep='helm dependency'
-  alias hdepu='helm dependency update'
-  alias hdepb='helm dependency build'
+  alias h='helm'                          # Base helm command
+  alias hi='helm install'                 # Install chart
+  alias hu='helm upgrade'                 # Upgrade release
+  alias hui='helm upgrade --install'      # Install or upgrade
+  alias hd='helm delete'                  # Delete release (same as uninstall)
+  alias hl='helm list'                    # List releases
+  alias hla='helm list --all'             # List all releases (including failed)
+  alias hlan='helm list --all-namespaces' # List across all namespaces
+  alias hs='helm search'                  # Search charts
+  alias hsr='helm search repo'            # Search in repos
+  alias hsh='helm search hub'             # Search Artifact Hub
+  alias hr='helm repo'                    # Repo commands
+  alias hra='helm repo add'               # Add repo
+  alias hru='helm repo update'            # Update repos
+  alias hrl='helm repo list'              # List repos
+  alias hg='helm get'                     # Get release info
+  alias hgv='helm get values'             # Get release values
+  alias hga='helm get all'                # Get all release info
+  alias hgm='helm get manifest'           # Get release manifest
+  alias ht='helm template'                # Render templates locally
+  alias hh='helm history'                 # Release history
+  alias hrb='helm rollback'               # Rollback release
+  alias hst='helm status'                 # Release status
+  alias hdep='helm dependency'            # Dependency commands
+  alias hdepu='helm dependency update'    # Update dependencies
+  alias hdepb='helm dependency build'     # Build dependencies
 fi
 
-# ====================================
+# =============================================================================
 # KUBERNETES FUNCTIONS
-# ====================================
+# =============================================================================
+#
+# These functions provide interactive workflows, often using fzf for
+# fuzzy selection. They make common operations faster and easier.
+#
+# =============================================================================
 
-# Quick context switch with fuzzy finder
+# -----------------------------------------------------------------------------
+# kctx-switch: Interactive context switching with fzf
+# -----------------------------------------------------------------------------
+#
+# Use fzf to select and switch Kubernetes context. Falls back to
+# listing contexts if fzf is not installed.
+#
+# Usage:
+#   kctx-switch    # Opens fuzzy selector
+#
+# -----------------------------------------------------------------------------
 kctx-switch() {
   if command -v fzf &>/dev/null; then
-    local context=$(kubectl config get-contexts -o name | fzf --height 40% --prompt="Select context: ")
+    local context
+    context=$(kubectl config get-contexts -o name | fzf --height 40% --prompt="Select context: ")
     if [[ -n "$context" ]]; then
       kubectl config use-context "$context"
+      echo "✅ Switched to context: $context"
     fi
   else
+    echo "Available contexts:"
     kubectl config get-contexts
+    echo ""
+    echo "(Install fzf for interactive selection: brew install fzf)"
   fi
 }
 
-# Quick namespace switch with fuzzy finder
+# -----------------------------------------------------------------------------
+# kns-switch: Interactive namespace switching with fzf
+# -----------------------------------------------------------------------------
+#
+# Use fzf to select and switch namespace in current context.
+#
+# Usage:
+#   kns-switch     # Opens fuzzy selector
+#
+# -----------------------------------------------------------------------------
 kns-switch() {
   if command -v fzf &>/dev/null; then
-    local ns=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | fzf --height 40% --prompt="Select namespace: ")
+    local ns
+    ns=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | fzf --height 40% --prompt="Select namespace: ")
     if [[ -n "$ns" ]]; then
       kubectl config set-context --current --namespace="$ns"
-      echo "Switched to namespace: $ns"
+      echo "✅ Switched to namespace: $ns"
     fi
   else
+    echo "Available namespaces:"
     kubectl get namespaces
+    echo ""
+    echo "(Install fzf for interactive selection: brew install fzf)"
   fi
 }
 
-# Get pod by partial name with fuzzy finder
+# -----------------------------------------------------------------------------
+# kpod: Select a pod using fzf
+# -----------------------------------------------------------------------------
+#
+# Returns the name of the selected pod. Useful as a helper for other functions.
+#
+# Usage:
+#   kpod           # Returns pod name
+#   ke $(kpod)     # Exec into selected pod
+#
+# -----------------------------------------------------------------------------
 kpod() {
   if command -v fzf &>/dev/null; then
     kubectl get pods | fzf --header-lines=1 --height 40% | awk '{print $1}'
   else
-    kubectl get pods "$@"
+    echo "fzf not installed. Usage: kubectl get pods" >&2
+    kubectl get pods
+    return 1
   fi
 }
 
-# Exec into pod with fuzzy selection
+# -----------------------------------------------------------------------------
+# kexec: Exec into a pod selected with fzf
+# -----------------------------------------------------------------------------
+#
+# Select a pod interactively, then exec into it.
+#
+# Usage:
+#   kexec           # Select pod and exec with /bin/sh
+#   kexec /bin/bash # Select pod and exec with bash
+#
+# -----------------------------------------------------------------------------
 kexec() {
-  local pod=$(kpod)
+  local pod
+  pod=$(kpod)
   if [[ -n "$pod" ]]; then
     local shell="${1:-/bin/sh}"
+    echo "💻 Connecting to pod: $pod"
     kubectl exec -it "$pod" -- "$shell"
   fi
 }
 
-# Tail logs with fuzzy pod selection
+# -----------------------------------------------------------------------------
+# klogs: Tail logs from a pod selected with fzf
+# -----------------------------------------------------------------------------
+#
+# Select a pod interactively, then tail its logs.
+#
+# Usage:
+#   klogs           # Select pod and tail logs
+#   klogs -c app    # Select pod and tail specific container
+#
+# -----------------------------------------------------------------------------
 klogs() {
-  local pod=$(kpod)
+  local pod
+  pod=$(kpod)
   if [[ -n "$pod" ]]; then
+    echo "📜 Tailing logs for pod: $pod"
     kubectl logs -f --tail=100 "$pod" "$@"
   fi
 }
 
-# Describe pod with fuzzy selection
+# -----------------------------------------------------------------------------
+# kdesc: Describe a pod selected with fzf
+# -----------------------------------------------------------------------------
 kdesc() {
-  local pod=$(kpod)
+  local pod
+  pod=$(kpod)
   if [[ -n "$pod" ]]; then
     kubectl describe pod "$pod"
   fi
 }
 
-# Delete pod with fuzzy selection and confirmation
+# -----------------------------------------------------------------------------
+# kdelpod: Delete a pod with fzf selection and confirmation
+# -----------------------------------------------------------------------------
+#
+# Select a pod, confirm deletion, then delete it.
+# Useful for killing stuck pods.
+#
+# Usage:
+#   kdelpod        # Select and delete pod
+#
+# -----------------------------------------------------------------------------
 kdelpod() {
-  local pod=$(kpod)
+  local pod
+  pod=$(kpod)
   if [[ -n "$pod" ]]; then
-    echo "Delete pod: $pod? (y/n)"
+    echo "⚠️  Delete pod: $pod? (y/n)"
     read -q confirm
     echo ""
     if [[ "$confirm" == "y" ]]; then
       kubectl delete pod "$pod"
+      echo "✅ Deleted pod: $pod"
+    else
+      echo "❌ Cancelled"
     fi
   fi
 }
 
-# Watch pods in current namespace
+# -----------------------------------------------------------------------------
+# kwatch: Watch pods in real-time
+# -----------------------------------------------------------------------------
+#
+# Continuously update pod status every 2 seconds.
+# Optionally filter by label selector.
+#
+# Usage:
+#   kwatch              # Watch all pods
+#   kwatch app=nginx    # Watch pods with label app=nginx
+#
+# -----------------------------------------------------------------------------
 kwatch() {
   local selector="${1:-}"
   if [[ -n "$selector" ]]; then
@@ -216,46 +364,94 @@ kwatch() {
   fi
 }
 
-# Get all resources in a namespace
+# -----------------------------------------------------------------------------
+# kall: List all resources in a namespace
+# -----------------------------------------------------------------------------
+#
+# Shows a comprehensive view of resources in a namespace.
+# Useful for understanding what's deployed.
+#
+# Usage:
+#   kall            # Current namespace
+#   kall production # Specific namespace
+#
+# -----------------------------------------------------------------------------
 kall() {
   local ns="${1:-$(kubectl config view --minify --output 'jsonpath={..namespace}')}"
-  echo "Resources in namespace: $ns"
-  echo "========================="
+  ns="${ns:-default}"  # Fallback to default if empty
+  
+  echo "📊 Resources in namespace: $ns"
+  echo "============================================="
+  
   for resource in pods deployments services configmaps secrets ingress pvc jobs cronjobs; do
-    echo "\n--- $resource ---"
+    echo ""
+    echo "--- $resource ---"
     kubectl get "$resource" -n "$ns" 2>/dev/null || echo "None"
   done
 }
 
-# Debug pod - create a debug container
+# -----------------------------------------------------------------------------
+# kdebug: Launch a debug container for troubleshooting
+# -----------------------------------------------------------------------------
+#
+# Creates a temporary pod with debugging tools (netshoot by default).
+# The pod is deleted when you exit.
+#
+# Usage:
+#   kdebug             # Use netshoot image
+#   kdebug busybox     # Use busybox image
+#
+# -----------------------------------------------------------------------------
 kdebug() {
-  local image="${1:-nicolaka/netshoot}"
+  local image="${1:-nicolaka/netshoot}"  # netshoot has tons of network tools
   local name="debug-$(date +%s)"
   
-  echo "Creating debug pod: $name with image: $image"
+  echo "🔧 Creating debug pod: $name"
+  echo "   Image: $image"
+  echo "   (Pod will be deleted when you exit)"
+  echo ""
+  
   kubectl run "$name" --rm -it --image="$image" --restart=Never -- /bin/bash
 }
 
-# Port forward with fuzzy selection
+# -----------------------------------------------------------------------------
+# kpf-select: Port forward with fzf pod selection
+# -----------------------------------------------------------------------------
+#
+# Select a pod, then port forward to it.
+#
+# Usage:
+#   kpf-select              # Forward 8080:8080
+#   kpf-select 3000 3000    # Forward 3000:3000
+#
+# -----------------------------------------------------------------------------
 kpf-select() {
-  local pod=$(kpod)
+  local pod
+  pod=$(kpod)
   if [[ -n "$pod" ]]; then
     local local_port="${1:-8080}"
     local remote_port="${2:-$local_port}"
-    echo "Port forwarding $pod: localhost:$local_port -> pod:$remote_port"
+    echo "🔗 Port forwarding: localhost:$local_port → $pod:$remote_port"
     kubectl port-forward "$pod" "$local_port:$remote_port"
   fi
 }
 
-# Get pod resource usage
-kres() {
-  echo "Pod Resource Usage:"
-  kubectl top pods --sort-by=memory 2>/dev/null || echo "Metrics server not available"
-}
-
-# Restart deployment
+# -----------------------------------------------------------------------------
+# krestart: Restart a deployment
+# -----------------------------------------------------------------------------
+#
+# Restarts all pods in a deployment by triggering a rollout.
+# Waits for the rollout to complete.
+#
+# Usage:
+#   krestart           # Select deployment with fzf
+#   krestart my-app    # Restart specific deployment
+#
+# -----------------------------------------------------------------------------
 krestart() {
   local deployment="$1"
+  
+  # Use fzf if no deployment specified
   if [[ -z "$deployment" ]]; then
     if command -v fzf &>/dev/null; then
       deployment=$(kubectl get deployments -o name | fzf --height 40% --prompt="Select deployment: " | sed 's|deployment.apps/||')
@@ -266,33 +462,97 @@ krestart() {
   fi
   
   if [[ -n "$deployment" ]]; then
-    echo "Restarting deployment: $deployment"
+    echo "🔄 Restarting deployment: $deployment"
     kubectl rollout restart deployment/"$deployment"
+    echo "⏳ Waiting for rollout to complete..."
     kubectl rollout status deployment/"$deployment"
+    echo "✅ Restart complete"
   fi
 }
 
-# Get events sorted by time
+# -----------------------------------------------------------------------------
+# kevents: Show recent cluster events
+# -----------------------------------------------------------------------------
+#
+# Shows the most recent events, sorted by timestamp.
+# Useful for debugging issues.
+#
+# Usage:
+#   kevents             # Current namespace
+#   kevents -A          # All namespaces
+#
+# -----------------------------------------------------------------------------
 kevents() {
   local ns="${1:---all-namespaces}"
   kubectl get events $ns --sort-by='.lastTimestamp' | tail -20
 }
 
-# Show cluster info summary
+# -----------------------------------------------------------------------------
+# kinfo: Show cluster summary
+# -----------------------------------------------------------------------------
+#
+# Quick overview of the current cluster configuration.
+#
+# Usage:
+#   kinfo
+#
+# -----------------------------------------------------------------------------
 kinfo() {
-  echo "Cluster Info:"
+  echo "🌐 Cluster Info"
   echo "============="
-  echo "Context: $(kubectl config current-context)"
+  echo "Context:   $(kubectl config current-context)"
   echo "Namespace: $(kubectl config view --minify --output 'jsonpath={..namespace}')"
   echo ""
-  echo "Nodes:"
+  echo "💻 Nodes:"
   kubectl get nodes
   echo ""
-  echo "Namespaces:"
+  echo "📁 Namespaces:"
   kubectl get namespaces
 }
 
-# Create namespace with resource quota
+# -----------------------------------------------------------------------------
+# ksec-view: Decode and view secret values
+# -----------------------------------------------------------------------------
+#
+# Secrets are base64 encoded. This function decodes them for viewing.
+# Use with caution in shared terminals!
+#
+# Usage:
+#   ksec-view              # Select secret with fzf
+#   ksec-view my-secret    # View specific secret
+#
+# -----------------------------------------------------------------------------
+ksec-view() {
+  local secret="$1"
+  
+  if [[ -z "$secret" ]]; then
+    if command -v fzf &>/dev/null; then
+      secret=$(kubectl get secrets -o name | fzf --height 40% --prompt="Select secret: " | sed 's|secret/||')
+    else
+      echo "Usage: ksec-view <secret-name>"
+      return 1
+    fi
+  fi
+  
+  if [[ -n "$secret" ]]; then
+    echo "🔐 Secret: $secret"
+    echo "==========="
+    # Decode each key-value pair
+    kubectl get secret "$secret" -o json | jq -r '.data | to_entries[] | "\(.key): \(.value | @base64d)"'
+  fi
+}
+
+# -----------------------------------------------------------------------------
+# kns-create: Create namespace with resource quota
+# -----------------------------------------------------------------------------
+#
+# Creates a namespace with default resource limits to prevent runaway usage.
+#
+# Usage:
+#   kns-create my-app           # Default limits
+#   kns-create my-app 8 16Gi    # 8 CPU cores, 16GB memory
+#
+# -----------------------------------------------------------------------------
 kns-create() {
   local ns="$1"
   local cpu_limit="${2:-4}"
@@ -300,11 +560,14 @@ kns-create() {
   
   if [[ -z "$ns" ]]; then
     echo "Usage: kns-create <namespace> [cpu-limit] [memory-limit]"
+    echo "  Default: 4 CPU cores, 8Gi memory"
     return 1
   fi
   
+  echo "📦 Creating namespace: $ns"
   kubectl create namespace "$ns"
   
+  echo "📏 Applying resource quota..."
   cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ResourceQuota
@@ -319,25 +582,7 @@ spec:
     limits.memory: "${mem_limit}"
 EOF
   
-  echo "Created namespace '$ns' with resource quota"
-}
-
-# Decode and view secret
-ksec-view() {
-  local secret="$1"
-  
-  if [[ -z "$secret" ]]; then
-    if command -v fzf &>/dev/null; then
-      secret=$(kubectl get secrets -o name | fzf --height 40% --prompt="Select secret: " | sed 's|secret/||')
-    else
-      echo "Usage: ksec-view <secret-name>"
-      return 1
-    fi
-  fi
-  
-  if [[ -n "$secret" ]]; then
-    echo "Secret: $secret"
-    echo "==========="
-    kubectl get secret "$secret" -o json | jq -r '.data | to_entries[] | "\(.key): \(.value | @base64d)"'
-  fi
+  echo "✅ Created namespace '$ns' with resource quota:"
+  echo "   CPU: ${cpu_limit}"
+  echo "   Memory: ${mem_limit}"
 }
