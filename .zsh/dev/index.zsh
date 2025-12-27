@@ -23,19 +23,22 @@ source_if_exists "$DEV_MODULE_DIR/php.zsh"
 source_if_exists "$DEV_MODULE_DIR/rust.zsh"
 source_if_exists "$DEV_MODULE_DIR/ruby.zsh"
 
-# Container-related tools
+# Container and orchestration tools
 source_if_exists "$DEV_MODULE_DIR/docker.zsh"
+source_if_exists "$DEV_MODULE_DIR/kubernetes.zsh"
+source_if_exists "$DEV_MODULE_DIR/argocd.zsh"
 
-# Load cloud platform tools if available
+# Infrastructure as Code
+source_if_exists "$DEV_MODULE_DIR/terraform.zsh"
+
+# Cloud platform tools
 source_if_exists "$DEV_MODULE_DIR/aws.zsh"
 source_if_exists "$DEV_MODULE_DIR/gcp.zsh"
 source_if_exists "$DEV_MODULE_DIR/azure.zsh"
 source_if_exists "$DEV_MODULE_DIR/digitalocean.zsh"
 
-# Load other tools
+# Other tools
 source_if_exists "$DEV_MODULE_DIR/database.zsh"
-source_if_exists "$DEV_MODULE_DIR/kubernetes.zsh"
-source_if_exists "$DEV_MODULE_DIR/terraform.zsh"
 source_if_exists "$DEV_MODULE_DIR/github.zsh"
 
 # Load local developer config if exists
@@ -50,14 +53,15 @@ init-project() {
   if [[ -z "$project_type" || -z "$project_name" ]]; then
     echo "Usage: init-project <type> <name> [options]"
     print -P "%F{blue}Available types:%f"
-    print -P "  %F{green}node%f     - Create a Node.js project"
-    print -P "  %F{green}python%f   - Create a Python project"
-    print -P "  %F{green}git%f      - Initialize a Git repository"
-    print -P "  %F{green}docker%f   - Create a Docker project"
-    print -P "  %F{green}php%f      - Create a PHP project"
-    print -P "  %F{green}java%f     - Create a Java project"
-    print -P "  %F{green}rust%f     - Create a Rust project"
-    print -P "  %F{green}gh%f       - Create a GitHub repository"
+    print -P "  %F{green}node%f       - Create a Node.js project"
+    print -P "  %F{green}python%f     - Create a Python project"
+    print -P "  %F{green}git%f        - Initialize a Git repository"
+    print -P "  %F{green}docker%f     - Create a Docker project"
+    print -P "  %F{green}php%f        - Create a PHP project"
+    print -P "  %F{green}java%f       - Create a Java project"
+    print -P "  %F{green}rust%f       - Create a Rust project"
+    print -P "  %F{green}terraform%f  - Create a Terraform project"
+    print -P "  %F{green}gh%f         - Create a GitHub repository"
     return 1
   fi
 
@@ -75,6 +79,9 @@ init-project() {
       dcreate "Dockerfile"
       dccompose "docker-compose.yml"
       ;;
+    terraform)
+      tf-project "$project_name" "${args[@]}"
+      ;;
     *)
       echo "Unknown project type: $project_type"
       return 1
@@ -89,10 +96,15 @@ docs() {
   if [[ -z "$project_type" ]]; then
     echo "Usage: docs <technology>"
     echo "Available documentation:"
-    echo "  node     - Node.js documentation"
-    echo "  python   - Python documentation"
-    echo "  git      - Git documentation"
-    echo "  docker   - Docker documentation"
+    echo "  node       - Node.js documentation"
+    echo "  python     - Python documentation"
+    echo "  git        - Git documentation"
+    echo "  docker     - Docker documentation"
+    echo "  k8s        - Kubernetes documentation"
+    echo "  terraform  - Terraform documentation"
+    echo "  aws        - AWS documentation"
+    echo "  argocd     - ArgoCD documentation"
+    echo "  helm       - Helm documentation"
     return 1
   fi
 
@@ -108,6 +120,21 @@ docs() {
       ;;
     docker)
       open "https://docs.docker.com/"
+      ;;
+    k8s|kubernetes)
+      open "https://kubernetes.io/docs/"
+      ;;
+    terraform|tf)
+      open "https://developer.hashicorp.com/terraform/docs"
+      ;;
+    aws)
+      open "https://docs.aws.amazon.com/"
+      ;;
+    argocd|argo)
+      open "https://argo-cd.readthedocs.io/"
+      ;;
+    helm)
+      open "https://helm.sh/docs/"
       ;;
     *)
       echo "Unknown technology: $project_type"
@@ -147,10 +174,78 @@ dev-env() {
       tmux split-window -v 'git status'
       tmux attach-session -t dev
       ;;
+    k8s|kubernetes)
+      echo "Setting up Kubernetes development environment..."
+      tmux new-session -d -s dev 'nvim .'
+      tmux split-window -h 'kubectl get pods -w'
+      tmux split-window -v 'stern .'
+      tmux attach-session -t dev
+      ;;
+    terraform)
+      echo "Setting up Terraform development environment..."
+      tmux new-session -d -s dev 'nvim .'
+      tmux split-window -h 'terraform plan'
+      tmux split-window -v 'git status'
+      tmux attach-session -t dev
+      ;;
     *)
       echo "Unknown environment type: $env_type"
-      echo "Available types: node, python"
+      echo "Available types: node, python, k8s, terraform"
       return 1
       ;;
   esac
+}
+
+# Quick status check for DevOps tools
+devops-status() {
+  echo "DevOps Tools Status"
+  echo "==================="
+  
+  # Kubernetes
+  if command -v kubectl &>/dev/null; then
+    echo -n "Kubernetes: "
+    kubectl config current-context 2>/dev/null || echo "not configured"
+  else
+    echo "Kubernetes: not installed"
+  fi
+  
+  # Terraform
+  if command -v terraform &>/dev/null; then
+    echo -n "Terraform: "
+    terraform version | head -1
+  else
+    echo "Terraform: not installed"
+  fi
+  
+  # AWS
+  if command -v aws &>/dev/null; then
+    echo -n "AWS: "
+    aws sts get-caller-identity --query 'Account' --output text 2>/dev/null || echo "not authenticated"
+  else
+    echo "AWS: not installed"
+  fi
+  
+  # ArgoCD
+  if command -v argocd &>/dev/null; then
+    echo -n "ArgoCD: "
+    argocd version --client --short 2>/dev/null || echo "installed"
+  else
+    echo "ArgoCD: not installed"
+  fi
+  
+  # Helm
+  if command -v helm &>/dev/null; then
+    echo -n "Helm: "
+    helm version --short 2>/dev/null
+  else
+    echo "Helm: not installed"
+  fi
+  
+  # Docker
+  if command -v docker &>/dev/null; then
+    echo -n "Docker: "
+    docker version --format '{{.Server.Version}}' 2>/dev/null || echo "not running"
+  else
+    echo "Docker: not installed"
+  fi
 }
