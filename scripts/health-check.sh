@@ -50,8 +50,9 @@ info() {
 check_command() {
     local cmd="$1"
     local name="${2:-$1}"
+    local version
     if command -v "$cmd" &>/dev/null; then
-        local version=$("$cmd" --version 2>/dev/null | head -1 || echo "installed")
+        version=$("$cmd" --version 2>/dev/null | head -1 || echo "installed")
         pass "$name: $version"
         return 0
     else

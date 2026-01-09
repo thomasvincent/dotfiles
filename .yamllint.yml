@@ -15,19 +15,19 @@ rules:
     max: 120
     allow-non-breakable-words: true
     allow-non-breakable-inline-mappings: true
-  
+
   # Allow multiple documents in one file
   document-start: disable
-  
+
   # Consistent indentation
   indentation:
     spaces: 2
     indent-sequences: consistent
-  
+
   # Truthy values
   truthy:
     allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
-  
+
   # Comments
   comments:
     min-spaces-from-content: 1

@@ -156,7 +156,7 @@ jobs:
             FAILED=1
           fi
         done
-        
+
         if [[ $FAILED -eq 0 ]]; then
           echo "✅ All templates verified successfully!"
         else

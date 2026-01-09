@@ -52,10 +52,10 @@ for item in "${FILES_TO_BACKUP[@]}"; do
         # Get relative path for backup
         relative_path="${item#$HOME/}"
         backup_path="$BACKUP_DIR/$relative_path"
-        
+
         # Create parent directory if needed
         mkdir -p "$(dirname "$backup_path")"
-        
+
         # Copy file or directory
         if [[ -d "$item" ]]; then
             cp -R "$item" "$backup_path"

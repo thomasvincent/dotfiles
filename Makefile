@@ -216,10 +216,10 @@ test:
 	chmod +x $$TMP_SCRIPT; \
 	zsh $$TMP_SCRIPT $$TMP_ERR; \
 	if [ -s $$TMP_ERR ]; then \
-		$(call print_error,Errors detected during startup:); \
+		echo -e "$(RED)❌ Errors detected during startup:$(RESET)"; \
 		cat $$TMP_ERR; \
 	else \
-		$(call print_success,No errors detected during shell startup!); \
+		echo -e "$(GREEN)✅ No errors detected during shell startup!$(RESET)"; \
 	fi; \
 	rm -f $$TMP_SCRIPT $$TMP_ERR
 
