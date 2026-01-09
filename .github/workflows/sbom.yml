@@ -1,0 +1,82 @@
+# =============================================================================
+# SBOM Generation Workflow
+# =============================================================================
+#
+# Generates Software Bill of Materials (SBOM) in CycloneDX and SPDX formats.
+# Runs on:
+#   - Every push to main (uploads as artifacts)
+#   - Every release (attaches to release)
+#
+# =============================================================================
+
+name: SBOM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Brewfile*'
+      - 'scripts/generate-sbom.sh'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate CycloneDX SBOM
+        run: |
+          chmod +x scripts/generate-sbom.sh
+          ./scripts/generate-sbom.sh -f cyclonedx -o sbom-cyclonedx.json
+
+      - name: Generate SPDX SBOM
+        run: |
+          ./scripts/generate-sbom.sh -f spdx -o sbom-spdx.json
+
+      - name: Validate CycloneDX SBOM
+        uses: CycloneDX/gh-action-validate-sbom@v1
+        with:
+          input-file: sbom-cyclonedx.json
+          fail-on-error: true
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            sbom-cyclonedx.json
+            sbom-spdx.json
+          retention-days: 90
+
+      - name: Attach SBOM to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            sbom-cyclonedx.json
+            sbom-spdx.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## SBOM Generation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### CycloneDX SBOM" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          head -30 sbom-cyclonedx.json >> $GITHUB_STEP_SUMMARY
+          echo "..." >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Package Count" >> $GITHUB_STEP_SUMMARY
+          echo "- **Components:** $(jq '.components | length' sbom-cyclonedx.json)" >> $GITHUB_STEP_SUMMARY

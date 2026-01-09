@@ -66,6 +66,7 @@ help:
 	@echo -e "  $(YELLOW)brew-install$(RESET)  - Install Homebrew packages"
 	@echo -e "  $(YELLOW)test$(RESET)          - Test shell startup"
 	@echo -e "  $(YELLOW)lint$(RESET)          - Run linters"
+	@echo -e "  $(YELLOW)sbom$(RESET)          - Generate SBOM (CycloneDX + SPDX)"
 	@echo -e "  $(YELLOW)clean$(RESET)         - Clean temporary files"
 
 .PHONY: install
@@ -297,6 +298,21 @@ productivity-setup:
 		sudo apt-get install -y libnotify-bin; \
 	fi
 	$(call print_success,Productivity tools setup complete)
+
+.PHONY: sbom
+sbom:
+	$(call print_header,Generating Software Bill of Materials)
+	@if [ -f "$(DOTFILES_DIR)/scripts/generate-sbom.sh" ]; then \
+		chmod +x "$(DOTFILES_DIR)/scripts/generate-sbom.sh"; \
+		echo "Generating CycloneDX SBOM..."; \
+		"$(DOTFILES_DIR)/scripts/generate-sbom.sh" -f cyclonedx -o "$(DOTFILES_DIR)/sbom-cyclonedx.json"; \
+		echo "Generating SPDX SBOM..."; \
+		"$(DOTFILES_DIR)/scripts/generate-sbom.sh" -f spdx -o "$(DOTFILES_DIR)/sbom-spdx.json"; \
+		$(call print_success,SBOM files generated); \
+	else \
+		$(call print_error,SBOM generation script not found); \
+		exit 1; \
+	fi
 
 .PHONY: clean
 clean:
