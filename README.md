@@ -6,24 +6,22 @@
 [![Shell: Zsh](https://img.shields.io/badge/Shell-Zsh-green)](https://www.zsh.org/)
 [![Platform: macOS](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux-lightgrey)]()
 
-> 🚀 Production-ready dotfiles for DevOps engineers, optimized for macOS with Terraform, Kubernetes, AWS, and GitOps workflows.
+> Production-ready dotfiles for DevOps engineers, optimized for macOS with Chezmoi-based management.
 
 ---
 
-## ✨ Features
+## Features
 
 | Category | Highlights |
 |----------|------------|
-| **DevOps Tooling** | Terraform, Kubernetes, Helm, ArgoCD, AWS CLI |
-| **Shell** | Zsh + Powerlevel10k with <500ms startup |
 | **Package Management** | Homebrew with organized Brewfiles |
-| **Productivity** | GTD workflows, task management, note-taking |
-| **Security** | GPG signing, SSH agent, 1Password integration |
-| **CI/CD** | GitHub Actions, Jenkins pipelines |
+| **Dotfiles Management** | Chezmoi templates with conditional features |
+| **Security** | GPG signing, SSH agent integration |
+| **CI/CD** | GitHub Actions, pre-commit hooks |
 
 ---
 
-## 📦 Quick Install
+## Quick Install
 
 ```bash
 sh -c "$(curl -fsLS https://raw.githubusercontent.com/thomasvincent/dotfiles/main/install.sh)"
@@ -35,71 +33,32 @@ Or with chezmoi directly:
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply thomasvincent
 ```
 
-📖 **[Full Installation Guide](docs/INSTALLATION.md)**
-
 ---
 
-## 🛠️ DevOps Highlights
-
-### Terraform
-
-```bash
-tf-project myinfra aws    # Scaffold new project
-tf-check                   # Run tflint + tfsec + checkov
-tf-cost prod               # Estimate costs with Infracost
-```
-
-### Kubernetes
-
-```bash
-kexec                      # Fuzzy pod selection → exec
-klogs                      # Fuzzy pod selection → logs  
-ksec-view                  # Decode and view secrets
-devops-status              # Check all tool status
-```
-
-### AWS
-
-```bash
-aws-profile                # Fuzzy profile switching
-ec2-ssm                    # SSM into instance
-eks-config                 # Update kubeconfig for cluster
-```
-
-📖 **[Complete DevOps Reference](docs/DEVOPS.md)**
-
----
-
-## 📁 Structure
+## Structure
 
 ```
 dotfiles/
-├── .zsh/                    # Zsh configuration modules
-│   ├── dev/                 # Developer tool configs
-│   │   ├── terraform.zsh    # Terraform workflows
-│   │   ├── kubernetes.zsh   # K8s + Helm aliases
-│   │   ├── aws.zsh          # AWS CLI shortcuts
-│   │   ├── argocd.zsh       # GitOps workflows
-│   │   └── ...              # More tool modules
-│   ├── aliases.zsh          # Shell aliases
-│   ├── completions.zsh      # Tab completions
-│   └── ...                  # More modules
-├── docs/                    # Documentation
-│   ├── INSTALLATION.md      # Setup guide
-│   ├── DEVOPS.md            # DevOps reference
-│   ├── WORKFLOWS.md         # Dev workflows
-│   ├── GTD.md               # GTD integration
-│   └── CUSTOMIZATION.md     # Personalization
+├── home/                    # Chezmoi source directory
+│   ├── dot_zshrc.tmpl       # Zsh configuration template
+│   ├── dot_zshenv.tmpl      # Environment variables template
+│   └── dot_zsh/             # Zsh module templates
+├── scripts/                 # Utility scripts
+│   ├── health-check.sh      # Verify installation
+│   ├── backup-dotfiles.sh   # Create backups
+│   └── macos-defaults.sh    # macOS system preferences
 ├── tests/                   # Test suite
 ├── Brewfile                 # Core packages
-├── Brewfile.dev             # Dev tools
+├── Brewfile.dev             # Development tools
+├── Brewfile.devops          # DevOps tools
+├── chezmoi.toml             # Chezmoi configuration
 ├── Makefile                 # Automation commands
 └── install.sh               # One-line installer
 ```
 
 ---
 
-## 🎯 Make Commands
+## Make Commands
 
 ```bash
 make help              # Show all commands
@@ -109,50 +68,59 @@ make dev-setup         # Set up dev environment
 make cloud-setup       # Configure cloud tools
 make test              # Test shell startup
 make lint              # Run linters
+make backup            # Backup existing dotfiles
 ```
 
 ---
 
-## 📚 Documentation
+## Configuration
 
-| Guide | Description |
-|-------|-------------|
-| [📥 Installation](docs/INSTALLATION.md) | Setup and configuration |
-| [🛠️ DevOps Tools](docs/DEVOPS.md) | Terraform, K8s, AWS, ArgoCD |
-| [⚙️ Workflows](docs/WORKFLOWS.md) | Development workflows |
-| [📝 GTD](docs/GTD.md) | Getting Things Done integration |
-| [🎨 Customization](docs/CUSTOMIZATION.md) | Personalization guide |
-| [🗓️ Changelog](CHANGELOG.md) | Version history |
-
----
-
-## 🔧 Customization
-
-Machine-specific settings go in `~/.zsh/local.zsh` (not committed):
+Chezmoi uses `chezmoi.toml` for configuration. Edit with:
 
 ```bash
-# Copy the example
-cp ~/.zsh/dev/local.zsh.example ~/.zsh/local.zsh
-
-# Add your customizations
-vim ~/.zsh/local.zsh
+chezmoi edit-config
 ```
 
-📖 **[Full Customization Guide](docs/CUSTOMIZATION.md)**
+Key settings:
+
+```toml
+[data]
+    name = "Your Name"
+    email = "your.email@example.com"
+    github_username = "yourusername"
+
+[data.cloud]
+    aws = true
+    gcp = false
+
+[data.security]
+    gpg_signing = true
+    use_ssh_agent = true
+```
 
 ---
 
-## 🤝 Contributing
+## Updating
+
+```bash
+# Update dotfiles
+chezmoi update
+
+# Or via make
+make update
+```
+
+---
+
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Run `make lint` before committing
 4. Submit a pull request
 
-See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details.
-
 ---
 
-## 📄 License
+## License
 
 [MIT](LICENSE) © Thomas Vincent

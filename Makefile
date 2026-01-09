@@ -21,7 +21,7 @@ endif
 
 # Directories
 HOME_DIR := $(HOME)
-DOTFILES_DIR := $(HOME)/dotfiles
+DOTFILES_DIR := $(shell pwd)
 BACKUP_DIR := $(HOME)/dotfiles_backup_$(shell date +%Y%m%d_%H%M%S)
 CONFIG_DIR := $(HOME)/.config
 ZSH_DIR := $(HOME)/.zsh
@@ -66,8 +66,6 @@ help:
 	@echo -e "  $(YELLOW)brew-install$(RESET)  - Install Homebrew packages"
 	@echo -e "  $(YELLOW)test$(RESET)          - Test shell startup"
 	@echo -e "  $(YELLOW)lint$(RESET)          - Run linters"
-	@echo -e "  $(YELLOW)migrate$(RESET)       - Migrate to chezmoi"
-	@echo -e "  $(YELLOW)functions$(RESET)     - Create placeholder function files"
 	@echo -e "  $(YELLOW)clean$(RESET)         - Clean temporary files"
 
 .PHONY: install
@@ -249,31 +247,6 @@ lint:
 	fi
 	$(call print_success,Linting complete)
 
-.PHONY: migrate
-migrate:
-	$(call print_header,Migrating to chezmoi)
-	@if [ -f "$(DOTFILES_DIR)/migrate-to-chezmoi.sh" ]; then \
-		bash "$(DOTFILES_DIR)/migrate-to-chezmoi.sh"; \
-	else \
-		$(call print_error,Migration script not found); \
-		exit 1; \
-	fi
-
-.PHONY: functions
-functions:
-	$(call print_header,Creating placeholder function files)
-	@mkdir -p "$(DOTFILES_DIR)/.zsh/functions.d"
-	@for func in 400_dev.zsh 500_cloud.zsh 600_containers.zsh 700_network.zsh 800_security.zsh 900_misc.zsh; do \
-		if [ ! -f "$(DOTFILES_DIR)/.zsh/functions.d/$$func" ]; then \
-			echo "Creating $$func..."; \
-			echo "#!/usr/bin/env zsh" > "$(DOTFILES_DIR)/.zsh/functions.d/$$func"; \
-			echo "# $$func - Function file for dotfiles" >> "$(DOTFILES_DIR)/.zsh/functions.d/$$func"; \
-			echo "# This is a placeholder file to prevent errors during shell startup" >> "$(DOTFILES_DIR)/.zsh/functions.d/$$func"; \
-			chmod +x "$(DOTFILES_DIR)/.zsh/functions.d/$$func"; \
-		fi; \
-	done
-	$(call print_success,Function files created)
-
 .PHONY: workflow-setup
 workflow-setup:
 	$(call print_header,Setting up workflow automation)
@@ -305,11 +278,6 @@ workflow-setup:
 			sudo dnf install -y tmux; \
 		fi; \
 	fi
-	@echo "Linking workflow functions..."
-	@mkdir -p "$(ZSH_DIR)"
-	@if [ -f "$(DOTFILES_DIR)/home/dot_zsh/workflows.zsh.tmpl" ]; then \
-		cp "$(DOTFILES_DIR)/home/dot_zsh/workflows.zsh.tmpl" "$(ZSH_DIR)/workflows.zsh"; \
-	fi
 	$(call print_success,Workflow automation setup complete)
 
 .PHONY: productivity-setup
@@ -318,11 +286,6 @@ productivity-setup:
 	@mkdir -p "$(HOME)/.tasks"
 	@mkdir -p "$(HOME)/.notes/meetings"
 	@mkdir -p "$(HOME)/.timetrack"
-	@echo "Linking productivity functions..."
-	@mkdir -p "$(ZSH_DIR)"
-	@if [ -f "$(DOTFILES_DIR)/home/dot_zsh/productivity.zsh.tmpl" ]; then \
-		cp "$(DOTFILES_DIR)/home/dot_zsh/productivity.zsh.tmpl" "$(ZSH_DIR)/productivity.zsh"; \
-	fi
 	@if [ "$(PLATFORM)" = "macos" ]; then \
 		echo "Creating a small helper for macOS notifications..."; \
 		mkdir -p "$(LOCAL_BIN_DIR)"; \

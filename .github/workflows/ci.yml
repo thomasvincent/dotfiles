@@ -82,13 +82,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y zsh
 
-    - name: Prepare test environment
-      run: |
-        # Create minimal directory structure for testing
-        mkdir -p .zsh/dev
-        mkdir -p .zsh/functions.d
-        touch .zshrc
-
     - name: Run shell startup test
       run: |
         if [[ -f "tests/test_shell_startup.sh" ]]; then
@@ -112,13 +105,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-
-    - name: Prepare test environment
-      run: |
-        # Create minimal directory structure for testing
-        mkdir -p .zsh/dev
-        mkdir -p .zsh/functions.d
-        touch .zshrc
 
     - name: Run shell startup test
       run: |
@@ -149,22 +135,13 @@ jobs:
         sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $(pwd)/bin
         echo "$(pwd)/bin" >> $GITHUB_PATH
 
-    - name: Create dummy config for template testing
+    - name: Use actual chezmoi config for template testing
       run: |
         mkdir -p .config
-        # Provide minimal data that templates might expect
-        cat > .config/chezmoi.json << 'EOF'
-        {
-          "data": {
-            "name": "Test User",
-            "email": "test@example.com",
-            "preferences": {
-              "editor": "vim",
-              "projects_dir": "/tmp/projects"
-            }
-          }
-        }
-        EOF
+        # Convert chezmoi.toml to JSON format for template testing
+        if [[ -f "chezmoi.toml" ]]; then
+          cp chezmoi.toml .config/chezmoi.toml
+        fi
 
     - name: Verify all templates
       run: |
@@ -172,7 +149,7 @@ jobs:
         FAILED=0
         for template in $(find . -name "*.tmpl" -type f 2>/dev/null); do
           echo "Verifying $template..."
-          if chezmoi execute-template --config=.config/chezmoi.json < "$template" > /dev/null 2>&1; then
+          if chezmoi execute-template --config=.config/chezmoi.toml < "$template" > /dev/null 2>&1; then
             echo "  ✓ OK"
           else
             echo "  ✗ FAILED"
