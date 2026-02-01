@@ -1,0 +1,29 @@
+# bat configuration
+# A cat clone with syntax highlighting
+
+# Set the theme
+--theme="Catppuccin Mocha"
+
+# Show line numbers
+--style="numbers,changes,header,grid"
+
+# Use italic text
+--italic-text=always
+
+# Set tab width
+--tabs=4
+
+# Enable paging for long files
+--paging=auto
+
+# Set pager
+--pager="less -FR"
+
+# Map extensions to languages
+--map-syntax "*.conf:INI"
+--map-syntax ".gitignore:Git Ignore"
+--map-syntax "*.dockerfile:Dockerfile"
+--map-syntax ".env*:DotENV"
+--map-syntax "Brewfile:Ruby"
+--map-syntax "Makefile*:Makefile"
+--map-syntax "*.tmpl:Go HTML Template"

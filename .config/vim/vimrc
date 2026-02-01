@@ -1,0 +1,65 @@
+" Vim configuration
+" Modern defaults for development
+
+" General settings
+set nocompatible
+set encoding=utf-8
+set fileencoding=utf-8
+set termencoding=utf-8
+
+" UI settings
+set number
+set relativenumber
+set cursorline
+set showmatch
+set showcmd
+set wildmenu
+set laststatus=2
+
+" Search settings
+set hlsearch
+set incsearch
+set ignorecase
+set smartcase
+
+" Indentation
+set autoindent
+set smartindent
+set expandtab
+set tabstop=4
+set shiftwidth=4
+set softtabstop=4
+
+" File handling
+set hidden
+set autoread
+set nobackup
+set nowritebackup
+set noswapfile
+
+" Performance
+set lazyredraw
+set ttyfast
+
+" Enable syntax highlighting
+syntax enable
+filetype plugin indent on
+
+" Better backspace
+set backspace=indent,eol,start
+
+" Split behavior
+set splitbelow
+set splitright
+
+" Clipboard
+set clipboard=unnamed
+
+" Key mappings
+let mapleader = " "
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l

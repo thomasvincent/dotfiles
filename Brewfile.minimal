@@ -1,0 +1,37 @@
+# Brewfile.minimal - Essential tools for quick setup
+# Use: brew bundle --file=Brewfile.minimal
+#
+# This is a minimal set of tools for a fast, lightweight setup.
+# For full development environment, use the main Brewfile instead.
+
+# Taps
+tap "homebrew/bundle"
+
+# Core shell tools
+brew "zsh"                    # Modern shell
+brew "git"                    # Version control
+brew "gh"                     # GitHub CLI
+
+# Essential utilities
+brew "fzf"                    # Fuzzy finder
+brew "ripgrep"                # Fast search (rg)
+brew "fd"                     # Fast find
+brew "bat"                    # Better cat
+brew "eza"                    # Better ls (exa replacement)
+brew "jq"                     # JSON processor
+brew "yq"                     # YAML processor
+
+# Navigation
+brew "zoxide"                 # Smart cd
+brew "tree"                   # Directory tree
+
+# Editor
+brew "neovim"                 # Modern vim
+
+# Dotfiles management
+brew "chezmoi"                # Dotfiles manager
+
+# Optional but recommended
+brew "starship"               # Cross-shell prompt
+brew "atuin"                  # Shell history sync
+brew "direnv"                 # Directory environments

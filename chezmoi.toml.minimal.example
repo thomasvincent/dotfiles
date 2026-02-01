@@ -1,0 +1,62 @@
+# chezmoi.toml.minimal.example
+# Minimal configuration for quick setup or temporary machines
+#
+# Copy this to ~/.config/chezmoi/chezmoi.toml and customize
+
+[data]
+  # User information
+  name = "Your Name"
+  email = "you@email.com"
+  github_username = "your-github"
+
+  # Platform
+  macos = true
+  linux = false
+
+  # Feature toggles - minimal
+  enable_cloud = false
+  enable_containers = false
+  enable_kubernetes = false
+  enable_dev_tools = true
+  enable_editors = true
+  enable_extras = false
+  enable_workflows = false
+  enable_productivity = false
+  minimal = true                 # Key flag for minimal setup
+
+  # Workflow toggles - all disabled
+  enable_wordpress = false
+  enable_chef = false
+  enable_puppet = false
+  enable_gtd = false
+  enable_macos_gtd = false
+  enable_google_gtd = false
+  enable_microsoft_gtd = false
+
+  # Cloud providers - none
+  aws = false
+  azure = false
+  gcp = false
+  digitalocean = false
+  oracle = false
+  linode = false
+
+  # Preferences
+  editor = "vim"
+  terminal = "default"
+  shell_prompt = "starship"
+  color_scheme = "auto"
+
+  # Directories
+  projects_dir = "$HOME/Projects"
+  task_dir = ""
+  notes_dir = ""
+  gtd_inbox_file = ""
+  time_track_dir = ""
+
+  # Security - basic
+  gpg_signing = false
+  use_ssh_agent = true
+  use_keychain = true
+  use_1password = false
+  use_yubikey = false
