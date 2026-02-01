@@ -1,0 +1,63 @@
+# chezmoi.toml.personal.example
+# Configuration for personal development environment
+#
+# Copy this to ~/.config/chezmoi/chezmoi.toml and customize
+
+[data]
+  # User information
+  name = "Your Name"
+  email = "you@personal-email.com"
+  github_username = "your-github"
+
+  # Platform
+  macos = true
+  linux = false
+
+  # Feature toggles - full personal setup
+  enable_cloud = true
+  enable_containers = true
+  enable_kubernetes = true
+  enable_dev_tools = true
+  enable_editors = true
+  enable_extras = true           # Personal apps
+  enable_workflows = true
+  enable_productivity = true
+  minimal = false
+
+  # Workflow toggles
+  enable_wordpress = true
+  enable_chef = true
+  enable_puppet = true
+  enable_gtd = true
+  enable_macos_gtd = true        # Apple ecosystem
+  enable_google_gtd = true
+  enable_microsoft_gtd = false
+  enable_omnifocus = true        # Personal GTD app
+
+  # Cloud providers - personal projects
+  aws = true
+  azure = false
+  gcp = true
+  digitalocean = true
+  oracle = false
+  linode = true
+
+  # Preferences
+  editor = "neovim"              # Or "vscode"
+  terminal = "alacritty"
+  shell_prompt = "starship"      # Or "powerlevel10k"
+  color_scheme = "dark"
+
+  # Directories
+  projects_dir = "$HOME/Developer"
+  task_dir = "$HOME/.tasks"
+  notes_dir = "$HOME/.notes"
+  gtd_inbox_file = "$HOME/.gtd/inbox.md"
+  time_track_dir = "$HOME/.timetrack"
+
+  # Security - personal settings
+  gpg_signing = true
+  use_ssh_agent = true
+  use_keychain = true
+  use_1password = true           # Personal password manager
+  use_yubikey = true             # Hardware key

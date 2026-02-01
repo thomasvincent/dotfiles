@@ -1,0 +1,66 @@
+# chezmoi.toml.work.example
+# Configuration for work/corporate environment
+#
+# Copy this to ~/.config/chezmoi/chezmoi.toml and customize
+
+[data]
+  # User information
+  name = "Your Name"
+  email = "your.name@company.com"
+  github_username = "your-work-github"
+
+  # Platform
+  macos = true
+  linux = false
+
+  # Feature toggles - work focused
+  enable_cloud = true
+  enable_containers = true
+  enable_kubernetes = true
+  enable_dev_tools = true
+  enable_editors = true
+  enable_extras = false
+  enable_workflows = true
+  enable_productivity = true
+  minimal = false
+
+  # Workflow toggles
+  enable_wordpress = false
+  enable_chef = false
+  enable_puppet = false
+  enable_gtd = true
+  enable_macos_gtd = false
+  enable_google_gtd = false
+  enable_microsoft_gtd = true    # Use Microsoft 365 at work
+
+  # Cloud providers - adjust for your company
+  aws = true
+  azure = true                   # Common in enterprise
+  gcp = false
+  digitalocean = false
+  oracle = false
+  linode = false
+
+  # Preferences
+  editor = "vscode"
+  terminal = "iterm2"
+  shell_prompt = "powerlevel10k"
+  color_scheme = "dark"
+
+  # Directories
+  projects_dir = "$HOME/Work"
+  task_dir = "$HOME/.tasks"
+  notes_dir = "$HOME/.notes"
+  gtd_inbox_file = "$HOME/.gtd/inbox.md"
+  time_track_dir = "$HOME/.timetrack"
+
+  # Security - work settings
+  gpg_signing = true
+  use_ssh_agent = true
+  use_keychain = true
+  use_1password = false
+  use_yubikey = false            # Enable if company provides
+
+  # Work-specific
+  corporate_proxy = ""           # Set if behind proxy
+  use_corporate_certs = false
