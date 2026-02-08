@@ -27,62 +27,62 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 pass() {
-    echo -e "${GREEN}✓${NC} $1"
-    ((PASSED++))
+  echo -e "${GREEN}✓${NC} $1"
+  ((PASSED++))
 }
 
 fail() {
-    echo -e "${RED}✗${NC} $1"
-    ((FAILED++))
+  echo -e "${RED}✗${NC} $1"
+  ((FAILED++))
 }
 
 warn() {
-    echo -e "${YELLOW}!${NC} $1"
-    ((WARNINGS++))
+  echo -e "${YELLOW}!${NC} $1"
+  ((WARNINGS++))
 }
 
 info() {
-    if [[ "$VERBOSE" == "--verbose" ]]; then
-        echo -e "${BLUE}ℹ${NC} $1"
-    fi
+  if [[ "$VERBOSE" == "--verbose" ]]; then
+    echo -e "${BLUE}ℹ${NC} $1"
+  fi
 }
 
 check_command() {
-    local cmd="$1"
-    local name="${2:-$1}"
-    local version
-    if command -v "$cmd" &>/dev/null; then
-        version=$("$cmd" --version 2>/dev/null | head -1 || echo "installed")
-        pass "$name: $version"
-        return 0
-    else
-        fail "$name: not found"
-        return 1
-    fi
+  local cmd="$1"
+  local name="${2:-$1}"
+  local version
+  if command -v "$cmd" &>/dev/null; then
+    version=$("$cmd" --version 2>/dev/null | head -1 || echo "installed")
+    pass "$name: $version"
+    return 0
+  else
+    fail "$name: not found"
+    return 1
+  fi
 }
 
 check_file() {
-    local file="$1"
-    local desc="$2"
-    if [[ -f "$file" ]]; then
-        pass "$desc exists"
-        return 0
-    else
-        fail "$desc missing: $file"
-        return 1
-    fi
+  local file="$1"
+  local desc="$2"
+  if [[ -f "$file" ]]; then
+    pass "$desc exists"
+    return 0
+  else
+    fail "$desc missing: $file"
+    return 1
+  fi
 }
 
 check_dir() {
-    local dir="$1"
-    local desc="$2"
-    if [[ -d "$dir" ]]; then
-        pass "$desc exists"
-        return 0
-    else
-        warn "$desc missing: $dir"
-        return 1
-    fi
+  local dir="$1"
+  local desc="$2"
+  if [[ -d "$dir" ]]; then
+    pass "$desc exists"
+    return 0
+  else
+    warn "$desc missing: $dir"
+    return 1
+  fi
 }
 
 echo -e "${BLUE}======================================${NC}"
@@ -105,9 +105,9 @@ check_dir ~/.zsh/dev "dev modules directory"
 echo ""
 echo "Testing shell startup..."
 if zsh -i -c 'exit 0' 2>/dev/null; then
-    pass "Shell starts without errors"
+  pass "Shell starts without errors"
 else
-    fail "Shell startup has errors"
+  fail "Shell startup has errors"
 fi
 
 echo ""
@@ -124,7 +124,7 @@ check_command curl "curl"
 check_command wget "wget"
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    check_command brew "Homebrew"
+  check_command brew "Homebrew"
 fi
 
 echo ""
@@ -171,15 +171,15 @@ echo "-----------------"
 check_file ~/.gitconfig ".gitconfig"
 
 if git config user.name &>/dev/null; then
-    pass "Git user.name: $(git config user.name)"
+  pass "Git user.name: $(git config user.name)"
 else
-    warn "Git user.name not set"
+  warn "Git user.name not set"
 fi
 
 if git config user.email &>/dev/null; then
-    pass "Git user.email: $(git config user.email)"
+  pass "Git user.email: $(git config user.email)"
 else
-    warn "Git user.email not set"
+  warn "Git user.email not set"
 fi
 
 echo ""
@@ -193,15 +193,15 @@ echo "-----------------"
 check_dir ~/.ssh "SSH directory"
 
 if [[ -f ~/.ssh/id_ed25519 ]] || [[ -f ~/.ssh/id_rsa ]]; then
-    pass "SSH key exists"
+  pass "SSH key exists"
 else
-    warn "No SSH key found (id_ed25519 or id_rsa)"
+  warn "No SSH key found (id_ed25519 or id_rsa)"
 fi
 
 if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
-    pass "GitHub SSH authentication works"
+  pass "GitHub SSH authentication works"
 else
-    warn "GitHub SSH authentication not verified"
+  warn "GitHub SSH authentication not verified"
 fi
 
 echo ""
@@ -213,14 +213,14 @@ echo -e "${BLUE}Kubernetes Configuration${NC}"
 echo "------------------------"
 
 if [[ -f ~/.kube/config ]]; then
-    pass "kubeconfig exists"
-    if kubectl config current-context &>/dev/null; then
-        pass "Current context: $(kubectl config current-context)"
-    else
-        warn "No current context set"
-    fi
+  pass "kubeconfig exists"
+  if kubectl config current-context &>/dev/null; then
+    pass "Current context: $(kubectl config current-context)"
+  else
+    warn "No current context set"
+  fi
 else
-    info "kubeconfig not found (optional)"
+  info "kubeconfig not found (optional)"
 fi
 
 echo ""
@@ -232,15 +232,15 @@ echo -e "${BLUE}AWS Configuration${NC}"
 echo "-----------------"
 
 if [[ -f ~/.aws/config ]]; then
-    pass "AWS config exists"
+  pass "AWS config exists"
 else
-    info "AWS config not found (optional)"
+  info "AWS config not found (optional)"
 fi
 
 if [[ -f ~/.aws/credentials ]] || [[ -n "$AWS_PROFILE" ]]; then
-    pass "AWS credentials configured"
+  pass "AWS credentials configured"
 else
-    info "AWS credentials not found (optional)"
+  info "AWS credentials not found (optional)"
 fi
 
 echo ""
@@ -258,9 +258,9 @@ echo -e "${YELLOW}Warnings:${NC} $WARNINGS"
 echo ""
 
 if [[ $FAILED -eq 0 ]]; then
-    echo -e "${GREEN}✓ All critical checks passed!${NC}"
-    exit 0
+  echo -e "${GREEN}✓ All critical checks passed!${NC}"
+  exit 0
 else
-    echo -e "${RED}✗ Some checks failed. Please review above.${NC}"
-    exit 1
+  echo -e "${RED}✗ Some checks failed. Please review above.${NC}"
+  exit 1
 fi

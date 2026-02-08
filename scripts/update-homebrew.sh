@@ -2,7 +2,7 @@
 # Script to install/update Homebrew and packages from Brewfile
 # Run this script to keep your system up to date
 
-set -e  # Exit on error
+set -e # Exit on error
 
 DOTFILES_DIR="$HOME/dotfiles"
 BREWFILE="$DOTFILES_DIR/Brewfile"

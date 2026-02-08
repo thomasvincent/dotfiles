@@ -26,7 +26,11 @@ osascript -e 'tell application "System Preferences" to quit' 2>/dev/null || true
 sudo -v
 
 # Keep sudo alive during script execution
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+while true; do
+  sudo -n true
+  sleep 60
+  kill -0 "$$" || exit
+done 2>/dev/null &
 
 # =============================================================================
 # GENERAL UI/UX
@@ -133,9 +137,9 @@ sudo chflags nohidden /Volumes
 
 # Expand File Info panes
 defaults write com.apple.finder FXInfoPanesExpanded -dict \
-    General -bool true \
-    OpenWith -bool true \
-    Privileges -bool true
+  General -bool true \
+  OpenWith -bool true \
+  Privileges -bool true
 
 # =============================================================================
 # DOCK
@@ -275,9 +279,9 @@ defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
 # SSD-SPECIFIC TWEAKS (if applicable)
 # =============================================================================
 if diskutil info / | grep -q "Solid State"; then
-    echo "💾 Applying SSD tweaks..."
-    # Disable hibernation (speeds up entering sleep mode)
-    sudo pmset -a hibernatemode 0
+  echo "💾 Applying SSD tweaks..."
+  # Disable hibernation (speeds up entering sleep mode)
+  sudo pmset -a hibernatemode 0
 fi
 
 # =============================================================================
@@ -287,13 +291,13 @@ echo ""
 echo "🔄 Restarting affected applications..."
 
 for app in "Activity Monitor" \
-    "cfprefsd" \
-    "Dock" \
-    "Finder" \
-    "Safari" \
-    "SystemUIServer" \
-    "Terminal"; do
-    killall "${app}" &> /dev/null || true
+  "cfprefsd" \
+  "Dock" \
+  "Finder" \
+  "Safari" \
+  "SystemUIServer" \
+  "Terminal"; do
+  killall "${app}" &>/dev/null || true
 done
 
 echo ""
