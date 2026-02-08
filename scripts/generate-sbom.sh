@@ -33,35 +33,35 @@ RESET='\033[0m'
 
 # Help message
 show_help() {
-    sed -n '2,17p' "$0" | sed 's/^# //' | sed 's/^#//'
-    exit 0
+  sed -n '2,17p' "$0" | sed 's/^# //' | sed 's/^#//'
+  exit 0
 }
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
-    case $1 in
-        -f|--format)
-            FORMAT="$2"
-            shift 2
-            ;;
-        -o|--output)
-            OUTPUT="$2"
-            shift 2
-            ;;
-        -h|--help)
-            show_help
-            ;;
-        *)
-            echo -e "${RED}Unknown option: $1${RESET}"
-            exit 1
-            ;;
-    esac
+  case $1 in
+  -f | --format)
+    FORMAT="$2"
+    shift 2
+    ;;
+  -o | --output)
+    OUTPUT="$2"
+    shift 2
+    ;;
+  -h | --help)
+    show_help
+    ;;
+  *)
+    echo -e "${RED}Unknown option: $1${RESET}"
+    exit 1
+    ;;
+  esac
 done
 
 # Validate format
 if [[ "$FORMAT" != "cyclonedx" && "$FORMAT" != "spdx" ]]; then
-    echo -e "${RED}Invalid format: $FORMAT. Use 'cyclonedx' or 'spdx'${RESET}"
-    exit 1
+  echo -e "${RED}Invalid format: $FORMAT. Use 'cyclonedx' or 'spdx'${RESET}"
+  exit 1
 fi
 
 echo -e "${BLUE}Generating SBOM in ${FORMAT} format...${RESET}"
@@ -73,43 +73,43 @@ declare -a TAP_PACKAGES=()
 
 # Parse a Brewfile
 parse_brewfile() {
-    local file="$1"
-    if [[ ! -f "$file" ]]; then
-        return
+  local file="$1"
+  if [[ ! -f "$file" ]]; then
+    return
+  fi
+
+  echo -e "${YELLOW}Parsing: $file${RESET}"
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Skip comments and empty lines
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${line// /}" ]] && continue
+
+    # Extract package type and name
+    if [[ "$line" =~ ^brew[[:space:]]+[\"\']([^\"\']+)[\"\'] ]]; then
+      BREW_PACKAGES+=("${BASH_REMATCH[1]}")
+    elif [[ "$line" =~ ^cask[[:space:]]+[\"\']([^\"\']+)[\"\'] ]]; then
+      CASK_PACKAGES+=("${BASH_REMATCH[1]}")
+    elif [[ "$line" =~ ^tap[[:space:]]+[\"\']([^\"\']+)[\"\'] ]]; then
+      TAP_PACKAGES+=("${BASH_REMATCH[1]}")
     fi
-
-    echo -e "${YELLOW}Parsing: $file${RESET}"
-
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        # Skip comments and empty lines
-        [[ "$line" =~ ^[[:space:]]*# ]] && continue
-        [[ -z "${line// }" ]] && continue
-
-        # Extract package type and name
-        if [[ "$line" =~ ^brew[[:space:]]+[\"\']([^\"\']+)[\"\'] ]]; then
-            BREW_PACKAGES+=("${BASH_REMATCH[1]}")
-        elif [[ "$line" =~ ^cask[[:space:]]+[\"\']([^\"\']+)[\"\'] ]]; then
-            CASK_PACKAGES+=("${BASH_REMATCH[1]}")
-        elif [[ "$line" =~ ^tap[[:space:]]+[\"\']([^\"\']+)[\"\'] ]]; then
-            TAP_PACKAGES+=("${BASH_REMATCH[1]}")
-        fi
-    done < "$file"
+  done <"$file"
 }
 
 # Parse all Brewfiles
 for brewfile in "$DOTFILES_DIR"/Brewfile*; do
-    parse_brewfile "$brewfile"
+  parse_brewfile "$brewfile"
 done
 
 # Get timestamp
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-UUID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "$(date +%s)-$(( RANDOM ))")
+UUID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "$(date +%s)-$((RANDOM))")
 
 # Generate CycloneDX format
 generate_cyclonedx() {
-    local output_file="$1"
+  local output_file="$1"
 
-    cat > "$output_file" << EOF
+  cat >"$output_file" <<EOF
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
@@ -142,16 +142,16 @@ generate_cyclonedx() {
   "components": [
 EOF
 
-    local first=true
+  local first=true
 
-    # Add brew packages
-    for pkg in "${BREW_PACKAGES[@]}"; do
-        if [[ "$first" == "true" ]]; then
-            first=false
-        else
-            echo "," >> "$output_file"
-        fi
-        cat >> "$output_file" << EOF
+  # Add brew packages
+  for pkg in "${BREW_PACKAGES[@]}"; do
+    if [[ "$first" == "true" ]]; then
+      first=false
+    else
+      echo "," >>"$output_file"
+    fi
+    cat >>"$output_file" <<EOF
     {
       "type": "application",
       "name": "${pkg}",
@@ -164,16 +164,16 @@ EOF
       ]
     }
 EOF
-    done
+  done
 
-    # Add cask packages
-    for pkg in "${CASK_PACKAGES[@]}"; do
-        if [[ "$first" == "true" ]]; then
-            first=false
-        else
-            echo "," >> "$output_file"
-        fi
-        cat >> "$output_file" << EOF
+  # Add cask packages
+  for pkg in "${CASK_PACKAGES[@]}"; do
+    if [[ "$first" == "true" ]]; then
+      first=false
+    else
+      echo "," >>"$output_file"
+    fi
+    cat >>"$output_file" <<EOF
     {
       "type": "application",
       "name": "${pkg}",
@@ -186,9 +186,9 @@ EOF
       ]
     }
 EOF
-    done
+  done
 
-    cat >> "$output_file" << EOF
+  cat >>"$output_file" <<EOF
 
   ]
 }
@@ -197,10 +197,10 @@ EOF
 
 # Generate SPDX format
 generate_spdx() {
-    local output_file="$1"
-    local doc_namespace="https://github.com/thomasvincent/dotfiles/sbom-${UUID}"
+  local output_file="$1"
+  local doc_namespace="https://github.com/thomasvincent/dotfiles/sbom-${UUID}"
 
-    cat > "$output_file" << EOF
+  cat >"$output_file" <<EOF
 {
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
@@ -227,11 +227,11 @@ generate_spdx() {
     }
 EOF
 
-    local counter=1
+  local counter=1
 
-    # Add brew packages
-    for pkg in "${BREW_PACKAGES[@]}"; do
-        cat >> "$output_file" << EOF
+  # Add brew packages
+  for pkg in "${BREW_PACKAGES[@]}"; do
+    cat >>"$output_file" <<EOF
 ,
     {
       "SPDXID": "SPDXRef-Package-brew-${counter}",
@@ -251,12 +251,12 @@ EOF
       ]
     }
 EOF
-        ((counter++))
-    done
+    ((counter++))
+  done
 
-    # Add cask packages
-    for pkg in "${CASK_PACKAGES[@]}"; do
-        cat >> "$output_file" << EOF
+  # Add cask packages
+  for pkg in "${CASK_PACKAGES[@]}"; do
+    cat >>"$output_file" <<EOF
 ,
     {
       "SPDXID": "SPDXRef-Package-cask-${counter}",
@@ -276,53 +276,53 @@ EOF
       ]
     }
 EOF
-        ((counter++))
-    done
+    ((counter++))
+  done
 
-    cat >> "$output_file" << EOF
+  cat >>"$output_file" <<EOF
 
   ],
   "relationships": [
 EOF
 
-    first=true
-    counter=1
+  first=true
+  counter=1
 
-    # Add relationships for brew packages
-    for pkg in "${BREW_PACKAGES[@]}"; do
-        if [[ "$first" == "true" ]]; then
-            first=false
-        else
-            echo "," >> "$output_file"
-        fi
-        cat >> "$output_file" << EOF
+  # Add relationships for brew packages
+  for pkg in "${BREW_PACKAGES[@]}"; do
+    if [[ "$first" == "true" ]]; then
+      first=false
+    else
+      echo "," >>"$output_file"
+    fi
+    cat >>"$output_file" <<EOF
     {
       "spdxElementId": "SPDXRef-Package-dotfiles",
       "relatedSpdxElement": "SPDXRef-Package-brew-${counter}",
       "relationshipType": "DEPENDS_ON"
     }
 EOF
-        ((counter++))
-    done
+    ((counter++))
+  done
 
-    # Add relationships for cask packages
-    for pkg in "${CASK_PACKAGES[@]}"; do
-        if [[ "$first" == "true" ]]; then
-            first=false
-        else
-            echo "," >> "$output_file"
-        fi
-        cat >> "$output_file" << EOF
+  # Add relationships for cask packages
+  for pkg in "${CASK_PACKAGES[@]}"; do
+    if [[ "$first" == "true" ]]; then
+      first=false
+    else
+      echo "," >>"$output_file"
+    fi
+    cat >>"$output_file" <<EOF
     {
       "spdxElementId": "SPDXRef-Package-dotfiles",
       "relatedSpdxElement": "SPDXRef-Package-cask-${counter}",
       "relationshipType": "DEPENDS_ON"
     }
 EOF
-        ((counter++))
-    done
+    ((counter++))
+  done
 
-    cat >> "$output_file" << EOF
+  cat >>"$output_file" <<EOF
 
   ]
 }
@@ -331,9 +331,9 @@ EOF
 
 # Generate SBOM
 if [[ "$FORMAT" == "cyclonedx" ]]; then
-    generate_cyclonedx "$OUTPUT"
+  generate_cyclonedx "$OUTPUT"
 else
-    generate_spdx "$OUTPUT"
+  generate_spdx "$OUTPUT"
 fi
 
 # Summary
