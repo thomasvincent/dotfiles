@@ -1,7 +1,7 @@
 # Shell utility functions
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
 # Show SSL certificate CNs and SANs for a domain
 getcertnames() {
   if [ -z "$1" ]; then
@@ -24,17 +24,19 @@ getcertnames() {
   fi
 }
 
+{{ if eq .chezmoi.os "darwin" -}}
 # cd to Finder's current directory
 cdf() { cd "$(osascript -e 'tell app "Finder" to POSIX path of (insertion location as alias)')"; }
-
-# DNS lookup with all records
-digga() { dig +nocmd "$1" any +multiline +noall +answer; }
 
 # Get bundle identifier for a macOS app
 bundleid() {
   osascript -e "id of app \"$1\"" 2>/dev/null | pbcopy
   echo "Bundle ID copied to clipboard"
 }
+{{ end -}}
+
+# DNS lookup with all records
+digga() { dig +nocmd "$1" any +multiline +noall +answer; }
 
 # Quick weather
 weather() { curl -s "https://wttr.in/${1:-}?format=3"; }
@@ -56,18 +58,37 @@ shrinkpdf() {
 
 # Show local and public IP
 myip() {
+{{ if eq .chezmoi.os "darwin" -}}
   local iface ip
   for iface in en0 en1 en4; do
     ip=$(ipconfig getifaddr "$iface" 2>/dev/null)
     [ -n "$ip" ] && echo "Local ($iface): $ip" && break
   done
+{{ else if eq .chezmoi.os "linux" -}}
+  local ip
+  ip=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | head -n1)
+  [ -n "$ip" ] && echo "Local:       $ip"
+{{ end -}}
   echo "Public:      $(curl -s https://ipinfo.io/ip)"
 }
 
 # Flush DNS cache
 flush-dns() {
-  sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
-  echo "DNS cache flushed"
+  if [[ "$OSTYPE" == darwin* ]]; then
+    sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
+    echo "DNS cache flushed"
+  else
+    if command -v systemd-resolve &>/dev/null; then
+      sudo systemd-resolve --flush-caches
+      echo "DNS cache flushed (systemd-resolved)"
+    elif command -v resolvectl &>/dev/null; then
+      sudo resolvectl flush-caches
+      echo "DNS cache flushed (resolvectl)"
+    else
+      echo "No systemd DNS resolver found"
+      return 1
+    fi
+  fi
 }
 
 # Docker cleanup
@@ -84,9 +105,6 @@ git-tidy() {
     | xargs -n 1 git branch -d 2>/dev/null
   echo "Tidied up"
 }
-
-# Create directory and cd into it
-mkcd() { mkdir -p "$1" && cd "$1"; }
 
 # Extract any archive
 extract() {
@@ -107,7 +125,9 @@ extract() {
   esac
 }
 
+{{ if eq .chezmoi.os "darwin" -}}
 # Show/hide desktop icons
 alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
 alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
+{{ end -}}
 {{ end -}}

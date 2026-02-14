@@ -1,7 +1,19 @@
 # Modern tool replacements
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
+{{ if eq .chezmoi.os "linux" -}}
+# Linux-specific: Debian/Ubuntu name bat as batcat
+if command -v batcat &>/dev/null; then
+  alias bat='batcat'
+fi
+
+# Linux-specific: Debian/Ubuntu name fd as fdfind
+if command -v fdfind &>/dev/null; then
+  alias fd='fdfind'
+fi
+{{ end -}}
+
 # bat → cat
 command -v bat &>/dev/null && alias cat="bat --style=plain"
 
@@ -27,7 +39,9 @@ alias mv='mv -iv'
 alias mkdir='mkdir -p'
 
 # Typo corrections
+{{ if eq .chezmoi.os "darwin" -}}
 alias brwe="brew"
+{{ end -}}
 alias gti="git"
 alias gut="git"
 

@@ -1,7 +1,7 @@
 # FZF configuration
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
 # Use fd for file listing (respects .gitignore, includes hidden, excludes .git)
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
@@ -10,10 +10,16 @@ export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
 # Preview with bat for files, eza for directories
 export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
 export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --level=2 {}'"
+{{ if eq .chezmoi.os "darwin" -}}
 export FZF_CTRL_R_OPTS="
   --preview 'echo {}' --preview-window down:3:hidden:wrap
   --bind 'ctrl-/:toggle-preview'
   --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'"
+{{ else if eq .chezmoi.os "linux" -}}
+export FZF_CTRL_R_OPTS="
+  --preview 'echo {}' --preview-window down:3:hidden:wrap
+  --bind 'ctrl-/:toggle-preview'"
+{{ end -}}
 
 # Use fd for path/dir completion
 _fzf_compgen_path() { fd --hidden --exclude ".git" . "$1"; }
@@ -32,5 +38,18 @@ _fzf_comprun() {
 }
 
 # Load fzf keybindings and completion
+{{ if eq .chezmoi.os "darwin" -}}
 source <(fzf --zsh) 2>/dev/null || true
+{{ else if eq .chezmoi.os "linux" -}}
+# Try common fzf locations on Linux
+if [ -f /usr/share/fzf/key-bindings.zsh ]; then
+  source /usr/share/fzf/key-bindings.zsh
+  [ -f /usr/share/fzf/completion.zsh ] && source /usr/share/fzf/completion.zsh
+elif [ -f "$HOME/.fzf.zsh" ]; then
+  source "$HOME/.fzf.zsh"
+elif [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
+  source /usr/share/doc/fzf/examples/key-bindings.zsh
+  [ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
+fi
+{{ end -}}
 {{ end -}}
