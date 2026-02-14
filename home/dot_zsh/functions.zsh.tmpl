@@ -1,0 +1,35 @@
+# Shell functions
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if eq .chezmoi.os "darwin" -}}
+# Create a directory and cd into it
+mkd() { mkdir -p "$@" && cd "$_"; }
+
+# Determine size of a file or total size of a directory
+fs() {
+  if du -b /dev/null > /dev/null 2>&1; then
+    local arg=-sbh
+  else
+    local arg=-sh
+  fi
+  if [[ -n "$@" ]]; then
+    du $arg -- "$@"
+  else
+    du $arg .[^.]* ./*
+  fi
+}
+
+# UTF-8-encode a string of Unicode hex characters
+unidecode() { perl -e "binmode(STDOUT, ':utf8'); print chr(0x$_) for @ARGV" "$@"; echo; }
+
+# Show all the names for a color
+showcolors() {
+  for i in {0..255}; do
+    printf "\x1b[38;5;${i}mcolour%-5i\x1b[0m" $i
+    if (( i % 8 == 7 )); then echo; fi
+  done
+}
+
+# Highlight a pattern in command output
+hl() { grep --color=always -E "$1|$" "${@:2}"; }
+{{ end -}}

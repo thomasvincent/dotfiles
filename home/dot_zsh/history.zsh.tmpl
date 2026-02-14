@@ -1,0 +1,19 @@
+# ZSH history configuration
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+
+# History options
+setopt EXTENDED_HISTORY       # Write timestamps to history
+setopt HIST_EXPIRE_DUPS_FIRST # Expire duplicates first
+setopt HIST_FIND_NO_DUPS      # Do not display previously found entries
+setopt HIST_IGNORE_ALL_DUPS   # Remove older duplicate entries
+setopt HIST_IGNORE_DUPS       # Do not record consecutive duplicates
+setopt HIST_IGNORE_SPACE      # Do not record entries starting with space
+setopt HIST_REDUCE_BLANKS     # Remove extra blanks
+setopt HIST_SAVE_NO_DUPS      # Do not save duplicates
+setopt HIST_VERIFY            # Show before executing from history
+setopt INC_APPEND_HISTORY     # Add commands immediately
+setopt SHARE_HISTORY          # Share history between sessions

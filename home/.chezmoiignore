@@ -1,0 +1,21 @@
+# Repository scaffolding (never deploy these)
+README.md
+LICENSE
+CHANGELOG.md
+Makefile
+Jenkinsfile
+VERSION
+SECURITY.md
+
+# Linux-only files (skip on macOS)
+{{ if eq .chezmoi.os "darwin" }}
+# nothing to exclude on macOS currently
+{{ end }}
+
+# macOS-only files (skip on Linux)
+{{ if ne .chezmoi.os "darwin" }}
+.zsh/macos_gtd_workflows.zsh
+.zsh/omnifocus_workflows.zsh
+.zsh/app_workflows.zsh
+.zsh/vscode_workflows.zsh
+{{ end }}

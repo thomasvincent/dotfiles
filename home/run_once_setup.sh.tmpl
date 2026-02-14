@@ -7,9 +7,6 @@ set -euo pipefail
 # Create necessary directories
 mkdir -p "$HOME/.zsh"
 
-# Link our ZSH module files from the chezmoi directory
-ln -sf "$HOME/.local/share/chezmoi/home/dot_zsh"/*.zsh "$HOME/.zsh/"
-
 # Create productivity directories if enabled
 {{ if .enable_productivity -}}
 mkdir -p "{{ .preferences.task_dir | default "$HOME/.tasks" }}"

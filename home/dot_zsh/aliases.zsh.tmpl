@@ -1,0 +1,29 @@
+# Shell aliases
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if eq .chezmoi.os "darwin" -}}
+# Navigation
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+# List files
+alias l="ls -la"
+alias la="ls -A"
+
+# Grep with color
+alias grep="grep --color=auto"
+
+# Quick edits
+alias zshrc="${EDITOR:-vim} ~/.zshrc"
+
+# Networking
+alias localip="ipconfig getifaddr en0"
+alias ips="ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }'"
+
+# Reload shell
+alias reload="exec ${SHELL} -l"
+
+# Clear with scrollback
+alias cls="clear && printf '\e[3J'"
+{{ end -}}

@@ -1,0 +1,28 @@
+# ZSH keybindings
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+# Use emacs-style keybindings
+bindkey -e
+
+# Home/End keys
+bindkey '^[[H' beginning-of-line
+bindkey '^[[F' end-of-line
+bindkey '^[[1~' beginning-of-line
+bindkey '^[[4~' end-of-line
+
+# Delete key
+bindkey '^[[3~' delete-char
+
+# Word navigation (Option+Left/Right on macOS)
+bindkey '^[[1;3D' backward-word
+bindkey '^[[1;3C' forward-word
+
+# Word deletion
+bindkey '^[^?' backward-kill-word  # Option+Backspace
+
+# Search history with current input
+bindkey '^[[A' up-line-or-search
+bindkey '^[[B' down-line-or-search
+
+# Accept autosuggestion (right arrow)
+bindkey '^[[C' forward-char
