@@ -31,7 +31,6 @@ rust-init() {
     return 1
   fi
 
-  # Check if cargo is installed
   if ! command -v cargo &>/dev/null; then
     echo "Error: Rust's Cargo not found."
     echo "Install Rust and Cargo with: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
@@ -40,7 +39,6 @@ rust-init() {
 
   local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
 
-  # Create project directory if it doesn't exist
   mkdir -p "$(dirname "$project_dir")"
 
   echo "Creating new Rust $project_type project: $project_name"
@@ -227,7 +225,6 @@ EOF
 
 # Check rust project dependencies for security vulnerabilities
 rust-audit() {
-  # Check if cargo-audit is installed
   if ! command -v cargo-audit &>/dev/null; then
     echo "Installing cargo-audit..."
     cargo install cargo-audit
@@ -248,7 +245,6 @@ rust-profile() {
 
 # Check for outdated dependencies
 rust-outdated() {
-  # Check if cargo-outdated is installed
   if ! command -v cargo-outdated &>/dev/null; then
     echo "Installing cargo-outdated..."
     cargo install cargo-outdated
@@ -262,13 +258,11 @@ rust-outdated() {
 rust-depgraph() {
   local output=${1:-"deps-graph.png"}
 
-  # Check if cargo-depgraph is installed
   if ! command -v cargo-depgraph &>/dev/null; then
     echo "Installing cargo-depgraph..."
     cargo install cargo-depgraph
   fi
 
-  # Check if dot is installed (from graphviz)
   if ! command -v dot &>/dev/null; then
     echo "Error: 'dot' command not found. Please install graphviz."
     return 1

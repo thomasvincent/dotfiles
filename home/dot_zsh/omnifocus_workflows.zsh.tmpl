@@ -24,7 +24,6 @@ of-add() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -50,7 +49,6 @@ of-add() {
   end tell
 end tell"
 
-  # Run the AppleScript
   osascript -e "$script"
 
   echo "Task \"$task_name\" added to OmniFocus inbox"
@@ -75,7 +73,6 @@ of-add-to-project() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -104,7 +101,6 @@ of-add-to-project() {
   end tell
 end tell"
 
-  # Run the AppleScript
   osascript -e "$script" 2>/dev/null
 
   # Check if the command was successful
@@ -126,7 +122,6 @@ of-projects() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -147,7 +142,6 @@ of-projects() {
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if the command was successful
@@ -178,7 +172,6 @@ of-tasks() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -216,7 +209,6 @@ of-tasks() {
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if the command was successful
@@ -246,7 +238,6 @@ of-complete() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -267,7 +258,6 @@ of-complete() {
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if any tasks were marked as completed
@@ -297,7 +287,6 @@ of-search() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -374,7 +363,6 @@ of-search() {
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if the search was successful
@@ -409,7 +397,6 @@ of-new-project() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -443,7 +430,6 @@ of-new-project() {
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if the project was created successfully
@@ -467,7 +453,6 @@ of-folders() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -480,7 +465,6 @@ of-folders() {
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if the command was successful
@@ -502,7 +486,6 @@ of-today() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -538,7 +521,6 @@ of-today() {
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if the command was successful
@@ -564,7 +546,6 @@ of-process-inbox() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -609,7 +590,6 @@ of-template() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -678,7 +658,6 @@ end tell"
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if the template was created successfully
@@ -708,13 +687,11 @@ of-apply-template() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
 
-  # Check if the template exists
   local script="tell application \"OmniFocus\"
   tell default document
     set templateExists to false
@@ -786,7 +763,6 @@ end tell"
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if the project was created successfully
@@ -810,13 +786,11 @@ of-templates() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
 
-  # Check if Templates folder exists
   local script="tell application \"OmniFocus\"
   tell default document
     set folderExists to false
@@ -848,7 +822,6 @@ end tell"
   end tell
 end tell"
 
-  # Run the AppleScript and store the result
   local result=$(osascript -e "$script" 2>/dev/null)
 
   # Check if the command was successful
@@ -874,7 +847,6 @@ of-quick-entry() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
@@ -895,13 +867,11 @@ of-weekly-review() {
     return 1
   fi
 
-  # Check if OmniFocus is installed
   if ! osascript -e 'id of application "OmniFocus"' &>/dev/null; then
     echo "Error: OmniFocus is not installed."
     return 1
   fi
 
-  # Check if the Weekly Review template already exists
   local script="tell application \"OmniFocus\"
   tell default document
     set templateExists to false

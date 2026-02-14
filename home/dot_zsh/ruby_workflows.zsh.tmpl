@@ -213,7 +213,6 @@ rails-init() {
     return 1
   fi
 
-  # Check if Rails is installed
   if ! gem list rails -i &>/dev/null; then
     echo "Rails is not installed. Installing Rails..."
     gem install rails
@@ -221,7 +220,6 @@ rails-init() {
 
   local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
 
-  # Create parent directory if it doesn't exist
   mkdir -p "$(dirname "$project_dir")"
 
   # Navigate to parent directory
@@ -567,14 +565,12 @@ rails-erd() {
     return 1
   fi
 
-  # Check if rails-erd gem is installed
   if ! bundle list | grep -q 'rails-erd'; then
     echo "rails-erd gem not found. Adding it to Gemfile..."
     echo "gem 'rails-erd', group: :development" >> Gemfile
     bundle install
   fi
 
-  # Check if graphviz is installed
   if ! command -v dot &>/dev/null; then
     echo "Error: graphviz is not installed."
     echo "Please install graphviz first."
@@ -616,7 +612,6 @@ ruby-gem() {
     return 1
   fi
 
-  # Check if bundler is installed
   if ! command -v bundler &>/dev/null; then
     echo "Bundler not found. Installing..."
     gem install bundler
@@ -664,7 +659,6 @@ ruby-install() {
     return 1
   fi
 
-  # Check if rbenv is installed
   if ! command -v rbenv &>/dev/null; then
     echo "rbenv not found. Please install rbenv first."
     return 1
