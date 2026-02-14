@@ -64,7 +64,9 @@ help:
 	@echo -e "  $(YELLOW)workflow-setup$(RESET) - Set up workflow automation tools"
 	@echo -e "  $(YELLOW)productivity-setup$(RESET) - Set up productivity tools"
 	@echo -e "  $(YELLOW)brew-install$(RESET)  - Install Homebrew packages"
-	@echo -e "  $(YELLOW)test$(RESET)          - Test shell startup"
+	@echo -e "  $(YELLOW)test$(RESET)          - Run bats test suite"
+	@echo -e "  $(YELLOW)test-quick$(RESET)    - Run quick tests (syntax, config, templates)"
+	@echo -e "  $(YELLOW)test-shellcheck$(RESET) - Run shellcheck on templates"
 	@echo -e "  $(YELLOW)lint$(RESET)          - Run linters"
 	@echo -e "  $(YELLOW)sbom$(RESET)          - Generate SBOM (CycloneDX + SPDX)"
 	@echo -e "  $(YELLOW)clean$(RESET)         - Clean temporary files"
@@ -205,23 +207,21 @@ brew-install:
 
 .PHONY: test
 test:
-	$(call print_header,Testing shell startup)
-	@export ZSH_TEST_MODE=1; \
-	TMP_SCRIPT=$$(mktemp /tmp/zsh_test_XXXXXX.zsh); \
-	TMP_ERR=$$(mktemp /tmp/zsh_err_XXXXXX.log); \
-	echo '# Test script for shell startup' > $$TMP_SCRIPT; \
-	echo 'exec 2>"$$1"' >> $$TMP_SCRIPT; \
-	echo 'source ~/.zshrc' >> $$TMP_SCRIPT; \
-	echo 'exit 0' >> $$TMP_SCRIPT; \
-	chmod +x $$TMP_SCRIPT; \
-	zsh $$TMP_SCRIPT $$TMP_ERR; \
-	if [ -s $$TMP_ERR ]; then \
-		echo -e "$(RED)❌ Errors detected during startup:$(RESET)"; \
-		cat $$TMP_ERR; \
-	else \
-		echo -e "$(GREEN)✅ No errors detected during shell startup!$(RESET)"; \
-	fi; \
-	rm -f $$TMP_SCRIPT $$TMP_ERR
+	$(call print_header,Running tests)
+	@command -v bats >/dev/null 2>&1 || { echo "Error: bats-core not installed. Run: brew install bats-core"; exit 1; }
+	@bats tests/*.bats
+
+.PHONY: test-quick
+test-quick:
+	$(call print_header,Running quick tests)
+	@command -v bats >/dev/null 2>&1 || { echo "Error: bats-core not installed. Run: brew install bats-core"; exit 1; }
+	@bats tests/shell_syntax.bats tests/config_validation.bats tests/template_syntax.bats
+
+.PHONY: test-shellcheck
+test-shellcheck:
+	$(call print_header,Running shellcheck on templates)
+	@command -v bats >/dev/null 2>&1 || { echo "Error: bats-core not installed. Run: brew install bats-core"; exit 1; }
+	@bats tests/shellcheck.bats
 
 .PHONY: lint
 lint:
