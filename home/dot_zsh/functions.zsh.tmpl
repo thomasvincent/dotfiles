@@ -36,7 +36,7 @@ hl() { grep --color=always -E "$1|$" "${@:2}"; }
 
 # URL-encode a string (used by GTD workflow modules)
 _url_encode() {
-  python3 -c "import urllib.parse; print(urllib.parse.quote('$1'))"
+  printf '%s' "$1" | python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.stdin.read()))"
 }
 
 # Bail out if a command is missing
