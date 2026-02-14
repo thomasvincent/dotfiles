@@ -439,30 +439,7 @@ cloud-ports() {
   nmap -Pn -p 1-1000 "$1"
 }
 
-# Terraform aliases and functions
-alias tf='terraform'
-alias tfi='terraform init'
-alias tfp='terraform plan'
-alias tfa='terraform apply'
-alias tfd='terraform destroy'
-alias tfo='terraform output'
-
-# Function to initialize Terraform with proper backend
-tf-init() {
-  local env="${1:-dev}"
-  terraform init -backend-config="env/$env.tfbackend"
-}
-
-# Function to run Terraform with proper variables file
-tf-plan() {
-  local env="${1:-dev}"
-  terraform plan -var-file="env/$env.tfvars"
-}
-
-tf-apply() {
-  local env="${1:-dev}"
-  terraform apply -var-file="env/$env.tfvars"
-}
+# Terraform aliases and functions are in hashicorp_workflows.zsh.tmpl
 
 # Kubernetes aliases and functions
 {{ if .enable_kubernetes -}}

@@ -109,10 +109,11 @@ render_module() {
 }
 
 @test "mkcd creates directory and changes to it" {
-    local utils=$(render_module "utils")
+    local funcs=$(render_module "functions")
     local testdir="${BATS_TMPDIR}/mkcd_test"
     local result
-    result=$(zsh -c "source '$utils' 2>/dev/null; mkcd '$testdir' 2>/dev/null; pwd" 2>/dev/null)
+    # mkcd is an alias for mkd in functions module; use setopt aliases to expand it
+    result=$(zsh -c "setopt aliases; source '$funcs' 2>/dev/null; mkcd '$testdir' 2>/dev/null; pwd" 2>/dev/null)
     [ -d "$testdir" ]
     [[ "$result" == "$testdir" ]]
 }

@@ -3,6 +3,8 @@
 
 # Create a directory and cd into it
 mkd() { mkdir -p "$@" && cd "$_"; }
+# Backward compatibility wrapper
+mkcd() { mkd "$@"; }
 
 # Determine size of a file or total size of a directory
 fs() {
