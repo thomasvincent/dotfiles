@@ -36,6 +36,7 @@ TEST_MODE=0
 if [[ "$#" -gt 0 && "$1" == "--test" ]]; then
     TEST_MODE=1
     echo -e "${YELLOW}Running in test mode. No changes will be made.${RESET}"
+    # Early exit in test mode - remaining lines are unreachable when testing
     exit 0
 fi
 
@@ -108,7 +109,6 @@ if [[ $TEST_MODE -eq 0 ]]; then
     make install
     make dev-setup
     make cloud-setup
-    make functions
 else
     echo -e "${YELLOW}Test mode: would run make targets${RESET}"
     echo -e "  - make backup"
@@ -116,7 +116,6 @@ else
     echo -e "  - make install"
     echo -e "  - make dev-setup"
     echo -e "  - make cloud-setup"
-    echo -e "  - make functions"
 fi
 
 # Success message

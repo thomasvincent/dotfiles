@@ -242,7 +242,7 @@ lint:
 	fi
 	@if command -v yamllint >/dev/null 2>&1; then \
 		echo "Running yamllint on YAML files..."; \
-		for file in $$(find $(DOTFILES_DIR) -name "*.yml" -o -name "*.yaml" -type f); do \
+		for file in $$(find $(DOTFILES_DIR) \( -name "*.yml" -o -name "*.yaml" \) -type f); do \
 			yamllint $$file; \
 		done; \
 	fi
@@ -321,4 +321,5 @@ clean:
 	@find "$(DOTFILES_DIR)" -name "*~" -delete -print
 	@find "$(DOTFILES_DIR)" -name ".DS_Store" -delete -print
 	@rm -rf $(HOME)/.zsh/cache/*
+	@rm -f $(DOTFILES_DIR)/sbom-cyclonedx.json $(DOTFILES_DIR)/sbom-spdx.json
 	$(call print_success,Temporary files cleaned)
