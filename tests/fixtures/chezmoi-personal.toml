@@ -50,6 +50,8 @@
     gtd_next_actions_file = "$HOME/GTD/next-actions.md"
     enable_wordpress = false
     enable_chef = false
+    sharepoint_url = ""
+    ms_gtd_folder = ""
     enable_puppet = false
     enable_ansible = false
     enable_java = false

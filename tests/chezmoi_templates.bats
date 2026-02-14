@@ -53,8 +53,30 @@ load test_helper/common-setup
     local config="${REPO_DIR}/tests/fixtures/chezmoi-minimal.toml"
     local failures=0
 
+    # Skip files that legitimately output {{ markers (GitHub Actions, Packer, etc.)
+    local skip_patterns=(
+        "cicd.zsh.tmpl"
+        "github_workflows.zsh.tmpl"
+        "hashicorp_workflows.zsh.tmpl"
+    )
+
     while IFS= read -r -d '' tmpl; do
         local name="${tmpl#${REPO_DIR}/}"
+        local basename="${tmpl##*/}"
+
+        # Check if this file should be skipped
+        local should_skip=0
+        for pattern in "${skip_patterns[@]}"; do
+            if [[ "$basename" == "$pattern" ]]; then
+                should_skip=1
+                break
+            fi
+        done
+
+        if [[ "$should_skip" -eq 1 ]]; then
+            continue
+        fi
+
         local rendered
         rendered=$(chezmoi --config="$config" execute-template < "$tmpl" 2>/dev/null) || continue
         if echo "$rendered" | grep -q '{{'; then
