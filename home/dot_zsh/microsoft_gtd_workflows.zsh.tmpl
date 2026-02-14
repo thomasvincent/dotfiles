@@ -44,7 +44,6 @@ msoutlook-open() {
     outlook_url="${outlook_url}/inbox/${folder}"
   fi
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$outlook_url"
   else
@@ -70,7 +69,6 @@ msoutlook-search() {
   # Build the search URL
   local outlook_search_url="${MS_OUTLOOK_URL}/?search=${encoded_query}"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$outlook_search_url"
   else
@@ -100,7 +98,6 @@ msoutlook-compose() {
   # Build the compose URL
   local outlook_compose_url="${MS_OUTLOOK_URL}/deeplink/compose?to=${encoded_to}&subject=${encoded_subject}&body=${encoded_body}"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$outlook_compose_url"
   else
@@ -138,10 +135,8 @@ mscalendar-open() {
       ;;
   esac
 
-  # Build the URL
   local calendar_url="${MS_CALENDAR_URL}/view/${calendar_view}"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$calendar_url"
   else
@@ -188,10 +183,8 @@ mscalendar-new() {
   local encoded_title=$(_url_encode "$title")
   local encoded_location=$(_url_encode "$location")
 
-  # Build the URL
   local calendar_new_url="${MS_CALENDAR_URL}/deeplink/compose?subject=${encoded_title}&startdt=${formatted_start}&enddt=${formatted_end}&location=${encoded_location}"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$calendar_new_url"
   else
@@ -206,7 +199,6 @@ mscalendar-today() {
   # Build URL for today's calendar view
   local calendar_url="${MS_CALENDAR_URL}/view/day"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$calendar_url"
   else
@@ -234,7 +226,6 @@ mstodo-open() {
     todo_url="${todo_url}/lists/${encoded_list}"
   fi
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$todo_url"
   else
@@ -249,7 +240,6 @@ mstodo-myday() {
   # URL for My Day view
   local todo_myday_url="${MS_TODO_URL}/myday"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$todo_myday_url"
   else
@@ -264,7 +254,6 @@ mstodo-important() {
   # URL for Important tasks
   local todo_important_url="${MS_TODO_URL}/important"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$todo_important_url"
   else
@@ -279,7 +268,6 @@ mstodo-planned() {
   # URL for Planned tasks
   local todo_planned_url="${MS_TODO_URL}/planned"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$todo_planned_url"
   else
@@ -295,7 +283,6 @@ mstodo-planned() {
 
 # Open Microsoft OneNote
 msonenote-open() {
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "${MS_ONENOTE_URL}"
   else
@@ -321,7 +308,6 @@ msonenote-new-notebook() {
   # Build the URL (this will open OneNote, but won't automatically create the notebook)
   local onenote_url="${MS_ONENOTE_URL}"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$onenote_url"
   else
@@ -353,7 +339,6 @@ msonedrive-open() {
     echo "Opening OneDrive"
   fi
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$onedrive_url"
   else
@@ -366,7 +351,6 @@ msonedrive-docs() {
   # URL for OneDrive documents
   local onedrive_docs_url="${MS_ONEDRIVE_URL}/?id=documents"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$onedrive_docs_url"
   else
@@ -408,7 +392,6 @@ msteams-chat() {
   # Build the URL for Teams chat
   local teams_chat_url="${MS_TEAMS_URL}/l/chat/0/0?users=${encoded_email}"
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$teams_chat_url"
   else
@@ -450,7 +433,6 @@ mssharepoint-open() {
     sharepoint_url="${sharepoint_url}/${site_path}"
   fi
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$sharepoint_url"
   else
@@ -476,7 +458,6 @@ msazure-open() {
     azure_url="${azure_url}/#@/resource/${resource}"
   fi
 
-  # Open the URL in the default browser
   if [[ "$OSTYPE" == "darwin"* ]]; then
     open "$azure_url"
   else

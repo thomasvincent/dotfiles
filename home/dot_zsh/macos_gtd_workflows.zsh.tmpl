@@ -55,7 +55,6 @@ reminders-new-project() {
     return 1
   fi
 
-  # Create the project list
   osascript <<EOF
 tell application "Reminders"
   make new list with properties {name:"Project: $project_name"}
@@ -450,7 +449,6 @@ calendar-create() {
 
   # If end date is not provided, set it to 1 hour after start date
   if [[ -z "$end_date" ]]; then
-    # Parse the start date to determine format
     if [[ "$start_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
       # Start date is just a date (YYYY-MM-DD), assume all-day event
       end_date="$start_date"
@@ -462,7 +460,6 @@ calendar-create() {
     fi
   fi
 
-  # Create the Calendar event
   osascript <<EOF
 tell application "Calendar"
   set allDay to $all_day
@@ -958,7 +955,6 @@ gtd-new-context() {
     context="@$context"
   fi
 
-  # Create the context list
   osascript <<EOF
 tell application "Reminders"
   make new list with properties {name:"$context"}
@@ -1041,7 +1037,6 @@ tell application "Notes"
 end tell
 EOF
 
-  # Create the note
   osascript <<EOF
 tell application "Notes"
   tell folder "$meeting_folder"
@@ -1096,7 +1091,6 @@ tell application "Notes"
 end tell
 EOF
 
-  # Create the note
   osascript <<EOF
 tell application "Notes"
   tell folder "$focus_folder"

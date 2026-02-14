@@ -59,7 +59,6 @@ gh-init() {
     return 1
   fi
 
-  # Create the repository
   echo "Creating GitHub repository: $repo_name ($visibility)"
 
   if [[ -n "$description" ]]; then
@@ -119,7 +118,6 @@ gh-init-current() {
     fi
   fi
 
-  # Create the repository
   echo "Creating GitHub repository from current directory: $repo_name ($visibility)"
 
   if [[ -n "$description" ]]; then
@@ -153,7 +151,6 @@ gh-fork() {
     return 1
   fi
 
-  # Fork the repository
   echo "Forking repository: $repo"
   if [[ -z "$clone_dir" ]]; then
     gh repo fork "$repo" --clone
@@ -222,7 +219,6 @@ gh-new-issue() {
     cmd+=(--assignee "$assignee")
   fi
 
-  # Create the issue
   echo "Creating GitHub issue: \"$title\""
   "${cmd[@]}"
 
@@ -272,7 +268,6 @@ gh-new-pr() {
     cmd+=(--reviewer "$reviewers")
   fi
 
-  # Create the pull request
   echo "Creating GitHub pull request: \"$title\""
   "${cmd[@]}"
 
@@ -338,7 +333,6 @@ gh-clone() {
     return 1
   fi
 
-  # Determine the destination directory
   local clone_dir
   if [[ -z "$dest_dir" ]]; then
     # Extract repo name from full repo path
@@ -355,7 +349,6 @@ gh-clone() {
 
   mkdir -p "$(dirname "$clone_dir")"
 
-  # Clone the repository
   echo "Cloning repository $repo to $clone_dir..."
   gh repo clone "$repo" "$clone_dir"
 
@@ -402,7 +395,6 @@ gh-new-gist() {
     cmd+=(--secret)
   fi
 
-  # Create the gist
   echo "Creating GitHub Gist from $file_path..."
   "${cmd[@]}"
 
@@ -448,7 +440,6 @@ gh-release() {
     cmd+=(--target "$target")
   fi
 
-  # Create the release
   echo "Creating GitHub release: $tag_name"
   "${cmd[@]}"
 
@@ -593,7 +584,6 @@ gh-new-workflow() {
     fi
   fi
 
-  # Create the workflow file based on template
   case $template in
     simple)
       cat > "$workflow_file" << EOF

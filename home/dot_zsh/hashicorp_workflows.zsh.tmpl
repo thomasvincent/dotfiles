@@ -1859,7 +1859,6 @@ waypoint-template() {
   mkdir -p "$project_dir"
   cd "$project_dir" || return 1
 
-  # Create the waypoint.hcl file
   cat > waypoint.hcl << EOF
 # The name of your project
 project = "$project_name"

@@ -104,7 +104,6 @@ clone-and-setup() {
     dest_dir=$(basename "$repo_url" .git)
   fi
 
-  # Clone the repository
   git clone "$repo_url" "$dest_dir"
   cd "$dest_dir" || return 1
 
