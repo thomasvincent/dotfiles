@@ -21,6 +21,10 @@ curl -fsSL https://raw.githubusercontent.com/thomasvincent/dotfiles/main/install
 - `sudo` access for package installation
 - `curl` and `git` installed
 
+### Development (optional)
+- [bats-core](https://github.com/bats-core/bats-core) for running tests: `brew install bats-core`
+- [shellcheck](https://www.shellcheck.net/) for shell linting: `brew install shellcheck`
+
 ## Step-by-Step Installation
 
 ### 1. Clone the Repository
@@ -127,7 +131,9 @@ This installs:
 | `make workflow-setup` | Workflow tools (GitHub CLI, tmux) |
 | `make productivity-setup` | Task management setup |
 | `make brew-install` | Install Homebrew packages |
-| `make test` | Run tests |
+| `make test` | Run bats test suite |
+| `make test-quick` | Fast syntax and config tests |
+| `make test-shellcheck` | Shellcheck on rendered templates |
 | `make lint` | Run pre-commit hooks |
 | `make clean` | Remove temporary files |
 
