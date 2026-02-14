@@ -1,0 +1,36 @@
+# FZF configuration
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if eq .chezmoi.os "darwin" -}}
+# Use fd for file listing (respects .gitignore, includes hidden, excludes .git)
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
+
+# Preview with bat for files, eza for directories
+export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
+export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --level=2 {}'"
+export FZF_CTRL_R_OPTS="
+  --preview 'echo {}' --preview-window down:3:hidden:wrap
+  --bind 'ctrl-/:toggle-preview'
+  --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'"
+
+# Use fd for path/dir completion
+_fzf_compgen_path() { fd --hidden --exclude ".git" . "$1"; }
+_fzf_compgen_dir() { fd --type d --hidden --exclude ".git" . "$1"; }
+
+# Context-aware completion previews
+_fzf_comprun() {
+  local command=$1
+  shift
+  case "$command" in
+    cd)           fzf --preview 'eza --tree --color=always {} | head -200' "$@" ;;
+    export|unset) fzf --preview "eval 'echo \$'{}" "$@" ;;
+    ssh)          fzf --preview 'dig {}' "$@" ;;
+    *)            fzf --preview 'bat -n --color=always --line-range :500 {}' "$@" ;;
+  esac
+}
+
+# Load fzf keybindings and completion
+source <(fzf --zsh) 2>/dev/null || true
+{{ end -}}

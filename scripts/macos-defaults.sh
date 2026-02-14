@@ -200,6 +200,19 @@ defaults write com.apple.Safari ShowFullURLInSmartSearchField -bool true
 # Prevent Safari from opening 'safe' files automatically
 defaults write com.apple.Safari AutoOpenSafeDownloads -bool false
 
+# Privacy: don't send search queries to Apple
+defaults write com.apple.Safari UniversalSearchEnabled -bool false
+defaults write com.apple.Safari SuppressSearchSuggestions -bool true
+
+# Disable AutoFill
+defaults write com.apple.Safari AutoFillFromAddressBook -bool false
+defaults write com.apple.Safari AutoFillPasswords -bool false
+defaults write com.apple.Safari AutoFillCreditCardData -bool false
+defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
+
+# Warn about fraudulent websites
+defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
+
 # =============================================================================
 # TERMINAL & ITERM2
 # =============================================================================
@@ -228,6 +241,9 @@ defaults write com.apple.ActivityMonitor ShowCategory -int 0
 # Sort by CPU usage
 defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
 defaults write com.apple.ActivityMonitor SortDirection -int 0
+
+# Show CPU usage in Dock icon
+defaults write com.apple.ActivityMonitor IconType -int 5
 
 # =============================================================================
 # SCREENSHOTS
@@ -279,6 +295,70 @@ if diskutil info / | grep -q "Solid State"; then
     # Disable hibernation (speeds up entering sleep mode)
     sudo pmset -a hibernatemode 0
 fi
+
+# =============================================================================
+# SECURITY & PRIVACY
+# =============================================================================
+echo "🔒 Configuring Security & Privacy..."
+
+# Enable Firewall
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+
+# Enable Stealth Mode (don't respond to ICMP probes)
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+
+# Enable firewall logging
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setloggingmode on
+
+# Require password immediately after sleep or screen saver
+defaults write com.apple.screensaver askForPassword -int 1
+defaults write com.apple.screensaver askForPasswordDelay -int 0
+
+# Disable Gatekeeper nag for downloaded apps
+defaults write com.apple.LaunchServices LSQuarantine -bool false
+
+# Restart on freeze
+sudo systemsetup -setrestartfreeze on 2>/dev/null || true
+
+# Restart on power loss
+sudo pmset -a autorestart 1
+
+# Set standby delay to 24 hours
+sudo pmset -a standbydelay 86400
+
+# =============================================================================
+# PHOTOS & MAIL
+# =============================================================================
+echo "📷 Configuring Photos & Mail..."
+
+# Prevent Photos from opening when devices are plugged in
+defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
+
+# Copy email addresses as plain text (not "Name <email>")
+defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
+
+# Disable inline attachments in Mail
+defaults write com.apple.mail DisableInlineAttachmentViewing -bool true
+
+# =============================================================================
+# TEXT EDIT
+# =============================================================================
+echo "📝 Configuring TextEdit..."
+
+# Use plain text mode by default
+defaults write com.apple.TextEdit RichText -int 0
+
+# Open and save files as UTF-8
+defaults write com.apple.TextEdit PlainTextEncoding -int 4
+defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
+
+# =============================================================================
+# SOUND
+# =============================================================================
+echo "🔇 Configuring Sound..."
+
+# Disable boot sound
+sudo nvram SystemAudioVolume=" " 2>/dev/null || true
 
 # =============================================================================
 # RESTART AFFECTED APPLICATIONS

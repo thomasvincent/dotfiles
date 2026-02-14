@@ -1,0 +1,14 @@
+# Timeouts
+connect-timeout = 60
+
+# Follow redirects
+location
+
+# Always include headers in the request
+referer = ";auto"
+
+# Show errors
+show-error
+
+# Use progress bar instead of meter
+progress-bar

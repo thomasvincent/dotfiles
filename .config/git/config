@@ -6,7 +6,7 @@
 [core]
     excludesfile = ~/.config/git/ignore
     editor = vim
-    pager = less -FX
+    pager = delta
     autocrlf = input
 
 [init]
@@ -18,18 +18,48 @@
 [push]
     default = current
     autoSetupRemote = true
+    followTags = true
 
 [pull]
-    rebase = false
+    rebase = true
 
 [fetch]
     prune = true
+    pruneTags = true
+    writeCommitGraph = true
 
 [merge]
-    conflictstyle = diff3
+    conflictStyle = zdiff3
 
 [diff]
     colorMoved = default
+    algorithm = histogram
+    colorMovedWS = allow-indentation-change
+
+[rebase]
+    autoSquash = true
+    updateRefs = true
+
+[transfer]
+    fsckObjects = true
+
+[rerere]
+    enabled = true
+
+[help]
+    autoCorrect = 1
+
+[commit]
+    verbose = true
+    template = ~/.gitmessage
+
+[branch]
+    sort = -committerdate
+
+[delta]
+    navigate = true
+    side-by-side = true
+    line-numbers = true
 
 [alias]
     # Status

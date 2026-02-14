@@ -1,0 +1,113 @@
+# Shell utility functions
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if eq .chezmoi.os "darwin" -}}
+# Show SSL certificate CNs and SANs for a domain
+getcertnames() {
+  if [ -z "$1" ]; then
+    echo "Usage: getcertnames <domain>"
+    return 1
+  fi
+  local tmp
+  tmp=$(echo -e "GET / HTTP/1.0\nEOT" \
+    | openssl s_client -connect "$1:443" -servername "$1" 2>&1)
+  if [[ "$tmp" == *"-----BEGIN CERTIFICATE-----"* ]]; then
+    echo "$tmp" \
+      | openssl x509 -noout -subject -nameopt RFC2253 \
+      | sed 's/subject=/CN: /'
+    echo "$tmp" \
+      | openssl x509 -noout -ext subjectAltName \
+      | sed 's/DNS://g' | tr ',' '\n' | sed 's/^ */  /'
+  else
+    echo "ERROR: could not connect to $1:443"
+    return 1
+  fi
+}
+
+# cd to Finder's current directory
+cdf() { cd "$(osascript -e 'tell app "Finder" to POSIX path of (insertion location as alias)')"; }
+
+# DNS lookup with all records
+digga() { dig +nocmd "$1" any +multiline +noall +answer; }
+
+# Get bundle identifier for a macOS app
+bundleid() {
+  osascript -e "id of app \"$1\"" 2>/dev/null | pbcopy
+  echo "Bundle ID copied to clipboard"
+}
+
+# Quick weather
+weather() { curl -s "https://wttr.in/${1:-}?format=3"; }
+
+# Fuzzy-find and kill a process
+fkill() { ps -ef | fzf --header-lines=1 | awk '{print $2}' | xargs kill -${1:-9}; }
+
+# URL unshortener
+unshorten() { curl -sIL "$1" 2>/dev/null | sed -n 's/[Ll]ocation: *//p'; }
+
+# Compress PDF with Ghostscript
+shrinkpdf() {
+  if [ -z "$1" ]; then echo "Usage: shrinkpdf <input.pdf> [output.pdf]"; return 1; fi
+  local out="${2:-${1%.pdf}-compressed.pdf}"
+  gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/ebook \
+    -dNOPAUSE -dQUIET -dBATCH -sOutputFile="$out" "$1"
+  echo "Compressed: $(du -h "$1" | cut -f1) → $(du -h "$out" | cut -f1)"
+}
+
+# Show local and public IP
+myip() {
+  local iface ip
+  for iface in en0 en1 en4; do
+    ip=$(ipconfig getifaddr "$iface" 2>/dev/null)
+    [ -n "$ip" ] && echo "Local ($iface): $ip" && break
+  done
+  echo "Public:      $(curl -s https://ipinfo.io/ip)"
+}
+
+# Flush DNS cache
+flush-dns() {
+  sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
+  echo "DNS cache flushed"
+}
+
+# Docker cleanup
+docker-clean() {
+  docker system prune -af --volumes
+  docker system df
+}
+
+# Git: prune stale remotes and merged branches
+git-tidy() {
+  git fetch --prune
+  git branch --no-color --merged \
+    | grep -v '^\*\|main\|master\|dev' \
+    | xargs -n 1 git branch -d 2>/dev/null
+  echo "Tidied up"
+}
+
+# Create directory and cd into it
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
+# Extract any archive
+extract() {
+  if [ ! -f "$1" ]; then echo "'$1' not found"; return 1; fi
+  case "$1" in
+    *.tar.bz2) tar xjf "$1" ;;
+    *.tar.gz)  tar xzf "$1" ;;
+    *.tar.xz)  tar xJf "$1" ;;
+    *.bz2)     bunzip2 "$1" ;;
+    *.gz)      gunzip "$1" ;;
+    *.tar)     tar xf "$1" ;;
+    *.tbz2)    tar xjf "$1" ;;
+    *.tgz)     tar xzf "$1" ;;
+    *.zip)     unzip "$1" ;;
+    *.Z)       uncompress "$1" ;;
+    *.7z)      7z x "$1" ;;
+    *)         echo "'$1' cannot be extracted" ;;
+  esac
+}
+
+# Show/hide desktop icons
+alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
+alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
+{{ end -}}

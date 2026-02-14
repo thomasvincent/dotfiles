@@ -1,0 +1,5 @@
+{{ if eq .chezmoi.os "darwin" -}}
+pinentry-program {{ output "brew" "--prefix" | trim }}/bin/pinentry-mac
+default-cache-ttl 600
+max-cache-ttl 7200
+{{ end -}}

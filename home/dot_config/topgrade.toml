@@ -1,0 +1,10 @@
+[misc]
+assume_yes = true
+cleanup = true
+no_retry = true
+
+[linux]
+yay_arguments = "--nodiffmenu"
+
+[commands]
+"Chezmoi update" = "chezmoi update --apply"
