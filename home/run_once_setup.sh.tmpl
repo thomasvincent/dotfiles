@@ -4,9 +4,6 @@
 
 set -euo pipefail
 
-# Create necessary directories
-mkdir -p "$HOME/.zsh"
-
 # Create productivity directories if enabled
 {{ if .enable_productivity -}}
 mkdir -p "{{ .preferences.task_dir | default "$HOME/.tasks" }}"

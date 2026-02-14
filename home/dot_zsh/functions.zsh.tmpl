@@ -1,7 +1,6 @@
 # Shell functions
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if eq .chezmoi.os "darwin" -}}
 # Create a directory and cd into it
 mkd() { mkdir -p "$@" && cd "$_"; }
 
@@ -32,4 +31,3 @@ showcolors() {
 
 # Highlight a pattern in command output
 hl() { grep --color=always -E "$1|$" "${@:2}"; }
-{{ end -}}

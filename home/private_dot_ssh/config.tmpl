@@ -17,10 +17,10 @@ Host github.com
     IdentityFile ~/.ssh/id_ed25519
     IdentitiesOnly yes
 
-{{ if and (hasKey . "work") .work -}}
+{{ if .work -}}
 # Work-specific configuration
 Host *.work.example.com
-    User {{ if hasKey . "work_username" }}{{ .work_username }}{{ end }}
+    User {{ .work_username }}
     IdentityFile ~/.ssh/id_work
     IdentitiesOnly yes
 {{ end -}}

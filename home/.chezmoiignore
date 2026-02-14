@@ -7,11 +7,6 @@ Jenkinsfile
 VERSION
 SECURITY.md
 
-# Linux-only files (skip on macOS)
-{{ if eq .chezmoi.os "darwin" }}
-# nothing to exclude on macOS currently
-{{ end }}
-
 # macOS-only files (skip on Linux)
 {{ if ne .chezmoi.os "darwin" }}
 .zsh/macos_gtd_workflows.zsh

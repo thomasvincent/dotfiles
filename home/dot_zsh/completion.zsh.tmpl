@@ -28,4 +28,4 @@ zstyle ':completion:*:descriptions' format '%B%d%b'
 
 # Cache completions
 zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/.zcompcache"
+zstyle ':completion:*' cache-path "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/.zcompcache"
