@@ -86,7 +86,6 @@ gcp-who() {
 # DigitalOcean Configuration
 export DIGITALOCEAN_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/doctl"
 
-# Helper function to check for doctl installation
 _check_doctl() {
   if ! command -v doctl >/dev/null 2>&1; then
     echo "Error: doctl CLI not installed."
@@ -103,7 +102,7 @@ _check_doctl() {
   return 0
 }
 
-# List DigitalOcean droplets with details
+# List droplets
 do-droplets() {
   _check_doctl || return 1
 
@@ -154,7 +153,6 @@ do-create-droplet() {
     $ssh_key_param \
     --wait
 
-  # Show the new droplet details
   echo "Droplet created:"
   doctl compute droplet get "$name" --format "ID,Name,Public IPv4,Memory,VCPUs,Disk,Region,Status"
 }
@@ -205,7 +203,6 @@ do-create-lamp() {
     --region "$region" \
     --wait
 
-  # Show the new droplet details
   echo "LAMP Stack droplet created:"
   doctl compute droplet get "$name" --format "ID,Name,Public IPv4,Memory,VCPUs,Status"
 
@@ -236,7 +233,6 @@ do-create-wordpress() {
     --region "$region" \
     --wait
 
-  # Show the new droplet details
   echo "WordPress droplet created:"
   doctl compute droplet get "$name" --format "ID,Name,Public IPv4,Memory,VCPUs,Status"
 
@@ -286,7 +282,6 @@ do-create-db() {
     --region "$region" \
     --version "$version"
 
-  # Show the new database details
   echo "Database cluster created:"
   doctl databases get "$name"
 }
@@ -334,7 +329,6 @@ do-create-k8s() {
     --count "$count" \
     --version "$version"
 
-  # Show the new cluster details
   echo "Kubernetes cluster created:"
   doctl kubernetes cluster get "$name"
 }
@@ -355,7 +349,6 @@ do-k8s-config() {
   echo "Configuring kubectl for DigitalOcean Kubernetes cluster $cluster_id..."
   doctl kubernetes cluster kubeconfig save "$cluster_id"
 
-  # Verify the connection
   echo "Testing connection to cluster..."
   kubectl get nodes
 }

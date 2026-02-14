@@ -9,11 +9,11 @@
 # ==================================
 
 # Google service account credentials path (if using API automation)
-GOOGLE_CREDENTIALS_PATH="{{ .preferences.google_credentials_path | default \"$HOME/.config/google/credentials.json\" }}"
-GOOGLE_AUTH_TOKEN_PATH="{{ .preferences.google_auth_token_path | default \"$HOME/.config/google/token.json\" }}"
+GOOGLE_CREDENTIALS_PATH="{{ .preferences.google_credentials_path | default "$HOME/.config/google/credentials.json" }}"
+GOOGLE_AUTH_TOKEN_PATH="{{ .preferences.google_auth_token_path | default "$HOME/.config/google/token.json" }}"
 
 # Google GTD folder structure for Drive
-GTD_DRIVE_ROOT="{{ .preferences.google_gtd_drive_folder | default \"GTD System\" }}"
+GTD_DRIVE_ROOT="{{ .preferences.google_gtd_drive_folder | default "GTD System" }}"
 GTD_DRIVE_INBOX="${GTD_DRIVE_ROOT}/Inbox"
 GTD_DRIVE_PROJECTS="${GTD_DRIVE_ROOT}/Projects"
 GTD_DRIVE_REFERENCE="${GTD_DRIVE_ROOT}/Reference"
@@ -97,9 +97,9 @@ gcal-new() {
   fi
 
   # URL encode the parameters
-  local encoded_title=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$title'''))" 2>/dev/null || echo "$title")
-  local encoded_details=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$details'''))" 2>/dev/null || echo "$details")
-  local encoded_location=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$location'''))" 2>/dev/null || echo "$location")
+  local encoded_title=$(_url_encode "$title")
+  local encoded_details=$(_url_encode "$details")
+  local encoded_location=$(_url_encode "$location")
 
   # Create the Google Calendar URL
   local gcal_url="https://calendar.google.com/calendar/r/eventedit?text=${encoded_title}&dates=${formatted_start}/${formatted_end}&details=${encoded_details}&location=${encoded_location}"
@@ -236,7 +236,7 @@ gkeep-capture() {
   fi
 
   # Escape the note text
-  local encoded_text=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$note_text'''))" 2>/dev/null || echo "$note_text")
+  local encoded_text=$(_url_encode "$note_text")
 
   # Construct the URL with note content
   local keep_url="https://keep.google.com/#create/text=${encoded_text}"
@@ -262,7 +262,7 @@ gkeep-label() {
   fi
 
   # Escape the label name
-  local encoded_label=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$label'''))" 2>/dev/null || echo "$label")
+  local encoded_label=$(_url_encode "$label")
 
   # Construct the URL with label filter
   local keep_url="https://keep.google.com/#label/${encoded_label}"
@@ -314,7 +314,7 @@ gmail-search() {
   fi
 
   # URL encode the search query
-  local encoded_query=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$search_query'''))" 2>/dev/null || echo "$search_query")
+  local encoded_query=$(_url_encode "$search_query")
 
   # Construct the Gmail search URL
   local gmail_url="https://mail.google.com/mail/u/0/#search/${encoded_query}"
@@ -342,9 +342,9 @@ gmail-compose() {
   fi
 
   # URL encode the parameters
-  local encoded_to=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$to'''))" 2>/dev/null || echo "$to")
-  local encoded_subject=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$subject'''))" 2>/dev/null || echo "$subject")
-  local encoded_body=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$body'''))" 2>/dev/null || echo "$body")
+  local encoded_to=$(_url_encode "$to")
+  local encoded_subject=$(_url_encode "$subject")
+  local encoded_body=$(_url_encode "$body")
 
   # Create the mailto URL (Gmail will intercept this if set as default handler)
   local mailto_url="mailto:${encoded_to}?subject=${encoded_subject}&body=${encoded_body}"
@@ -452,7 +452,7 @@ gdrive-search() {
   fi
 
   # URL encode the search term
-  local encoded_term=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$search_term'''))" 2>/dev/null || echo "$search_term")
+  local encoded_term=$(_url_encode "$search_term")
 
   # Construct the Drive search URL
   local drive_url="https://drive.google.com/drive/u/0/search?q=${encoded_term}"
@@ -472,7 +472,7 @@ gdocs-new() {
   local title=${1:-"Untitled Document"}
 
   # URL encode the title
-  local encoded_title=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$title'''))" 2>/dev/null || echo "$title")
+  local encoded_title=$(_url_encode "$title")
 
   # Create the document URL
   local docs_url="https://docs.google.com/document/u/0/create?title=${encoded_title}"
@@ -492,7 +492,7 @@ gsheets-new() {
   local title=${1:-"Untitled Spreadsheet"}
 
   # URL encode the title
-  local encoded_title=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$title'''))" 2>/dev/null || echo "$title")
+  local encoded_title=$(_url_encode "$title")
 
   # Create the spreadsheet URL
   local sheets_url="https://sheets.google.com/create?title=${encoded_title}"
