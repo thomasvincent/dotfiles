@@ -13,7 +13,7 @@ fs() {
   else
     local arg=-sh
   fi
-  if [[ -n "$@" ]]; then
+  if [[ $# -gt 0 ]]; then
     du $arg -- "$@"
   else
     du $arg .[^.]* ./*
@@ -33,3 +33,15 @@ showcolors() {
 
 # Highlight a pattern in command output
 hl() { grep --color=always -E "$1|$" "${@:2}"; }
+
+# URL-encode a string (used by GTD workflow modules)
+_url_encode() {
+  python3 -c "import urllib.parse; print(urllib.parse.quote('$1'))"
+}
+
+# Bail out if a command is missing
+_require_cmd() {
+  command -v "$1" >/dev/null 2>&1 && return 0
+  echo "Error: $1 is not installed.${2:+ Install with: $2}"
+  return 1
+}
