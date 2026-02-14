@@ -20,11 +20,7 @@ rails-init-project() {
     return 1
   fi
 
-  if ! command -v rails >/dev/null 2>&1; then
-    echo "Error: Rails is not installed."
-    echo "Install it with: gem install rails"
-    return 1
-  fi
+  _require_cmd "rails" "gem install rails" || return 1
 
   mkdir -p "$(dirname "$directory")"
 
@@ -701,11 +697,7 @@ rails-init-api() {
     return 1
   fi
 
-  if ! command -v rails >/dev/null 2>&1; then
-    echo "Error: Rails is not installed."
-    echo "Install it with: gem install rails"
-    return 1
-  fi
+  _require_cmd "rails" "gem install rails" || return 1
 
   mkdir -p "$(dirname "$directory")"
 

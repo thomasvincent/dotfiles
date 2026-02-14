@@ -17,11 +17,7 @@ ansible-init-project() {
     return 1
   fi
 
-  if ! command -v ansible >/dev/null 2>&1; then
-    echo "Error: Ansible is not installed."
-    echo "Install it with: pip install ansible"
-    return 1
-  fi
+  _require_cmd "ansible" "pip install ansible" || return 1
 
   mkdir -p "$directory"
   cd "$directory" || return 1
@@ -29,7 +25,6 @@ ansible-init-project() {
   # Create recommended directory structure
   mkdir -p {inventories,roles,group_vars,host_vars,playbooks,library,filter_plugins,files,templates}
 
-  # Create basic configuration files
   cat > ansible.cfg << 'EOF'
 [defaults]
 inventory = ./inventories
@@ -47,7 +42,6 @@ pipelining = True
 ssh_args = -o ControlMaster=auto -o ControlPersist=60s -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
 EOF
 
-  # Create inventory file
   cat > inventories/hosts << 'EOF'
 [local]
 localhost ansible_connection=local
@@ -69,7 +63,6 @@ ansible_ssh_user=root
 # Add global variables here
 EOF
 
-  # Create a simple example playbook
   cat > playbooks/site.yml << 'EOF'
 ---
 - name: Main playbook
@@ -84,7 +77,6 @@ EOF
         - always
 EOF
 
-  # Create a README file
   cat > README.md << "EOF"
 # Ansible Project: ${project_name}
 
@@ -119,10 +111,8 @@ ansible-playbook playbooks/site.yml -i inventories/hosts --check
 ```
 EOF
 
-  # Initialize git repository
   git init
 
-  # Create .gitignore
   cat > .gitignore << 'EOF'
 *.retry
 *.pyc
@@ -138,7 +128,6 @@ __pycache__/
 *.swo
 EOF
 
-  # Create initial commit
   git add .
   git commit -m "Initial Ansible project setup"
 
@@ -160,11 +149,7 @@ ansible-new-role() {
     return 1
   fi
 
-  if ! command -v ansible-galaxy >/dev/null 2>&1; then
-    echo "Error: ansible-galaxy is not installed."
-    echo "Install it with: pip install ansible"
-    return 1
-  fi
+  _require_cmd "ansible-galaxy" "pip install ansible" || return 1
 
   mkdir -p "$directory"
   ansible-galaxy init "$directory/$role_name"
@@ -271,11 +256,7 @@ all:
     ansible_ssh_private_key_file: ~/.ssh/id_rsa
 EOF
   elif [[ "$source" == "aws" ]]; then
-    if ! command -v aws >/dev/null 2>&1; then
-      echo "Error: AWS CLI is not installed."
-      echo "Install it with: pip install awscli"
-      return 1
-    fi
+    _require_cmd "aws" "pip install awscli" || return 1
 
     cat > "$output_file" << 'EOF'
 #!/bin/bash
@@ -388,11 +369,7 @@ ansible-scan-network() {
     return 1
   fi
 
-  if ! command -v nmap >/dev/null 2>&1; then
-    echo "Error: nmap is not installed."
-    echo "Install it with: brew install nmap (macOS) or apt install nmap (Linux)"
-    return 1
-  fi
+  _require_cmd "nmap" "brew install nmap (macOS) or apt install nmap (Linux)" || return 1
 
   echo "Scanning network $network for hosts..."
 
@@ -460,7 +437,6 @@ ansible-playbook-wizard() {
     gather_facts="false"
   fi
 
-  # Create the playbook file
   cat > "playbooks/$playbook_name" << EOF
 ---
 - name: ${playbook_name%.*} playbook

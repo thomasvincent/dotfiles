@@ -18,11 +18,7 @@ groovy-init-project() {
     return 1
   fi
 
-  if ! command -v gradle >/dev/null 2>&1; then
-    echo "Error: Gradle is not installed."
-    echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
-    return 1
-  fi
+  _require_cmd "gradle" "brew install gradle (macOS) or sdk install gradle (sdkman)" || return 1
 
   mkdir -p "$directory"
   cd "$directory" || return 1
@@ -389,7 +385,6 @@ groovy-new-script() {
     script_name="${script_name}.groovy"
   fi
 
-  # Create the script file
   cat > "$script_name" << EOF
 #!/usr/bin/env groovy
 /**
@@ -454,7 +449,6 @@ class Script {
 Script.main(args)
 EOF
 
-  # Make the script executable
   chmod +x "$script_name"
 
   echo "Groovy script created at: $script_name"
@@ -472,11 +466,9 @@ groovy-gen-class() {
     return 1
   fi
 
-  # Create the package directory structure
   local package_dir="src/main/groovy/${package_name//./\/}"
   mkdir -p "$package_dir"
 
-  # Define the class file path
   local class_file="$package_dir/$class_name.groovy"
 
   cat > "$class_file" << EOF
@@ -583,11 +575,7 @@ groovy-run() {
     return 1
   fi
 
-  if ! command -v groovy >/dev/null 2>&1; then
-    echo "Error: Groovy is not installed."
-    echo "Install it with: brew install groovy (macOS) or sdk install groovy (sdkman)"
-    return 1
-  fi
+  _require_cmd "groovy" "brew install groovy (macOS) or sdk install groovy (sdkman)" || return 1
 
   groovy "$script_path" $args
 }
@@ -608,7 +596,6 @@ groovy-convert-java() {
     return 1
   fi
 
-  # Get the class name and package
   local class_name=$(basename "$java_file" .java)
   local package_name=$(grep -o "package [a-zA-Z0-9_.]*;" "$java_file" | sed "s/package //;s/;//")
 
@@ -620,7 +607,6 @@ groovy-convert-java() {
 
   echo "Converting $java_file to Groovy..."
 
-  # Read the Java file
   local java_content=$(cat "$java_file")
 
   # Replace common Java patterns with Groovy equivalents
@@ -637,7 +623,6 @@ groovy-convert-java() {
   groovy_content=$(echo "$groovy_content" | sed '/^package/a \\nimport groovy.transform.CompileStatic')
   groovy_content=$(echo "$groovy_content" | sed '/^public class/i @CompileStatic')
 
-  # Write the Groovy file
   echo "$groovy_content" > "$output_file"
 
   echo "Converted file created at: $output_file"
@@ -655,15 +640,12 @@ groovy-gen-dsl() {
     return 1
   fi
 
-  # Create the package directory structure
   local package_dir="src/main/groovy/${package_name//./\/}"
   mkdir -p "$package_dir"
 
-  # Define the DSL files
   local builder_file="$package_dir/${dsl_name}.groovy"
   local example_file="$package_dir/${dsl_name}Example.groovy"
 
-  # Create the builder file
   cat > "$builder_file" << EOF
 package $package_name
 
@@ -885,7 +867,6 @@ groovy-install() {
     return 0
   fi
 
-  # Install the specified Groovy version
   sdk install groovy "$version"
 
   # Verify installation
@@ -908,7 +889,6 @@ groovy-grape-script() {
     script_name="${script_name}.groovy"
   fi
 
-  # Create the script file
   cat > "$script_name" << EOF
 #!/usr/bin/env groovy
 /**
@@ -976,7 +956,6 @@ class Script {
 Script.main(args)
 EOF
 
-  # Make the script executable
   chmod +x "$script_name"
 
   echo "Groovy script with Grape dependencies created at: $script_name"

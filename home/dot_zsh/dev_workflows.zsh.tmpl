@@ -23,10 +23,7 @@ wp-init() {
   mkdir -p "$dir"
   cd "$dir" || return 1
 
-  if ! command -v docker >/dev/null 2>&1; then
-    echo "Error: Docker is not installed. Please install Docker first."
-    return 1
-  fi
+  _require_cmd "docker" "Install Docker from https://docs.docker.com/get-docker/" || return 1
 
   if ! command -v docker-compose >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
     echo "Error: docker-compose is not installed. Please install docker-compose first."
@@ -340,7 +337,6 @@ wp-install-cli() {
     echo "WP-CLI installed at $HOME/bin/wp"
   fi
 
-  # Test the installation
   if command -v wp >/dev/null 2>&1; then
     wp --info
   else
@@ -365,13 +361,8 @@ chef-init-cookbook() {
     return 1
   fi
 
-  if ! command -v chef >/dev/null 2>&1; then
-    echo "Error: Chef is not installed."
-    echo "Install it with: gem install chef"
-    return 1
-  fi
+  _require_cmd "chef" "gem install chef" || return 1
 
-  # Create the cookbook
   chef generate cookbook "$cookbook_name" $options
 
   # Navigate to the cookbook
@@ -437,7 +428,6 @@ chef-gen-recipe() {
     return 1
   fi
 
-  # Generate the recipe
   chef generate recipe "$recipe_name"
 
   # Generate a test for the recipe
@@ -459,11 +449,7 @@ chef-test() {
     return 1
   fi
 
-  if ! command -v kitchen >/dev/null 2>&1; then
-    echo "Error: Test Kitchen is not installed."
-    echo "Install it with: gem install test-kitchen kitchen-vagrant"
-    return 1
-  fi
+  _require_cmd "kitchen" "gem install test-kitchen kitchen-vagrant" || return 1
 
   echo "Testing Chef cookbook..."
 
@@ -488,7 +474,6 @@ chef-create-role() {
 
   mkdir -p roles
 
-  # Create the role file
   cat > "roles/$role_name.json" << EOF
 {
   "name": "$role_name",
@@ -528,7 +513,6 @@ chef-report() {
   local cookbook_name=$(grep "^name" metadata.rb | sed -E "s/name\s+'([^']+)'.*/\1/")
   local cookbook_version=$(grep "^version" metadata.rb | sed -E "s/version\s+'([^']+)'.*/\1/")
 
-  # Create the report
   cat > "$output_file" << EOF
 # Chef Cookbook Report: $cookbook_name v$cookbook_version
 
@@ -592,7 +576,6 @@ chef-upload() {
 
   echo "Uploading cookbook $cookbook_name to Chef server..."
 
-  # Run foodcritic to check for lint errors
   if command -v foodcritic >/dev/null 2>&1; then
     echo "Running foodcritic..."
     foodcritic .
@@ -608,7 +591,6 @@ chef-upload() {
     fi
   fi
 
-  # Upload the cookbook
   knife cookbook upload "$cookbook_name"
 
   if [[ $? -eq 0 ]]; then
@@ -710,7 +692,6 @@ puppet-gen-class() {
     return 1
   fi
 
-  # Create the class using PDK if available
   if command -v pdk >/dev/null 2>&1; then
     echo "Creating class with PDK..."
     pdk new class "$class_name"
@@ -833,11 +814,7 @@ EOF
 puppet-lint() {
   local path=${1:-.}
 
-  if ! command -v puppet-lint >/dev/null 2>&1; then
-    echo "Error: puppet-lint is not installed."
-    echo "Install it with: gem install puppet-lint"
-    return 1
-  fi
+  _require_cmd "puppet-lint" "gem install puppet-lint" || return 1
 
   echo "Running puppet-lint on $path..."
   puppet-lint --fix --relative "$path"

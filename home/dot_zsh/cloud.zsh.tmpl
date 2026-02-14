@@ -87,11 +87,7 @@ gcp-who() {
 export DIGITALOCEAN_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/doctl"
 
 _check_doctl() {
-  if ! command -v doctl >/dev/null 2>&1; then
-    echo "Error: doctl CLI not installed."
-    echo "Install with: brew install doctl (macOS) or snap install doctl (Linux)"
-    return 1
-  fi
+  _require_cmd "doctl" "brew install doctl (macOS) or snap install doctl (Linux)" || return 1
 
   if ! doctl account get >/dev/null 2>&1; then
     echo "Error: doctl not authenticated."

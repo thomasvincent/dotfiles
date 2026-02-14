@@ -18,11 +18,7 @@ java-init-gradle() {
     return 1
   fi
 
-  if ! command -v gradle >/dev/null 2>&1; then
-    echo "Error: Gradle is not installed."
-    echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
-    return 1
-  fi
+  _require_cmd "gradle" "brew install gradle (macOS) or sdk install gradle (sdkman)" || return 1
 
   mkdir -p "$directory"
   cd "$directory" || return 1
@@ -628,11 +624,9 @@ java-gen-class() {
     return 1
   fi
 
-  # Create the package directory structure
   local package_dir="src/main/java/${package_name//./\/}"
   mkdir -p "$package_dir"
 
-  # Define the class file path
   local class_file="$package_dir/$class_name.java"
 
   cat > "$class_file" << EOF
@@ -714,11 +708,9 @@ java-gen-pojo() {
     return 1
   fi
 
-  # Create the package directory structure
   local package_dir="src/main/java/${package_name//./\/}"
   mkdir -p "$package_dir"
 
-  # Define the class file path
   local class_file="$package_dir/$class_name.java"
 
   IFS=',' read -ra FIELD_ARRAY <<< "$fields"
@@ -889,11 +881,7 @@ java-gradle-wrapper() {
     return 1
   fi
 
-  if ! command -v gradle >/dev/null 2>&1; then
-    echo "Error: Gradle is not installed."
-    echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
-    return 1
-  fi
+  _require_cmd "gradle" "brew install gradle (macOS) or sdk install gradle (sdkman)" || return 1
 
   # Create Gradle wrapper
   gradle wrapper
@@ -1008,7 +996,6 @@ java-gen-test() {
     return 1
   fi
 
-  # Create the test directory structure
   local test_dir="src/test/java/${package_name//./\/}"
   mkdir -p "$test_dir"
 
@@ -1024,7 +1011,6 @@ java-gen-test() {
   # Define the test file path
   local test_file="$test_dir/$test_class_name.java"
 
-  # Create the test file
   cat > "$test_file" << EOF
 package $package_name;
 
