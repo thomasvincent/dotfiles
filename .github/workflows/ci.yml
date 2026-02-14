@@ -42,17 +42,17 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
     - name: Verify CLAUDE.md exists
       run: test -f CLAUDE.md || (echo "Missing CLAUDE.md" && exit 1)
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
       with:
         python-version: '3.11'
         cache: 'pip'
@@ -74,25 +74,19 @@ jobs:
   test-linux:
     name: Test on Linux
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-    - name: Install Zsh
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y zsh
+        sudo apt-get install -y zsh bats
 
-    - name: Run shell startup test
-      run: |
-        if [[ -f "tests/test_shell_startup.sh" ]]; then
-          chmod +x tests/test_shell_startup.sh
-          ./tests/test_shell_startup.sh || echo "Shell startup test failed but continuing"
-        else
-          echo "No test script found, skipping"
-        fi
+    - name: Run tests
+      run: bats tests/shell_syntax.bats tests/duplicate_functions.bats tests/config_validation.bats tests/template_syntax.bats
 
   # ===========================================================================
   # macOS Test Job
@@ -103,20 +97,17 @@ jobs:
   test-macos:
     name: Test on macOS
     runs-on: macos-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-    - name: Run shell startup test
-      run: |
-        if [[ -f "tests/test_shell_startup.sh" ]]; then
-          chmod +x tests/test_shell_startup.sh
-          ./tests/test_shell_startup.sh || echo "Shell startup test failed but continuing"
-        else
-          echo "No test script found, skipping"
-        fi
+    - name: Install bats
+      run: brew install bats-core
+
+    - name: Run tests
+      run: bats tests/shell_syntax.bats tests/duplicate_functions.bats tests/config_validation.bats tests/template_syntax.bats
 
   # ===========================================================================
   # Template Verification Job
@@ -127,42 +118,32 @@ jobs:
   verify-templates:
     name: Verify Chezmoi Templates
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
     - name: Install Chezmoi
       run: |
         sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $(pwd)/bin
         echo "$(pwd)/bin" >> $GITHUB_PATH
 
-    - name: Use actual chezmoi config for template testing
+    - name: Verify templates with minimal profile
       run: |
-        mkdir -p .config
-        # Convert chezmoi.toml to JSON format for template testing
-        if [[ -f "chezmoi.toml" ]]; then
-          cp chezmoi.toml .config/chezmoi.toml
-        fi
-
-    - name: Verify all templates
-      run: |
-        # Find all .tmpl files and verify each one
         FAILED=0
-        for template in $(find . -name "*.tmpl" -type f 2>/dev/null); do
+        for template in $(find home -name "*.tmpl" -type f 2>/dev/null); do
           echo "Verifying $template..."
-          if chezmoi execute-template --config=.config/chezmoi.toml < "$template" > /dev/null 2>&1; then
-            echo "  ✓ OK"
+          if chezmoi --config=tests/fixtures/chezmoi-minimal.toml execute-template < "$template" > /dev/null 2>&1; then
+            echo "  OK"
           else
-            echo "  ✗ FAILED"
+            echo "  FAILED"
             FAILED=1
           fi
         done
-
-        if [[ $FAILED -eq 0 ]]; then
-          echo "✅ All templates verified successfully!"
+        if [ $FAILED -eq 0 ]; then
+          echo "All templates verified successfully"
         else
-          echo "❌ Some templates failed verification"
+          echo "Some templates failed verification"
           exit 1
         fi
