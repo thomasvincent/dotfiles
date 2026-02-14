@@ -528,13 +528,11 @@ EOF
 tf-visualize() {
   local planfile="${1:-tfplan.out}"
 
-  # Check if terraform is installed
   if ! command -v terraform &>/dev/null; then
     echo "Error: terraform not found."
     return 1
   fi
 
-  # Check if graphviz is installed
   if ! command -v dot &>/dev/null; then
     echo "Error: graphviz is not installed."
     echo "Please install graphviz to visualize Terraform graphs."
@@ -568,7 +566,6 @@ tf-visualize() {
   # Convert DOT to PNG
   dot -Tpng "$dotfile" -o "$pngfile"
 
-  # Clean up
   rm "$dotfile"
 
   echo "Terraform graph generated: $pngfile"
@@ -585,7 +582,6 @@ tf-visualize() {
 tf-docs() {
   local dir="${1:-.}"
 
-  # Check if terraform-docs is installed
   if ! command -v terraform-docs &>/dev/null; then
     echo "Error: terraform-docs not found."
     echo "Install it with:"
@@ -662,7 +658,6 @@ tf-workspace-create() {
     return 1
   fi
 
-  # Check if workspace already exists
   if terraform workspace list | grep -q "$workspace"; then
     echo "Workspace '$workspace' already exists. Selecting it..."
     terraform workspace select "$workspace"
@@ -692,7 +687,6 @@ EOF
 tf-cost() {
   local env="${1:-dev}"
 
-  # Check if infracost is installed
   if ! command -v infracost &>/dev/null; then
     echo "Error: infracost not found."
     echo "Install it with:"
@@ -715,7 +709,6 @@ tf-cost() {
   # Run Infracost
   infracost breakdown --path tfplan.json
 
-  # Clean up
   rm -f tfplan.binary tfplan.json
 }
 
@@ -723,7 +716,6 @@ tf-cost() {
 tf-export() {
   echo "Exporting Terraform outputs as environment variables..."
 
-  # Check if terraform is installed
   if ! command -v terraform &>/dev/null; then
     echo "Error: terraform not found."
     return 1
@@ -806,7 +798,6 @@ alias vkm='vault kv metadata'
 vault-dev() {
   local vault_dir=${1:-"$HOME/.vault-dev"}
 
-  # Check if Vault is installed
   if ! command -v vault &>/dev/null; then
     echo "Error: vault not found."
     echo "Install it with:"
@@ -818,7 +809,6 @@ vault-dev() {
     return 1
   fi
 
-  # Create vault directory if it doesn't exist
   mkdir -p "$vault_dir"
   cd "$vault_dir" || return 1
 
@@ -1058,7 +1048,6 @@ alias cln='consul nodes'
 consul-dev() {
   local data_dir=${1:-"$HOME/.consul-dev"}
 
-  # Check if Consul is installed
   if ! command -v consul &>/dev/null; then
     echo "Error: consul not found."
     echo "Install it with:"
@@ -1070,7 +1059,6 @@ consul-dev() {
     return 1
   fi
 
-  # Create data directory if it doesn't exist
   mkdir -p "$data_dir"
 
   echo "Starting Consul development server with data directory: $data_dir"
@@ -1239,7 +1227,6 @@ alias ndns='nomad node status'
 nomad-dev() {
   local data_dir=${1:-"$HOME/.nomad-dev"}
 
-  # Check if Nomad is installed
   if ! command -v nomad &>/dev/null; then
     echo "Error: nomad not found."
     echo "Install it with:"
@@ -1251,7 +1238,6 @@ nomad-dev() {
     return 1
   fi
 
-  # Create data directory if it doesn't exist
   mkdir -p "$data_dir"
 
   echo "Starting Nomad development server with data directory: $data_dir"
@@ -1367,7 +1353,7 @@ nomad-logs() {
   fi
 
   # Get the allocation ID for the job
-  local alloc_id=$(nomad job status -t '{{range .Allocations}}{{if eq .ClientStatus "running"}}{{.ID}}{{end}}{{end}}' "$job_name")
+  local alloc_id=$(nomad job status -t '{{ "{{" }}range .Allocations{{ "}}" }}{{ "{{" }}if eq .ClientStatus "running"{{ "}}" }}{{ "{{" }}.ID{{ "}}" }}{{ "{{" }}end{{ "}}" }}{{ "{{" }}end{{ "}}" }}' "$job_name")
 
   if [[ -z "$alloc_id" ]]; then
     echo "Error: No running allocation found for job: $job_name"
@@ -1391,7 +1377,7 @@ nomad-exec() {
   fi
 
   # Get the allocation ID for the job
-  local alloc_id=$(nomad job status -t '{{range .Allocations}}{{if eq .ClientStatus "running"}}{{.ID}}{{end}}{{end}}' "$job_name")
+  local alloc_id=$(nomad job status -t '{{ "{{" }}range .Allocations{{ "}}" }}{{ "{{" }}if eq .ClientStatus "running"{{ "}}" }}{{ "{{" }}.ID{{ "}}" }}{{ "{{" }}end{{ "}}" }}{{ "{{" }}end{{ "}}" }}' "$job_name")
 
   if [[ -z "$alloc_id" ]]; then
     echo "Error: No running allocation found for job: $job_name"
@@ -1448,7 +1434,7 @@ packer-template() {
 # Packer Variables
 variable "ami_name" {
   type    = string
-  default = "$template_name-{{timestamp}}"
+  default = "$template_name-{{ "{{" }}timestamp}}"
 }
 
 variable "region" {
@@ -1467,7 +1453,7 @@ variable "ssh_username" {
 }
 
 locals {
-  timestamp = regex_replace(timestamp(), "[- TZ:]", "")
+  timestamp = regex_replace({{ "{{" }}timestamp}}(), "[- TZ:]", "")
 }
 EOF
 
@@ -1671,7 +1657,6 @@ EOF
 packer-lint() {
   local dir=${1:-.}
 
-  # Check if packer is installed
   if ! command -v packer &>/dev/null; then
     echo "Error: packer not found."
     return 1
@@ -1783,7 +1768,6 @@ boundary-env() {
   echo "Boundary environment variables set:"
   echo "BOUNDARY_ADDR=$BOUNDARY_ADDR"
 
-  # Check if boundary is installed
   if ! command -v boundary &>/dev/null; then
     echo "Warning: boundary command not found."
     echo "Install it with:"
@@ -1872,7 +1856,6 @@ waypoint-template() {
 
   local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
 
-  # Create project directory if it doesn't exist
   mkdir -p "$project_dir"
   cd "$project_dir" || return 1
 
@@ -2113,7 +2096,6 @@ EOF
 
 # Initialize Waypoint server in development mode
 waypoint-server-dev() {
-  # Check if waypoint is installed
   if ! command -v waypoint &>/dev/null; then
     echo "Error: waypoint not found."
     echo "Install it with:"
@@ -2129,7 +2111,6 @@ waypoint-server-dev() {
   waypoint server run
 }
 
-# Run the complete Waypoint deployment workflow
 waypoint-up() {
   local folder=${1:-.}
 

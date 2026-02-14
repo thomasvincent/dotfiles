@@ -46,7 +46,6 @@ gh-init() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
@@ -74,7 +73,6 @@ gh-init() {
     return 1
   fi
 
-  # Ask if user wants to clone the repository
   echo "Repository created successfully."
   read -p "Do you want to clone the repository now? (y/N) " clone_repo
 
@@ -93,10 +91,8 @@ gh-init-current() {
   local visibility=${1:-private}
   local description=${2:-""}
 
-  # Get the current directory name as the repo name
   local repo_name=$(basename "$PWD")
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
@@ -151,7 +147,6 @@ gh-fork() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
@@ -203,14 +198,12 @@ gh-new-issue() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
     return 1
   fi
 
-  # Create issue command
   local -a cmd=(gh issue create --title "$title")
 
   if [[ -n "$body" ]]; then
@@ -251,14 +244,12 @@ gh-new-pr() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
     return 1
   fi
 
-  # Create PR command
   local -a cmd=(gh pr create --title "$title")
 
   if [[ -n "$body" ]]; then
@@ -299,7 +290,6 @@ gh-search-repos() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
@@ -321,7 +311,6 @@ gh-search-issues() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
@@ -343,7 +332,6 @@ gh-clone() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
@@ -365,7 +353,6 @@ gh-clone() {
     fi
   fi
 
-  # Create parent directory if it doesn't exist
   mkdir -p "$(dirname "$clone_dir")"
 
   # Clone the repository
@@ -396,20 +383,17 @@ gh-new-gist() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
     return 1
   fi
 
-  # Check if file exists
   if [[ ! -f "$file_path" ]]; then
     echo "Error: File not found: $file_path"
     return 1
   fi
 
-  # Create gist command
   local -a cmd=(gh gist create "$file_path" --desc "$description")
 
   if [[ "$is_public" == "true" ]]; then
@@ -440,14 +424,12 @@ gh-release() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
     return 1
   fi
 
-  # Create release command
   local -a cmd=(gh release create "$tag_name" --title "$title")
 
   if [[ -n "$notes_file" && -f "$notes_file" ]]; then
@@ -485,7 +467,6 @@ gh-release-notes() {
     return 1
   fi
 
-  # Check if git is installed
   if ! command -v git &>/dev/null; then
     echo "Error: git not found."
     return 1
@@ -493,7 +474,6 @@ gh-release-notes() {
 
   echo "Generating release notes from $previous_tag to $new_tag..."
 
-  # Generate commit log
   local commit_log=$(git log --pretty=format:"* %s" "$previous_tag..$new_tag")
 
   if [[ -z "$commit_log" ]]; then
@@ -516,7 +496,6 @@ EOF
 
   echo "Release notes generated successfully in $output_file"
 
-  # Ask if user wants to view the file
   read -p "Do you want to view the release notes? (y/N) " view_notes
 
   if [[ "$view_notes" == "y" || "$view_notes" == "Y" ]]; then
@@ -532,14 +511,12 @@ EOF
 gh-workflows() {
   local repo=${1:-""}
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
     return 1
   fi
 
-  # List workflows command
   local -a cmd=(gh workflow list)
 
   if [[ -n "$repo" ]]; then
@@ -564,14 +541,12 @@ gh-run-workflow() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
     return 1
   fi
 
-  # Run workflow command
   local -a cmd=(gh workflow run "$workflow" --ref "$ref")
 
   if [[ -n "$repo" ]]; then
@@ -582,7 +557,6 @@ gh-run-workflow() {
     cmd+=(--raw-field "$inputs")
   fi
 
-  # Run the workflow
   echo "Running GitHub workflow: $workflow on $ref"
   "${cmd[@]}"
 
@@ -601,7 +575,6 @@ gh-new-workflow() {
     return 1
   fi
 
-  # Check if .github/workflows directory exists
   if [[ ! -d ".github/workflows" ]]; then
     echo "Creating .github/workflows directory..."
     mkdir -p .github/workflows
@@ -610,7 +583,6 @@ gh-new-workflow() {
   # Create workflow file path
   local workflow_file=".github/workflows/${workflow_name}.yml"
 
-  # Check if workflow file already exists
   if [[ -f "$workflow_file" ]]; then
     echo "Workflow file already exists: $workflow_file"
     read -p "Do you want to overwrite it? (y/N) " overwrite
@@ -671,10 +643,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Use Node.js \${{ matrix.node-version }}
+    - name: Use Node.js \${{ "{{" }} matrix.node-version }}
       uses: actions/setup-node@v3
       with:
-        node-version: \${{ matrix.node-version }}
+        node-version: \${{ "{{" }} matrix.node-version }}
         cache: 'npm'
 
     - name: Install dependencies
@@ -712,10 +684,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python \${{ matrix.python-version }}
+    - name: Set up Python \${{ "{{" }} matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: \${{ matrix.python-version }}
+        python-version: \${{ "{{" }} matrix.python-version }}
         cache: 'pip'
 
     - name: Install dependencies
@@ -761,14 +733,14 @@ jobs:
       if: github.event_name != 'pull_request'
       uses: docker/login-action@v2
       with:
-        username: \${{ secrets.DOCKERHUB_USERNAME }}
-        password: \${{ secrets.DOCKERHUB_TOKEN }}
+        username: \${{ "{{" }} secrets.DOCKERHUB_USERNAME }}
+        password: \${{ "{{" }} secrets.DOCKERHUB_TOKEN }}
 
     - name: Build and push
       uses: docker/build-push-action@v4
       with:
         context: .
-        push: \${{ github.event_name != 'pull_request' }}
+        push: \${{ "{{" }} github.event_name != 'pull_request' }}
         tags: user/app:latest
 EOF
       ;;
@@ -800,10 +772,10 @@ jobs:
       id: create_release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: \${{ "{{" }} secrets.GITHUB_TOKEN }}
       with:
-        tag_name: \${{ github.ref }}
-        release_name: Release \${{ github.ref }}
+        tag_name: \${{ "{{" }} github.ref }}
+        release_name: Release \${{ "{{" }} github.ref }}
         draft: false
         prerelease: false
         body_path: CHANGELOG.md
@@ -851,7 +823,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: \${{ steps.deployment.outputs.page_url }}
+      url: \${{ "{{" }} steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
 
@@ -873,7 +845,6 @@ EOF
 
   echo "GitHub Actions workflow created: $workflow_file with $template template"
 
-  # Ask if user wants to view the file
   read -p "Do you want to view the workflow file? (y/N) " view_file
 
   if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
@@ -941,7 +912,6 @@ EOF
   if [[ ! -f "LICENSE" ]]; then
     echo "Creating LICENSE file..."
 
-    # Get current year
     local year=$(date +%Y)
     local user_name="{{ .name | default "$(git config user.name)" }}"
 
@@ -974,7 +944,6 @@ EOF
   if [[ ! -f ".gitignore" ]]; then
     echo "Creating .gitignore file..."
 
-    # Base .gitignore contents
     cat > ".gitignore" << EOF
 # OS generated files
 .DS_Store
@@ -1011,7 +980,6 @@ node_modules/
 jspm_packages/
 EOF
 
-    # Add template-specific .gitignore entries
     case $template in
       python)
         cat >> ".gitignore" << EOF
@@ -1099,7 +1067,6 @@ EOF
   # Create issue templates
   mkdir -p .github/ISSUE_TEMPLATE
 
-  # Create bug report template
   cat > .github/ISSUE_TEMPLATE/bug_report.md << EOF
 ---
 name: Bug report
@@ -1133,7 +1100,6 @@ If applicable, add screenshots to help explain your problem.
 Add any other context about the problem here.
 EOF
 
-  # Create feature request template
   cat > .github/ISSUE_TEMPLATE/feature_request.md << EOF
 ---
 name: Feature request
@@ -1213,7 +1179,6 @@ EOF
 
   echo "GitHub project setup completed successfully."
 
-  # Ask if user wants to push to GitHub
   read -p "Do you want to push this project to GitHub? (y/N) " push_to_github
 
   if [[ "$push_to_github" == "y" || "$push_to_github" == "Y" ]]; then
@@ -1231,7 +1196,6 @@ gh-stats() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
@@ -1240,22 +1204,17 @@ gh-stats() {
 
   echo "Fetching stats for $repo..."
 
-  # Get repo info
   gh repo view "$repo" --json name,description,stargazers,forks,watchers,issues,updatedAt,createdAt
 
-  # Get collaborators
   echo "Collaborators:"
   gh api "repos/$repo/collaborators" --jq '.[].login'
 
-  # Get recent commits
   echo "Recent commits:"
   gh api "repos/$repo/commits" --jq '.[0:5] | .[] | {sha: .sha[0:7], message: .commit.message | split("\n")[0], author: .commit.author.name, date: .commit.author.date}'
 
-  # Get recent releases
   echo "Recent releases:"
   gh api "repos/$repo/releases" --jq '.[0:3] | .[] | {tag: .tag_name, name: .name, created: .created_at, url: .html_url}'
 
-  # Get traffic stats (requires push access)
   echo "Attempting to fetch traffic stats (requires push access)..."
   gh api "repos/$repo/traffic/views" --silent || echo "Could not fetch traffic stats. Push access required."
 }
@@ -1265,7 +1224,6 @@ gh-codeowners() {
   local codeowners_content=$1
 
   if [[ -z "$codeowners_content" ]]; then
-    # Create directory if it doesn't exist
     mkdir -p .github
 
     # Create CODEOWNERS file template
@@ -1290,7 +1248,6 @@ EOF
     echo "CODEOWNERS file created at .github/CODEOWNERS"
     echo "Please edit it to add appropriate ownership rules."
 
-    # Ask if user wants to view the file
     read -p "Do you want to view the CODEOWNERS file? (y/N) " view_file
 
     if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
@@ -1301,7 +1258,6 @@ EOF
       fi
     fi
   else
-    # Create directory if it doesn't exist
     mkdir -p .github
 
     # Create CODEOWNERS file with provided content
@@ -1322,7 +1278,6 @@ gh-badge() {
     return 1
   fi
 
-  # Extract repository information
   local repo
   if [[ -d .git ]]; then
     repo=$(git remote get-url origin 2>/dev/null | sed -e 's/.*github.com[:\/]\(.*\)\.git/\1/')
@@ -1333,13 +1288,11 @@ gh-badge() {
     return 1
   fi
 
-  # Generate badge markdown
   local badge_markdown="![${workflow%.*}](https://github.com/$repo/actions/workflows/$workflow/badge.svg?branch=$branch)"
 
   echo "GitHub Actions status badge for $workflow on $branch:"
   echo "$badge_markdown"
 
-  # Ask if user wants to add it to README.md
   read -p "Do you want to add this badge to README.md? (y/N) " add_to_readme
 
   if [[ "$add_to_readme" == "y" || "$add_to_readme" == "Y" ]]; then
@@ -1378,7 +1331,6 @@ $badge_markdown/" README.md
 
 # Create a GitHub dependabot configuration
 gh-dependabot() {
-  # Create directory if it doesn't exist
   mkdir -p .github
 
   # Create dependabot.yml file
@@ -1405,7 +1357,6 @@ EOF
 
   echo "Dependabot configuration created at .github/dependabot.yml"
 
-  # Ask if user wants to customize the configuration
   read -p "Do you want to customize the dependabot configuration? (y/N) " customize
 
   if [[ "$customize" == "y" || "$customize" == "Y" ]]; then
@@ -1423,7 +1374,6 @@ EOF
 
 # Create a GitHub pull request template
 gh-pr-template() {
-  # Create directory if it doesn't exist
   mkdir -p .github
 
   # Create pull request template
@@ -1456,7 +1406,6 @@ EOF
 
   echo "Pull request template created at .github/pull_request_template.md"
 
-  # Ask if user wants to view the file
   read -p "Do you want to view the PR template? (y/N) " view_file
 
   if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
@@ -1496,7 +1445,6 @@ EOF
 
   echo "Security policy created at SECURITY.md"
 
-  # Ask if user wants to view the file
   read -p "Do you want to view the security policy? (y/N) " view_file
 
   if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
@@ -1519,7 +1467,6 @@ gh-branch-protection() {
     return 1
   fi
 
-  # Check if gh is installed
   if ! command -v gh &>/dev/null; then
     echo "Error: GitHub CLI not found."
     echo "Install it with: brew install gh"
