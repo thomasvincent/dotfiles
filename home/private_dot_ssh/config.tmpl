@@ -4,7 +4,9 @@
 # Global settings
 Host *
     AddKeysToAgent yes
+{{ if eq .chezmoi.os "darwin" -}}
     UseKeychain yes
+{{ end -}}
     IdentityFile ~/.ssh/id_ed25519
     IdentityFile ~/.ssh/id_rsa
     ServerAliveInterval 60

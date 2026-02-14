@@ -179,7 +179,11 @@ EOF
     {{ else if eq .preferences.editor "emacs" -}}
     emacs "$review_file"
     {{ else -}}
-    open "$review_file"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      open "$review_file"
+    else
+      xdg-open "$review_file" 2>/dev/null || echo "Cannot open: $review_file"
+    fi
     {{ end -}}
 
     echo "Weekly Review template created at $review_file"
@@ -301,7 +305,11 @@ EOF
   {{ else if eq .preferences.editor "emacs" -}}
   emacs "$project_file"
   {{ else -}}
-  open "$project_file"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    open "$project_file"
+  else
+    xdg-open "$project_file" 2>/dev/null || echo "Cannot open: $project_file"
+  fi
   {{ end -}}
 
   echo "Project file for '$project_name' created at $project_file"

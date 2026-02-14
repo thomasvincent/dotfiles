@@ -4,6 +4,12 @@
 
 set -e  # Exit on error
 
+# Ensure we're on macOS
+if [[ "$(uname -s)" != "Darwin" ]]; then
+    echo "Error: This script is for macOS only" >&2
+    exit 1
+fi
+
 DOTFILES_DIR="$HOME/dotfiles"
 BREWFILE="$DOTFILES_DIR/Brewfile"
 

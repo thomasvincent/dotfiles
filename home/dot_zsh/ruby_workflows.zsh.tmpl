@@ -13,6 +13,7 @@ if command -v rbenv &>/dev/null; then
 fi
 
 # Initialize chruby if available
+{{ if eq .chezmoi.os "darwin" -}}
 if [[ -f /usr/local/share/chruby/chruby.sh ]]; then
   source /usr/local/share/chruby/chruby.sh
   source /usr/local/share/chruby/auto.sh
@@ -20,6 +21,12 @@ elif [[ -f /opt/homebrew/share/chruby/chruby.sh ]]; then
   source /opt/homebrew/share/chruby/chruby.sh
   source /opt/homebrew/share/chruby/auto.sh
 fi
+{{ else -}}
+if [[ -f /usr/share/chruby/chruby.sh ]]; then
+  source /usr/share/chruby/chruby.sh
+  source /usr/share/chruby/auto.sh
+fi
+{{ end -}}
 
 # Ruby aliases
 alias be="bundle exec"
@@ -584,8 +591,10 @@ rails-erd() {
 
   if [[ -f erd.pdf ]]; then
     echo "ERD generated at erd.pdf"
-    if command -v open &>/dev/null; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
       open erd.pdf
+    else
+      xdg-open erd.pdf 2>/dev/null || echo "Cannot open: erd.pdf"
     fi
   else
     echo "ERD generation failed."

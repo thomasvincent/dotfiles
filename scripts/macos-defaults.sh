@@ -16,6 +16,12 @@
 
 set -e
 
+# Ensure we're on macOS
+if [[ "$(uname -s)" != "Darwin" ]]; then
+    echo "Error: This script is for macOS only" >&2
+    exit 1
+fi
+
 echo "🍎 Configuring macOS defaults..."
 echo ""
 
