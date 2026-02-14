@@ -58,7 +58,7 @@ gh-init() {
     echo "You are not authenticated with GitHub CLI."
     echo "Please run 'gh auth login' first."
     return 1
-  }
+  fi
 
   # Create the repository
   echo "Creating GitHub repository: $repo_name ($visibility)"
@@ -108,7 +108,7 @@ gh-init-current() {
     echo "You are not authenticated with GitHub CLI."
     echo "Please run 'gh auth login' first."
     return 1
-  }
+  fi
 
   # Check if directory is a git repository
   if [[ ! -d ".git" ]]; then
@@ -211,27 +211,27 @@ gh-new-issue() {
   fi
 
   # Create issue command
-  local cmd="gh issue create --title \"$title\""
+  local -a cmd=(gh issue create --title "$title")
 
   if [[ -n "$body" ]]; then
-    cmd+=" --body \"$body\""
+    cmd+=(--body "$body")
   fi
 
   if [[ -n "$repo" ]]; then
-    cmd+=" --repo \"$repo\""
+    cmd+=(--repo "$repo")
   fi
 
   if [[ -n "$labels" ]]; then
-    cmd+=" --label \"$labels\""
+    cmd+=(--label "$labels")
   fi
 
   if [[ -n "$assignee" ]]; then
-    cmd+=" --assignee \"$assignee\""
+    cmd+=(--assignee "$assignee")
   fi
 
   # Create the issue
   echo "Creating GitHub issue: \"$title\""
-  eval "$cmd"
+  "${cmd[@]}"
 
   echo "Issue created successfully."
 }
@@ -259,31 +259,31 @@ gh-new-pr() {
   fi
 
   # Create PR command
-  local cmd="gh pr create --title \"$title\""
+  local -a cmd=(gh pr create --title "$title")
 
   if [[ -n "$body" ]]; then
-    cmd+=" --body \"$body\""
+    cmd+=(--body "$body")
   fi
 
   if [[ -n "$base" ]]; then
-    cmd+=" --base \"$base\""
+    cmd+=(--base "$base")
   fi
 
   if [[ -n "$repo" ]]; then
-    cmd+=" --repo \"$repo\""
+    cmd+=(--repo "$repo")
   fi
 
   if [[ -n "$labels" ]]; then
-    cmd+=" --label \"$labels\""
+    cmd+=(--label "$labels")
   fi
 
   if [[ -n "$reviewers" ]]; then
-    cmd+=" --reviewer \"$reviewers\""
+    cmd+=(--reviewer "$reviewers")
   fi
 
   # Create the pull request
   echo "Creating GitHub pull request: \"$title\""
-  eval "$cmd"
+  "${cmd[@]}"
 
   echo "Pull request created successfully."
 }
@@ -410,17 +410,17 @@ gh-new-gist() {
   fi
 
   # Create gist command
-  local cmd="gh gist create \"$file_path\" --desc \"$description\""
+  local -a cmd=(gh gist create "$file_path" --desc "$description")
 
   if [[ "$is_public" == "true" ]]; then
-    cmd+=" --public"
+    cmd+=(--public)
   else
-    cmd+=" --secret"
+    cmd+=(--secret)
   fi
 
   # Create the gist
   echo "Creating GitHub Gist from $file_path..."
-  eval "$cmd"
+  "${cmd[@]}"
 
   echo "Gist created successfully."
 }
@@ -448,27 +448,27 @@ gh-release() {
   fi
 
   # Create release command
-  local cmd="gh release create \"$tag_name\" --title \"$title\""
+  local -a cmd=(gh release create "$tag_name" --title "$title")
 
   if [[ -n "$notes_file" && -f "$notes_file" ]]; then
-    cmd+=" --notes-file \"$notes_file\""
+    cmd+=(--notes-file "$notes_file")
   fi
 
   if [[ "$prerelease" == "true" ]]; then
-    cmd+=" --prerelease"
+    cmd+=(--prerelease)
   fi
 
   if [[ "$draft" == "true" ]]; then
-    cmd+=" --draft"
+    cmd+=(--draft)
   fi
 
   if [[ -n "$target" ]]; then
-    cmd+=" --target \"$target\""
+    cmd+=(--target "$target")
   fi
 
   # Create the release
   echo "Creating GitHub release: $tag_name"
-  eval "$cmd"
+  "${cmd[@]}"
 
   echo "Release created successfully."
 }
@@ -540,15 +540,15 @@ gh-workflows() {
   fi
 
   # List workflows command
-  local cmd="gh workflow list"
+  local -a cmd=(gh workflow list)
 
   if [[ -n "$repo" ]]; then
-    cmd+=" --repo \"$repo\""
+    cmd+=(--repo "$repo")
   fi
 
   # List workflows
   echo "Listing GitHub workflows..."
-  eval "$cmd"
+  "${cmd[@]}"
 }
 
 # Run a GitHub workflow
@@ -572,19 +572,19 @@ gh-run-workflow() {
   fi
 
   # Run workflow command
-  local cmd="gh workflow run \"$workflow\" --ref \"$ref\""
+  local -a cmd=(gh workflow run "$workflow" --ref "$ref")
 
   if [[ -n "$repo" ]]; then
-    cmd+=" --repo \"$repo\""
+    cmd+=(--repo "$repo")
   fi
 
   if [[ -n "$inputs" ]]; then
-    cmd+=" --raw-field \"$inputs\""
+    cmd+=(--raw-field "$inputs")
   fi
 
   # Run the workflow
   echo "Running GitHub workflow: $workflow on $ref"
-  eval "$cmd"
+  "${cmd[@]}"
 
   echo "Workflow run initiated."
 }

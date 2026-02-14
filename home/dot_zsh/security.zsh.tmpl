@@ -63,7 +63,7 @@ if command -v op >/dev/null; then
 
   # 1Password functions
   op-signin() {
-    eval $(op signin)
+    eval "$(op signin)"
   }
 
   op-get-password() {
