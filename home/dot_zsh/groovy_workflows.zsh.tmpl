@@ -10,7 +10,7 @@
 groovy-init-project() {
   local project_name=$1
   local package_name=${2:-"com.example.$project_name"}
-  local directory=${3:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
+  local directory=${3:-"{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"}
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: groovy-init-project <project-name> [package-name] [directory]"
@@ -18,14 +18,12 @@ groovy-init-project() {
     return 1
   fi
 
-  # Check if Gradle is installed
   if ! command -v gradle >/dev/null 2>&1; then
     echo "Error: Gradle is not installed."
     echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
     return 1
   fi
 
-  # Create project directory if it doesn't exist
   mkdir -p "$directory"
   cd "$directory" || return 1
 
@@ -481,7 +479,6 @@ groovy-gen-class() {
   # Define the class file path
   local class_file="$package_dir/$class_name.groovy"
 
-  # Create the class file
   cat > "$class_file" << EOF
 package $package_name
 
@@ -581,20 +578,17 @@ groovy-run() {
     return 1
   fi
 
-  # Check if script exists
   if [[ ! -f "$script_path" ]]; then
     echo "Error: Script not found at $script_path"
     return 1
   fi
 
-  # Check if Groovy is installed
   if ! command -v groovy >/dev/null 2>&1; then
     echo "Error: Groovy is not installed."
     echo "Install it with: brew install groovy (macOS) or sdk install groovy (sdkman)"
     return 1
   fi
 
-  # Run the script
   groovy "$script_path" $args
 }
 
@@ -609,7 +603,6 @@ groovy-convert-java() {
     return 1
   fi
 
-  # Check if file exists
   if [[ ! -f "$java_file" ]]; then
     echo "Error: Java file not found at $java_file"
     return 1
@@ -625,7 +618,6 @@ groovy-convert-java() {
 
   local output_file="$output_package_dir/$class_name.groovy"
 
-  # Perform the conversion
   echo "Converting $java_file to Groovy..."
 
   # Read the Java file
@@ -871,7 +863,6 @@ EOF
 groovy-install() {
   local version=${1:-"latest"}
 
-  # Check if SDKMAN is installed
   if [[ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
     echo "SDKMAN is not installed. Do you want to install it now? (y/n)"
     read -r install_sdkman

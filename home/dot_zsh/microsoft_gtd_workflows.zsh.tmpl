@@ -16,13 +16,13 @@ MS_ONENOTE_URL="https://www.onenote.com/notebooks"
 MS_TEAMS_URL="https://teams.microsoft.com"
 MS_PLANNER_URL="https://tasks.office.com"
 MS_ONEDRIVE_URL="https://onedrive.live.com"
-MS_SHAREPOINT_URL="{{ .preferences.sharepoint_url | default \"https://your-tenant.sharepoint.com\" }}"
+MS_SHAREPOINT_URL="{{ .preferences.sharepoint_url | default "https://your-tenant.sharepoint.com" }}"
 
 # Microsoft Cloud Azure Portal
 MS_AZURE_PORTAL="https://portal.azure.com"
 
 # Microsoft GTD folder structure for OneDrive/SharePoint
-GTD_MS_ROOT="{{ .preferences.ms_gtd_folder | default \"GTD System\" }}"
+GTD_MS_ROOT="{{ .preferences.ms_gtd_folder | default "GTD System" }}"
 GTD_MS_INBOX="${GTD_MS_ROOT}/Inbox"
 GTD_MS_PROJECTS="${GTD_MS_ROOT}/Projects"
 GTD_MS_REFERENCE="${GTD_MS_ROOT}/Reference"
@@ -65,7 +65,7 @@ msoutlook-search() {
   fi
 
   # URL encode the search query
-  local encoded_query=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$search_query'''))" 2>/dev/null || echo "$search_query")
+  local encoded_query=$(_url_encode "$search_query")
 
   # Build the search URL
   local outlook_search_url="${MS_OUTLOOK_URL}/?search=${encoded_query}"
@@ -93,9 +93,9 @@ msoutlook-compose() {
   fi
 
   # URL encode the parameters
-  local encoded_to=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$to'''))" 2>/dev/null || echo "$to")
-  local encoded_subject=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$subject'''))" 2>/dev/null || echo "$subject")
-  local encoded_body=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$body'''))" 2>/dev/null || echo "$body")
+  local encoded_to=$(_url_encode "$to")
+  local encoded_subject=$(_url_encode "$subject")
+  local encoded_body=$(_url_encode "$body")
 
   # Build the compose URL
   local outlook_compose_url="${MS_OUTLOOK_URL}/deeplink/compose?to=${encoded_to}&subject=${encoded_subject}&body=${encoded_body}"
@@ -185,8 +185,8 @@ mscalendar-new() {
   fi
 
   # URL encode parameters
-  local encoded_title=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$title'''))" 2>/dev/null || echo "$title")
-  local encoded_location=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$location'''))" 2>/dev/null || echo "$location")
+  local encoded_title=$(_url_encode "$title")
+  local encoded_location=$(_url_encode "$location")
 
   # Build the URL
   local calendar_new_url="${MS_CALENDAR_URL}/deeplink/compose?subject=${encoded_title}&startdt=${formatted_start}&enddt=${formatted_end}&location=${encoded_location}"
@@ -230,7 +230,7 @@ mstodo-open() {
   # If list is specified, add it to the URL
   if [[ -n "$list" ]]; then
     # URL encode the list name
-    local encoded_list=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$list'''))" 2>/dev/null || echo "$list")
+    local encoded_list=$(_url_encode "$list")
     todo_url="${todo_url}/lists/${encoded_list}"
   fi
 
@@ -316,7 +316,7 @@ msonenote-new-notebook() {
   fi
 
   # URL encode the notebook name
-  local encoded_name=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$notebook_name'''))" 2>/dev/null || echo "$notebook_name")
+  local encoded_name=$(_url_encode "$notebook_name")
 
   # Build the URL (this will open OneNote, but won't automatically create the notebook)
   local onenote_url="${MS_ONENOTE_URL}"
@@ -403,7 +403,7 @@ msteams-chat() {
   fi
 
   # URL encode the email
-  local encoded_email=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$person'''))" 2>/dev/null || echo "$person")
+  local encoded_email=$(_url_encode "$person")
 
   # Build the URL for Teams chat
   local teams_chat_url="${MS_TEAMS_URL}/l/chat/0/0?users=${encoded_email}"

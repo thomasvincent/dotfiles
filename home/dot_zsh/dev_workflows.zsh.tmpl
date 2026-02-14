@@ -18,19 +18,16 @@ wp-init() {
     return 1
   fi
 
-  local dir="{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"
+  local dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
 
-  # Create project directory if it doesn't exist
   mkdir -p "$dir"
   cd "$dir" || return 1
 
-  # Check if Docker is installed
   if ! command -v docker >/dev/null 2>&1; then
     echo "Error: Docker is not installed. Please install Docker first."
     return 1
   fi
 
-  # Check if docker-compose is installed
   if ! command -v docker-compose >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
     echo "Error: docker-compose is not installed. Please install docker-compose first."
     return 1
@@ -179,7 +176,7 @@ wp-child-theme() {
   local parent_theme=$1
   local child_theme_name=$2
   local child_theme_title=${3:-"$child_theme_name"}
-  local author=${4:-"{{ .name | default \"WordPress Developer\" }}"}
+  local author=${4:-"{{ .name | default "WordPress Developer" }}"}
 
   if [[ -z "$parent_theme" || -z "$child_theme_name" ]]; then
     echo "Usage: wp-child-theme <parent-theme-folder> <child-theme-folder> [child-theme-title] [author]"
@@ -206,7 +203,6 @@ wp-child-theme() {
     return 1
   fi
 
-  # Check if parent theme exists
   if [[ ! -d "$parent_theme" ]]; then
     echo "Error: Parent theme '$parent_theme' not found."
     echo "Available themes:"
@@ -302,7 +298,6 @@ wp-export-db() {
 
   echo "Exporting WordPress database to $output_file..."
 
-  # Find the database container name
   local db_container
   db_container=$(docker ps | grep mysql | grep -v "phpmyadmin" | awk '{print $NF}')
 
@@ -311,7 +306,6 @@ wp-export-db() {
     return 1
   fi
 
-  # Export the database
   docker exec "$db_container" mysqldump -u wordpress -pwordpress wordpress > "$output_file"
 
   echo "Database exported to $output_file"
@@ -371,7 +365,6 @@ chef-init-cookbook() {
     return 1
   fi
 
-  # Check if Chef is installed
   if ! command -v chef >/dev/null 2>&1; then
     echo "Error: Chef is not installed."
     echo "Install it with: gem install chef"
@@ -466,7 +459,6 @@ chef-test() {
     return 1
   fi
 
-  # Check if Test Kitchen is installed
   if ! command -v kitchen >/dev/null 2>&1; then
     echo "Error: Test Kitchen is not installed."
     echo "Install it with: gem install test-kitchen kitchen-vagrant"
@@ -494,7 +486,6 @@ chef-create-role() {
     return 1
   fi
 
-  # Create the roles directory if it doesn't exist
   mkdir -p roles
 
   # Create the role file
@@ -534,7 +525,6 @@ chef-report() {
     return 1
   fi
 
-  # Get cookbook name and version
   local cookbook_name=$(grep "^name" metadata.rb | sed -E "s/name\s+'([^']+)'.*/\1/")
   local cookbook_version=$(grep "^version" metadata.rb | sed -E "s/version\s+'([^']+)'.*/\1/")
 
@@ -550,19 +540,16 @@ $(grep "^description" metadata.rb | sed -E "s/description\s+'([^']+)'.*/\1/" || 
 
 EOF
 
-  # List recipes
   for recipe in recipes/*.rb; do
     recipe_name=$(basename "$recipe" .rb)
     echo "### $recipe_name" >> "$output_file"
     echo "" >> "$output_file"
 
-    # Extract recipe description from comments
     grep "^#" "$recipe" | grep -v "^#=\|^#-\|^##\|^###" | sed 's/^# //' >> "$output_file"
 
     echo "" >> "$output_file"
   done
 
-  # List attributes
   if [[ -d "attributes" ]]; then
     echo "## Attributes" >> "$output_file"
     echo "" >> "$output_file"
@@ -572,14 +559,12 @@ EOF
       echo "### $attr_name" >> "$output_file"
       echo "" >> "$output_file"
 
-      # Extract attribute descriptions
       grep "^#" "$attr" | grep -v "^#=\|^#-\|^##\|^###" | sed 's/^# //' >> "$output_file"
 
       echo "" >> "$output_file"
     done
   fi
 
-  # List dependencies
   echo "## Dependencies" >> "$output_file"
   echo "" >> "$output_file"
   grep "^depends" metadata.rb | sed -E "s/depends\s+'([^']+)'(.*)/- \1\2/" >> "$output_file"
@@ -597,14 +582,12 @@ chef-upload() {
     return 1
   fi
 
-  # Check if knife is installed
   if ! command -v knife >/dev/null 2>&1; then
     echo "Error: knife command not found."
     echo "Please ensure Chef Workstation is installed and knife is configured."
     return 1
   fi
 
-  # Get cookbook name
   local cookbook_name=$(grep "^name" metadata.rb | sed -E "s/name\s+'([^']+)'.*/\1/")
 
   echo "Uploading cookbook $cookbook_name to Chef server..."
@@ -644,7 +627,7 @@ chef-upload() {
 # Initialize a new Puppet module
 puppet-init-module() {
   local module_name=$1
-  local author=${2:-"{{ .name | default \"Puppet Developer\" }}"}
+  local author=${2:-"{{ .name | default "Puppet Developer" }}"}
 
   if [[ -z "$module_name" ]]; then
     echo "Usage: puppet-init-module <module-name> [author]"
@@ -652,12 +635,10 @@ puppet-init-module() {
     return 1
   fi
 
-  # Check if Puppet Development Kit is installed
   if command -v pdk >/dev/null 2>&1; then
     echo "Creating new Puppet module with PDK..."
     pdk new module "$module_name" --skip-interview
   else
-    # Check if puppet is installed
     if ! command -v puppet >/dev/null 2>&1; then
       echo "Error: Neither PDK nor Puppet is installed."
       echo "Install PDK (recommended) or Puppet to create modules."
@@ -737,15 +718,12 @@ puppet-gen-class() {
     # Manual creation of class files
     echo "PDK not found. Creating class files manually..."
 
-    # Determine the path components
     local path_parts
     IFS=':' read -ra path_parts <<< "$class_name"
 
-    # Get the module name from metadata.json
     local module_name
     module_name=$(grep -o '"name": *"[^"]*"' metadata.json | cut -d'"' -f4 | cut -d'-' -f2)
 
-    # Create the class manifest
     local class_path="manifests"
     local class_file="init.pp"
 
@@ -757,10 +735,8 @@ puppet-gen-class() {
       class_file="${path_parts[-1]}.pp"
     fi
 
-    # Create the directory
     mkdir -p "$class_path"
 
-    # Create the class file
     cat > "$class_path/$class_file" << EOF
 # @summary A short summary of the purpose of this class
 #
@@ -771,7 +747,6 @@ class ${class_name} {
 }
 EOF
 
-    # Create the spec test file
     mkdir -p "spec/classes"
 
     local spec_file="${class_name//::/\/}_spec.rb"
@@ -818,7 +793,6 @@ puppet-gen-type() {
   mkdir -p "lib/puppet/type"
   mkdir -p "lib/puppet/provider/$type_name"
 
-  # Create the type file
   cat > "lib/puppet/type/$type_name.rb" << EOF
 Puppet::Type.newtype(:$type_name) do
   @doc = "Manage a $type_name."
@@ -833,7 +807,6 @@ Puppet::Type.newtype(:$type_name) do
 end
 EOF
 
-  # Create the provider file
   cat > "lib/puppet/provider/$type_name/ruby.rb" << EOF
 Puppet::Type.type(:$type_name).provide(:ruby) do
   desc "Ruby provider for $type_name type."
@@ -860,7 +833,6 @@ EOF
 puppet-lint() {
   local path=${1:-.}
 
-  # Check if puppet-lint is installed
   if ! command -v puppet-lint >/dev/null 2>&1; then
     echo "Error: puppet-lint is not installed."
     echo "Install it with: gem install puppet-lint"

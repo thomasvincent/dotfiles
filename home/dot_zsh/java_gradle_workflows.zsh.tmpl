@@ -10,7 +10,7 @@
 java-init-gradle() {
   local project_name=$1
   local package_name=${2:-"com.example.$project_name"}
-  local directory=${3:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
+  local directory=${3:-"{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"}
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: java-init-gradle <project-name> [package-name] [directory]"
@@ -18,14 +18,12 @@ java-init-gradle() {
     return 1
   fi
 
-  # Check if Gradle is installed
   if ! command -v gradle >/dev/null 2>&1; then
     echo "Error: Gradle is not installed."
     echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
     return 1
   fi
 
-  # Create project directory if it doesn't exist
   mkdir -p "$directory"
   cd "$directory" || return 1
 
@@ -311,7 +309,7 @@ EOF
 java-init-spring() {
   local project_name=$1
   local package_name=${2:-"com.example.$project_name"}
-  local directory=${3:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
+  local directory=${3:-"{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"}
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: java-init-spring <project-name> [package-name] [directory]"
@@ -319,7 +317,6 @@ java-init-spring() {
     return 1
   fi
 
-  # Check if Spring Boot CLI is installed
   if command -v spring >/dev/null 2>&1; then
     # Use spring cli to initialize the project
     mkdir -p "$directory"
@@ -569,7 +566,6 @@ EOF
 
 # List all available versions of Java via SDKMAN
 java-versions() {
-  # Check if SDKMAN is installed
   if [[ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
     echo "SDKMAN is not installed. Do you want to install it now? (y/n)"
     read -r install_sdkman
@@ -601,7 +597,6 @@ java-install() {
     return 1
   fi
 
-  # Check if SDKMAN is installed
   if [[ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
     echo "SDKMAN is not installed. Do you want to install it now? (y/n)"
     read -r install_sdkman
@@ -640,7 +635,6 @@ java-gen-class() {
   # Define the class file path
   local class_file="$package_dir/$class_name.java"
 
-  # Create the class file
   cat > "$class_file" << EOF
 package $package_name;
 
@@ -727,7 +721,6 @@ java-gen-pojo() {
   # Define the class file path
   local class_file="$package_dir/$class_name.java"
 
-  # Parse fields and create class content
   IFS=',' read -ra FIELD_ARRAY <<< "$fields"
 
   # Create field declarations
@@ -803,7 +796,6 @@ java-gen-pojo() {
     equals_hash_fields+="$field_name"
   done
 
-  # Create the class file
   cat > "$class_file" << EOF
 package $package_name;
 
@@ -897,12 +889,11 @@ java-gradle-wrapper() {
     return 1
   fi
 
-  # Check if Gradle is installed
   if ! command -v gradle >/dev/null 2>&1; then
     echo "Error: Gradle is not installed."
     echo "Install it with: brew install gradle (macOS) or sdk install gradle (sdkman)"
     return 1
-  }
+  fi
 
   # Create Gradle wrapper
   gradle wrapper
@@ -920,9 +911,8 @@ java-gradle() {
   if [[ ! -f "build.gradle" && ! -f "build.gradle.kts" && ! -f "gradlew" ]]; then
     echo "Not a Gradle project. No build.gradle, build.gradle.kts, or gradlew found."
     return 1
-  }
+  fi
 
-  # Check if a wrapper exists
   local gradle_cmd="gradle"
   if [[ -f "gradlew" ]]; then
     gradle_cmd="./gradlew"

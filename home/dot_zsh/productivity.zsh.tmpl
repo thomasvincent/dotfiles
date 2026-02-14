@@ -13,7 +13,7 @@ USE_MACOS_REMINDERS=false
 {{ end -}}
 
 # Simple task manager using plain text files as fallback
-TASK_DIR="{{ .preferences.task_dir | default \"$HOME/.tasks\" }}"
+TASK_DIR="{{ .preferences.task_dir | default "$HOME/.tasks" }}"
 TASK_FILE="$TASK_DIR/tasks.txt"
 ARCHIVE_FILE="$TASK_DIR/archive.txt"
 
@@ -307,8 +307,8 @@ USE_MACOS_NOTES=true
 USE_MACOS_NOTES=false
 {{ end -}}
 
-NOTES_DIR="{{ .preferences.notes_dir | default \"$HOME/.notes\" }}"
-DEFAULT_NOTES_FOLDER="{{ .preferences.notes_folder | default \"CLI Notes\" }}"
+NOTES_DIR="{{ .preferences.notes_dir | default "$HOME/.notes" }}"
+DEFAULT_NOTES_FOLDER="{{ .preferences.notes_folder | default "CLI Notes" }}"
 
 # Initialize notes directory if it doesn't exist
 [[ ! -d "$NOTES_DIR" ]] && mkdir -p "$NOTES_DIR"
@@ -602,8 +602,8 @@ EOF
 # ==================================
 
 # Default settings
-MEETING_DIR="{{ .preferences.meeting_dir | default \"$NOTES_DIR/meetings\" }}"
-MEETING_FOLDER="{{ .preferences.meeting_folder | default \"Meetings\" }}"
+MEETING_DIR="{{ .preferences.meeting_dir | default "$NOTES_DIR/meetings" }}"
+MEETING_FOLDER="{{ .preferences.meeting_folder | default "Meetings" }}"
 
 # Initialize meeting notes directory if it doesn't exist (for non-macOS systems)
 [[ ! -d "$MEETING_DIR" ]] && mkdir -p "$MEETING_DIR"
@@ -1001,7 +1001,7 @@ EOF
 # Time Tracking
 # ==================================
 
-TIME_TRACK_DIR="{{ .preferences.time_track_dir | default \"$HOME/.timetrack\" }}"
+TIME_TRACK_DIR="{{ .preferences.time_track_dir | default "$HOME/.timetrack" }}"
 TIME_TRACK_FILE="$TIME_TRACK_DIR/time_entries.csv"
 CURRENT_TASK_FILE="$TIME_TRACK_DIR/current_task"
 

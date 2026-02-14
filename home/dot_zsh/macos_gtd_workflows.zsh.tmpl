@@ -9,8 +9,8 @@
 # ==================================
 
 # Initialize constants
-GTD_INBOX_FOLDER="{{ .preferences.gtd_inbox_folder | default \"GTD/Inbox\" }}"
-GTD_PROJECTS_FOLDER="{{ .preferences.gtd_projects_folder | default \"GTD/Projects\" }}"
+GTD_INBOX_FOLDER="{{ .preferences.gtd_inbox_folder | default "GTD/Inbox" }}"
+GTD_PROJECTS_FOLDER="{{ .preferences.gtd_projects_folder | default "GTD/Projects" }}"
 
 # ==================================
 # Reminders App Integrations
@@ -685,7 +685,7 @@ gtd-capture() {
     return 1
   fi
 
-  # Make sure the inbox folder exists in Notes
+  # Ensure inbox exists
   osascript <<EOF > /dev/null 2>&1
 tell application "Notes"
   if not (exists folder "$GTD_INBOX_FOLDER") then

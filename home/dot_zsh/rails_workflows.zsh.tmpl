@@ -11,7 +11,7 @@ rails-init-project() {
   local project_name=$1
   local db_type=${2:-"postgresql"}
   local options=${@:3}
-  local directory=${4:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
+  local directory=${4:-"{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"}
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: rails-init-project <project-name> [db-type] [options] [directory]"
@@ -20,14 +20,12 @@ rails-init-project() {
     return 1
   fi
 
-  # Check if Rails is installed
   if ! command -v rails >/dev/null 2>&1; then
     echo "Error: Rails is not installed."
     echo "Install it with: gem install rails"
     return 1
   fi
 
-  # Create project directory if it doesn't exist
   mkdir -p "$(dirname "$directory")"
 
   # Default options if none provided
@@ -694,7 +692,7 @@ rails-init-api() {
   local project_name=$1
   local db_type=${2:-"postgresql"}
   local options=${@:3}
-  local directory=${4:-"{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"}
+  local directory=${4:-"{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"}
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: rails-init-api <project-name> [db-type] [options] [directory]"
@@ -703,14 +701,12 @@ rails-init-api() {
     return 1
   fi
 
-  # Check if Rails is installed
   if ! command -v rails >/dev/null 2>&1; then
     echo "Error: Rails is not installed."
     echo "Install it with: gem install rails"
     return 1
   fi
 
-  # Create project directory if it doesn't exist
   mkdir -p "$(dirname "$directory")"
 
   # Default options if none provided
@@ -1261,7 +1257,6 @@ rails-gen-api-resource() {
   # Modify the API controller
   local controller_file="app/controllers/api/v1/${resource_name}_controller.rb"
 
-  # Check if the controller file exists
   if [[ -f "$controller_file" ]]; then
     # Get the model class name in proper case
     local model_class=$(echo "$resource_singular" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.camelize")
@@ -1357,9 +1352,7 @@ EOF
   # Update routes
   local routes_file="config/routes.rb"
 
-  # Check if the API namespace already exists
   if grep -q "namespace :api" "$routes_file"; then
-    # Check if the v1 namespace already exists
     if grep -q "namespace :v1" "$routes_file"; then
       # Add the resource to the v1 namespace
       if grep -q "end # end v1" "$routes_file"; then
@@ -1580,7 +1573,6 @@ rails-gen-service() {
     return 1
   fi
 
-  # Create services directory if it doesn't exist
   mkdir -p app/services
 
   # Convert service name to proper class name
@@ -1700,7 +1692,6 @@ rails-db-migrate() {
     fi
   fi
 
-  # Run the migration
   RAILS_ENV=$env rails db:migrate
 
   # Show the schema version

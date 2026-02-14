@@ -9,7 +9,7 @@
 new-project() {
   local project_name=$1
   local project_type=${2:-generic}  # default to generic
-  local project_dir="{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"
+  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: new-project <project-name> [project-type]"
@@ -154,7 +154,7 @@ dev-start() {
     cd "." || return 1
   else
     # Navigate to project directory
-    cd "{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name" || {
+    cd "{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name" || {
       echo "Project $project_name not found!"
       return 1
     }
@@ -164,7 +164,6 @@ dev-start() {
 
   # Start tmux session for the project if tmux is installed
   if command -v tmux >/dev/null; then
-    # Check if session already exists
     if ! tmux has-session -t "$project_name" 2>/dev/null; then
       tmux new-session -d -s "$project_name"
       tmux rename-window -t "$project_name:0" "editor"
@@ -370,13 +369,12 @@ docker-run-project() {
     project_name=$(basename "$PWD")
   else
     # Navigate to project directory
-    cd "{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name" || {
+    cd "{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name" || {
       echo "Project $project_name not found!"
       return 1
     }
   fi
 
-  # Check if docker-compose.yml exists
   if [[ ! -f "docker-compose.yml" && ! -f "docker-compose.yaml" ]]; then
     echo "No docker-compose file found in the project directory."
     return 1
@@ -398,7 +396,6 @@ docker-run-project() {
     docker-compose -f docker-compose.yml -f "$compose_file" build
   fi
 
-  # Run the containers
   docker-compose -f docker-compose.yml -f "$compose_file" up -d
 
   echo "$project_name is now running in $environment environment."
@@ -416,13 +413,12 @@ docker-logs-project() {
     project_name=$(basename "$PWD")
   else
     # Navigate to project directory
-    cd "{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name" || {
+    cd "{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name" || {
       echo "Project $project_name not found!"
       return 1
     }
   fi
 
-  # Check if docker-compose.yml exists
   if [[ ! -f "docker-compose.yml" && ! -f "docker-compose.yaml" ]]; then
     echo "No docker-compose file found in the project directory."
     return 1
@@ -492,7 +488,6 @@ git-publish() {
     return 1
   fi
 
-  # Check if the branch exists
   if ! git show-ref --verify --quiet "refs/heads/$branch_name"; then
     echo "Branch $branch_name does not exist."
     return 1
@@ -587,7 +582,7 @@ edit-project() {
     {{ end -}}
   else
     # Navigate to project directory
-    local project_dir="{{ .preferences.projects_dir | default \"$HOME/Projects\" }}/$project_name"
+    local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
     if [[ ! -d "$project_dir" ]]; then
       echo "Project $project_name not found!"
       return 1
