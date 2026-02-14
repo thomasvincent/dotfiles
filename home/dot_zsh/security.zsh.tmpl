@@ -5,7 +5,7 @@
 {{ if .security.use_ssh_agent -}}
 # Start SSH agent if not running
 if [[ -z "$SSH_AUTH_SOCK" && -z "$SSH_CONNECTION" ]]; then
-  local ssh_agent_env="$HOME/.ssh/agent.env"
+  ssh_agent_env="$HOME/.ssh/agent.env"
 
   if [[ -f "$ssh_agent_env" ]]; then
     source "$ssh_agent_env" > /dev/null
@@ -138,4 +138,3 @@ security-check() {
 # Security aliases
 alias ssh-agent-list='ssh-add -l'
 alias ssh-agent-remove='ssh-add -D'
-alias security-check='security-check'
