@@ -3,9 +3,6 @@
 
 # Taps
 tap "homebrew/bundle"
-tap "homebrew/cask"
-tap "homebrew/cask-fonts"
-tap "homebrew/core"
 tap "homebrew/services"
 
 # Core tools
@@ -27,7 +24,7 @@ brew "fd"  # Better find
 brew "fzf"  # Fuzzy finder
 brew "jq"  # JSON processor
 brew "yq"  # YAML processor
-brew "exa"  # Better ls
+brew "eza"  # Better ls
 brew "z"  # Jump around
 brew "diff-so-fancy"  # Better diff
 brew "moreutils"  # Additional Unix utilities
@@ -35,14 +32,11 @@ brew "gnupg"  # GPG
 brew "pinentry-mac"  # For GPG
 
 # Development tools
+# Runtime versions managed by asdf
 brew "python"
-brew "python@3.9"
-brew "pyenv"  # Python version manager
 brew "node"
-brew "nvm"  # Node version manager
 brew "go"
 brew "ruby"
-brew "rbenv"  # Ruby version manager
 brew "rust"
 brew "rustup-init"  # Rust installer
 
