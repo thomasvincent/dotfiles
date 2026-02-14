@@ -4,59 +4,96 @@
 # Copy this to ~/.config/chezmoi/chezmoi.toml and customize
 
 [data]
-  # User information
-  name = "Your Name"
-  email = "you@email.com"
-  github_username = "your-github"
+    # User information
+    name = "Your Name"
+    email = "you@email.com"
+    github_username = "your-github"
 
-  # Platform
-  macos = true
-  linux = false
+    # Feature toggles - all disabled for minimal setup
+    enable_cloud = false
+    enable_containers = false
+    enable_kubernetes = false
+    enable_dev_tools = false
+    enable_editors = false
+    enable_extras = false
+    enable_workflows = false
+    enable_productivity = false
+    minimal = true
 
-  # Feature toggles - minimal
-  enable_cloud = false
-  enable_containers = false
-  enable_kubernetes = false
-  enable_dev_tools = true
-  enable_editors = true
-  enable_extras = false
-  enable_workflows = false
-  enable_productivity = false
-  minimal = true                 # Key flag for minimal setup
+    # GTD workflow toggles - all disabled
+    enable_gtd = false
+    enable_macos_gtd = false
+    enable_google_gtd = false
+    enable_microsoft_gtd = false
 
-  # Workflow toggles - all disabled
-  enable_wordpress = false
-  enable_chef = false
-  enable_puppet = false
-  enable_gtd = false
-  enable_macos_gtd = false
-  enable_google_gtd = false
-  enable_microsoft_gtd = false
+    # Work-specific settings - disabled
+    work = false
+    work_username = ""
+    work_email = ""
 
-  # Cloud providers - none
-  aws = false
-  azure = false
-  gcp = false
-  digitalocean = false
-  oracle = false
-  linode = false
+    # Platform - adjust to your OS
+    macos = false
+    linux = true
 
-  # Preferences
-  editor = "vim"
-  terminal = "default"
-  shell_prompt = "starship"
-  color_scheme = "auto"
+[data.cloud]
+    # Cloud provider toggles - all disabled
+    aws = false
+    azure = false
+    gcp = false
+    digitalocean = false
+    oracle = false
+    linode = false
 
-  # Directories
-  projects_dir = "$HOME/Projects"
-  task_dir = ""
-  notes_dir = ""
-  gtd_inbox_file = ""
-  time_track_dir = ""
+[data.preferences]
+    # Editor and terminal - minimal defaults
+    editor = "vim"
+    terminal = "default"
+    shell_prompt = "starship"
+    color_scheme = "auto"
 
-  # Security - basic
-  gpg_signing = false
-  use_ssh_agent = true
-  use_keychain = true
-  use_1password = false
-  use_yubikey = false
+    # Directory paths
+    projects_dir = "$HOME/Projects"
+    task_dir = ""
+    notes_dir = ""
+    meeting_dir = ""
+    time_track_dir = ""
+
+    # GTD-specific directories (empty for minimal)
+    notes_folder = ""
+    meeting_folder = ""
+    reminders_list = ""
+    gtd_inbox_folder = ""
+    gtd_inbox_file = ""
+    gtd_templates_dir = ""
+    gtd_projects_folder = ""
+    gtd_projects_dir = ""
+    gtd_next_actions_file = ""
+
+    # Technology stack toggles - all disabled
+    enable_wordpress = false
+    enable_chef = false
+    enable_puppet = false
+    enable_ansible = false
+    enable_java = false
+    enable_groovy = false
+    enable_rails = false
+    enable_omnifocus = false
+    enable_rust = false
+    enable_ruby = false
+    enable_hashicorp = false
+    enable_vscode = false
+    enable_github = false
+
+    # Pomodoro timer settings (defaults)
+    pomodoro_work = 25
+    pomodoro_break = 5
+    pomodoro_longbreak = 15
+    pomodoro_cycles = 4
+
+[data.security]
+    # Security settings - minimal
+    gpg_signing = false
+    use_ssh_agent = true
+    use_keychain = false
+    use_1password = false
+    use_yubikey = false

@@ -4,63 +4,96 @@
 # Copy this to ~/.config/chezmoi/chezmoi.toml and customize
 
 [data]
-  # User information
-  name = "Your Name"
-  email = "your.name@company.com"
-  github_username = "your-work-github"
+    # User information
+    name = "Your Name"
+    email = "your.name@company.com"
+    github_username = "your-work-github"
 
-  # Platform
-  macos = true
-  linux = false
+    # Feature toggles - work/enterprise focused
+    enable_cloud = true
+    enable_containers = true
+    enable_kubernetes = true       # Common in enterprise
+    enable_dev_tools = true
+    enable_editors = true
+    enable_extras = false          # Avoid personal apps
+    enable_workflows = true
+    enable_productivity = true
+    minimal = false
 
-  # Feature toggles - work focused
-  enable_cloud = true
-  enable_containers = true
-  enable_kubernetes = true
-  enable_dev_tools = true
-  enable_editors = true
-  enable_extras = false
-  enable_workflows = true
-  enable_productivity = true
-  minimal = false
+    # GTD workflow toggles - enterprise tools
+    enable_gtd = true
+    enable_macos_gtd = false
+    enable_google_gtd = false
+    enable_microsoft_gtd = true    # Microsoft 365 (Outlook, Teams, OneNote)
 
-  # Workflow toggles
-  enable_wordpress = false
-  enable_chef = false
-  enable_puppet = false
-  enable_gtd = true
-  enable_macos_gtd = false
-  enable_google_gtd = false
-  enable_microsoft_gtd = true    # Use Microsoft 365 at work
+    # Work-specific settings
+    work = true
+    work_username = "your-corp-username"
+    work_email = "your.name@company.com"
 
-  # Cloud providers - adjust for your company
-  aws = true
-  azure = true                   # Common in enterprise
-  gcp = false
-  digitalocean = false
-  oracle = false
-  linode = false
+    # Platform - corporate macOS laptop
+    macos = true
+    linux = false
 
-  # Preferences
-  editor = "vscode"
-  terminal = "iterm2"
-  shell_prompt = "powerlevel10k"
-  color_scheme = "dark"
+[data.cloud]
+    # Cloud provider toggles - adjust for your company
+    aws = true
+    azure = true                   # Common in enterprise
+    gcp = false
+    digitalocean = false
+    oracle = false
+    linode = false
 
-  # Directories
-  projects_dir = "$HOME/Work"
-  task_dir = "$HOME/.tasks"
-  notes_dir = "$HOME/.notes"
-  gtd_inbox_file = "$HOME/.gtd/inbox.md"
-  time_track_dir = "$HOME/.timetrack"
+[data.preferences]
+    # Editor and terminal - enterprise standard
+    editor = "code"                # VS Code for work
+    terminal = "iterm2"
+    shell_prompt = "starship"
+    color_scheme = "dark"
 
-  # Security - work settings
-  gpg_signing = true
-  use_ssh_agent = true
-  use_keychain = true
-  use_1password = false
-  use_yubikey = false            # Enable if company provides
+    # Directory paths - work organization
+    projects_dir = "$HOME/Work"
+    task_dir = "$HOME/.tasks"
+    notes_dir = "$HOME/Documents/Work/Notes"
+    meeting_dir = "$HOME/Documents/Work/Meetings"
+    time_track_dir = "$HOME/.timetrack"
 
-  # Work-specific
-  corporate_proxy = ""           # Set if behind proxy
-  use_corporate_certs = false
+    # GTD-specific directories
+    notes_folder = "Work Notes"
+    meeting_folder = "Work Meetings"
+    reminders_list = "Work Tasks"
+    gtd_inbox_folder = "Work/Inbox"
+    gtd_inbox_file = "$HOME/.gtd/work-inbox.md"
+    gtd_templates_dir = "$HOME/.gtd/templates"
+    gtd_projects_folder = "Work/Projects"
+    gtd_projects_dir = "$HOME/.gtd/work-projects"
+    gtd_next_actions_file = "$HOME/.gtd/work-next-actions.md"
+
+    # Technology stack toggles - enterprise tools
+    enable_wordpress = false
+    enable_chef = false
+    enable_puppet = false
+    enable_ansible = true          # Common in enterprise automation
+    enable_java = true             # Common in enterprise
+    enable_groovy = true           # Jenkins pipelines
+    enable_rails = false
+    enable_omnifocus = false       # Use Microsoft tools instead
+    enable_rust = false
+    enable_ruby = false
+    enable_hashicorp = true        # Terraform, Vault common in enterprise
+    enable_vscode = true
+    enable_github = true
+
+    # Pomodoro timer settings
+    pomodoro_work = 25
+    pomodoro_break = 5
+    pomodoro_longbreak = 15
+    pomodoro_cycles = 4
+
+[data.security]
+    # Security settings - enterprise requirements
+    gpg_signing = true
+    use_ssh_agent = true
+    use_keychain = true
+    use_1password = false          # May use enterprise password manager
+    use_yubikey = false            # Enable if company provides hardware keys

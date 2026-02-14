@@ -4,60 +4,96 @@
 # Copy this to ~/.config/chezmoi/chezmoi.toml and customize
 
 [data]
-  # User information
-  name = "Your Name"
-  email = "you@personal-email.com"
-  github_username = "your-github"
+    # User information
+    name = "Your Name"
+    email = "you@personal-email.com"
+    github_username = "your-github"
 
-  # Platform
-  macos = true
-  linux = false
+    # Feature toggles - full personal setup
+    enable_cloud = true
+    enable_containers = true
+    enable_kubernetes = true
+    enable_dev_tools = true
+    enable_editors = true
+    enable_extras = true           # Personal apps and tools
+    enable_workflows = true
+    enable_productivity = true
+    minimal = false
 
-  # Feature toggles - full personal setup
-  enable_cloud = true
-  enable_containers = true
-  enable_kubernetes = true
-  enable_dev_tools = true
-  enable_editors = true
-  enable_extras = true           # Personal apps
-  enable_workflows = true
-  enable_productivity = true
-  minimal = false
+    # GTD workflow toggles - macOS ecosystem
+    enable_gtd = true
+    enable_macos_gtd = true        # Apple Reminders, Notes, Calendar
+    enable_google_gtd = true       # Google Calendar, Tasks
+    enable_microsoft_gtd = false
 
-  # Workflow toggles
-  enable_wordpress = true
-  enable_chef = true
-  enable_puppet = true
-  enable_gtd = true
-  enable_macos_gtd = true        # Apple ecosystem
-  enable_google_gtd = true
-  enable_microsoft_gtd = false
-  enable_omnifocus = true        # Personal GTD app
+    # Work-specific settings - disabled for personal
+    work = false
+    work_username = ""
+    work_email = ""
 
-  # Cloud providers - personal projects
-  aws = true
-  azure = false
-  gcp = true
-  digitalocean = true
-  oracle = false
-  linode = true
+    # Platform - macOS personal machine
+    macos = true
+    linux = false
 
-  # Preferences
-  editor = "neovim"              # Or "vscode"
-  terminal = "alacritty"
-  shell_prompt = "starship"      # Or "powerlevel10k"
-  color_scheme = "dark"
+[data.cloud]
+    # Cloud provider toggles - personal projects
+    aws = true
+    azure = false
+    gcp = true
+    digitalocean = true
+    oracle = false
+    linode = true
 
-  # Directories
-  projects_dir = "$HOME/Developer"
-  task_dir = "$HOME/.tasks"
-  notes_dir = "$HOME/.notes"
-  gtd_inbox_file = "$HOME/.gtd/inbox.md"
-  time_track_dir = "$HOME/.timetrack"
+[data.preferences]
+    # Editor and terminal - modern tools
+    editor = "nvim"                # Or "code" for VS Code
+    terminal = "warp"              # Or "alacritty", "iterm2"
+    shell_prompt = "starship"
+    color_scheme = "dark"
 
-  # Security - personal settings
-  gpg_signing = true
-  use_ssh_agent = true
-  use_keychain = true
-  use_1password = true           # Personal password manager
-  use_yubikey = true             # Hardware key
+    # Directory paths - personal setup
+    projects_dir = "$HOME/Developer"
+    task_dir = "$HOME/.tasks"
+    notes_dir = "$HOME/Documents/Notes"
+    meeting_dir = "$HOME/Documents/Meetings"
+    time_track_dir = "$HOME/.timetrack"
+
+    # GTD-specific directories
+    notes_folder = "Notes"
+    meeting_folder = "Meetings"
+    reminders_list = "GTD"
+    gtd_inbox_folder = "GTD/Inbox"
+    gtd_inbox_file = "$HOME/.gtd/inbox.md"
+    gtd_templates_dir = "$HOME/.gtd/templates"
+    gtd_projects_folder = "GTD/Projects"
+    gtd_projects_dir = "$HOME/.gtd/projects"
+    gtd_next_actions_file = "$HOME/.gtd/next-actions.md"
+
+    # Technology stack toggles - personal preferences
+    enable_wordpress = true
+    enable_chef = true
+    enable_puppet = true
+    enable_ansible = true
+    enable_java = false
+    enable_groovy = false
+    enable_rails = false
+    enable_omnifocus = true        # Personal GTD app
+    enable_rust = true
+    enable_ruby = true
+    enable_hashicorp = true        # Terraform, Vault, etc.
+    enable_vscode = true
+    enable_github = true
+
+    # Pomodoro timer settings
+    pomodoro_work = 25
+    pomodoro_break = 5
+    pomodoro_longbreak = 15
+    pomodoro_cycles = 4
+
+[data.security]
+    # Security settings - personal machine
+    gpg_signing = true
+    use_ssh_agent = true
+    use_keychain = true
+    use_1password = true           # Personal password manager
+    use_yubikey = true             # Hardware security key
