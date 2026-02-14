@@ -19,7 +19,7 @@ repos:
   # General file fixes
   # ---------------------------------------------------------------------------
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       # Fix trailing whitespace
       - id: trailing-whitespace
@@ -59,7 +59,7 @@ repos:
   # Shell script linting
   # ---------------------------------------------------------------------------
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
         args: [--severity=error]
@@ -70,7 +70,7 @@ repos:
   # Secret detection
   # ---------------------------------------------------------------------------
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+    rev: v1.5.0
     hooks:
       - id: detect-secrets
         exclude: '(package.lock.json|\.pem$|\.key$|\.tmpl$|chezmoi\.toml$)'
@@ -79,7 +79,7 @@ repos:
   # Markdown linting
   # ---------------------------------------------------------------------------
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.38.0
+    rev: v0.47.0
     hooks:
       - id: markdownlint
         args: [--fix, --disable, MD013, MD033, MD041]
@@ -88,10 +88,22 @@ repos:
   # YAML linting
   # ---------------------------------------------------------------------------
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.33.0
+    rev: v1.38.0
     hooks:
       - id: yamllint
         args: [-c, .yamllint.yml]
+
+  # ---------------------------------------------------------------------------
+  # Shellcheck for chezmoi templates
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: shellcheck-templates
+        name: shellcheck zsh templates
+        entry: bash -c 'for f in "$@"; do sed "s/{{[^}]*}}//g" "$f" | shellcheck -s bash -; done'
+        language: system
+        files: '\.zsh\.tmpl$'
+        types: [file]
 
 # =============================================================================
 # Configuration
