@@ -1,0 +1,74 @@
+[data]
+    name = "Test User"
+    email = "test@example.com"
+    github_username = "testuser"
+    enable_cloud = false
+    enable_containers = false
+    enable_kubernetes = false
+    enable_dev_tools = false
+    enable_editors = false
+    enable_extras = false
+    enable_workflows = false
+    enable_productivity = false
+    minimal = true
+    enable_gtd = false
+    enable_macos_gtd = false
+    enable_google_gtd = false
+    enable_microsoft_gtd = false
+    work = false
+    work_username = ""
+    work_email = ""
+    macos = false
+    linux = true
+
+[data.cloud]
+    aws = false
+    azure = false
+    gcp = false
+    digitalocean = false
+    oracle = false
+    linode = false
+
+[data.preferences]
+    editor = "vim"
+    terminal = "default"
+    shell_prompt = "starship"
+    color_scheme = "auto"
+    projects_dir = "$HOME/Projects"
+    task_dir = ""
+    notes_dir = ""
+    meeting_dir = ""
+    time_track_dir = ""
+    notes_folder = ""
+    meeting_folder = ""
+    reminders_list = ""
+    gtd_inbox_folder = ""
+    gtd_inbox_file = ""
+    gtd_templates_dir = ""
+    gtd_projects_folder = ""
+    gtd_projects_dir = ""
+    gtd_next_actions_file = ""
+    enable_wordpress = false
+    enable_chef = false
+    enable_puppet = false
+    enable_ansible = false
+    enable_java = false
+    enable_groovy = false
+    enable_rails = false
+    enable_omnifocus = false
+    enable_rust = false
+    enable_ruby = false
+    enable_hashicorp = false
+    enable_vscode = false
+    enable_github = false
+    pomodoro_work = 25
+    pomodoro_break = 5
+    pomodoro_longbreak = 15
+    pomodoro_cycles = 4
+
+[data.security]
+    gpg_signing = false
+    use_ssh_agent = true
+    use_keychain = false
+    use_1password = false
+    use_yubikey = false

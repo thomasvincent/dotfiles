@@ -1,0 +1,9 @@
+# Shellcheck configuration for chezmoi-managed zsh dotfiles
+# SC1090: Can't follow non-constant source
+disable=SC1090
+# SC1091: Not following sourced file
+disable=SC1091
+# SC2034: Variable appears unused (common in zsh configs for exported vars)
+disable=SC2034
+# SC2154: Variable referenced but not assigned (set by zsh framework/plugins)
+disable=SC2154

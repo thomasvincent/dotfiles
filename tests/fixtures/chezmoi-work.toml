@@ -1,0 +1,74 @@
+[data]
+    name = "Test User"
+    email = "test@company.com"
+    github_username = "testuser"
+    enable_cloud = true
+    enable_containers = false
+    enable_kubernetes = false
+    enable_dev_tools = true
+    enable_editors = false
+    enable_extras = false
+    enable_workflows = true
+    enable_productivity = true
+    minimal = false
+    enable_gtd = false
+    enable_macos_gtd = false
+    enable_google_gtd = false
+    enable_microsoft_gtd = true
+    work = true
+    work_username = "testuser-work"
+    work_email = "test@company.com"
+    macos = true
+    linux = false
+
+[data.cloud]
+    aws = true
+    azure = true
+    gcp = false
+    digitalocean = false
+    oracle = false
+    linode = false
+
+[data.preferences]
+    editor = "vim"
+    terminal = "default"
+    shell_prompt = "starship"
+    color_scheme = "auto"
+    projects_dir = "$HOME/Projects"
+    task_dir = "$HOME/GTD/Tasks"
+    notes_dir = "$HOME/GTD/Notes"
+    meeting_dir = "$HOME/GTD/Meetings"
+    time_track_dir = "$HOME/GTD/TimeTracking"
+    notes_folder = "Notes"
+    meeting_folder = "Meetings"
+    reminders_list = "Work"
+    gtd_inbox_folder = "Inbox"
+    gtd_inbox_file = "$HOME/GTD/inbox.md"
+    gtd_templates_dir = "$HOME/GTD/Templates"
+    gtd_projects_folder = "Projects"
+    gtd_projects_dir = "$HOME/GTD/Projects"
+    gtd_next_actions_file = "$HOME/GTD/next-actions.md"
+    enable_wordpress = false
+    enable_chef = false
+    enable_puppet = false
+    enable_ansible = false
+    enable_java = false
+    enable_groovy = false
+    enable_rails = false
+    enable_omnifocus = false
+    enable_rust = false
+    enable_ruby = false
+    enable_hashicorp = false
+    enable_vscode = false
+    enable_github = true
+    pomodoro_work = 25
+    pomodoro_break = 5
+    pomodoro_longbreak = 15
+    pomodoro_cycles = 4
+
+[data.security]
+    gpg_signing = true
+    use_ssh_agent = true
+    use_keychain = true
+    use_1password = false
+    use_yubikey = false
