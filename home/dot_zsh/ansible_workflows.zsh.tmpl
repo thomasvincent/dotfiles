@@ -204,7 +204,7 @@ ansible-run() {
   if [[ ! -f "$inventory" ]]; then
     echo "Error: Inventory not found at $inventory"
     return 1
-  }
+  fi
 
   # Run the playbook
   ansible-playbook "$playbook_path" -i "$inventory" $options
