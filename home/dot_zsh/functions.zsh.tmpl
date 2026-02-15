@@ -2,7 +2,7 @@
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
 # Create a directory and cd into it
-mkd() { mkdir -p "$@" && cd "$_"; }
+mkd() { mkdir -p "$@" && cd "$_" || return; }
 # Backward compatibility wrapper
 mkcd() { mkd "$@"; }
 

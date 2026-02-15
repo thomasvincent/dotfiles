@@ -358,7 +358,7 @@ ansible-adhoc() {
   fi
 }
 
-# Generate a comprehensive Ansible inventory from running servers
+# Generate an Ansible inventory from running servers
 ansible-scan-network() {
   local network=$1
   local output_file=${2:-"inventories/scanned-hosts.yml"}

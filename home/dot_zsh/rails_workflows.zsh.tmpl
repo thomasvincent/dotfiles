@@ -591,7 +591,7 @@ rails-gen-controller() {
     if [[ -f "$controller_spec_file" ]]; then
       echo "Enhancing controller spec for $controller_name"
 
-      # Create a more comprehensive controller spec
+      # Create a controller spec with full CRUD actions
       cat > "$controller_spec_file" << EOF
 require 'rails_helper'
 
@@ -631,7 +631,7 @@ EOF
     if [[ -f "$request_spec_file" ]]; then
       echo "Enhancing request spec for $controller_name"
 
-      # Create a comprehensive request spec
+      # Create a request spec covering all endpoints
       cat > "$request_spec_file" << EOF
 require 'rails_helper'
 
