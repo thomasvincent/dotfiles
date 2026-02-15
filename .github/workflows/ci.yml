@@ -21,6 +21,9 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  CHEZMOI_VERSION: "2.69.4"
+
 # Cancel previous runs on the same PR to save resources
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -43,6 +46,8 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout code
@@ -75,6 +80,9 @@ jobs:
     name: Test on Linux
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [lint]
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout code
@@ -98,6 +106,9 @@ jobs:
     name: Test on macOS
     runs-on: macos-latest
     timeout-minutes: 10
+    needs: [lint]
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout code
@@ -119,6 +130,9 @@ jobs:
     name: Verify Chezmoi Templates
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [lint]
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout code
@@ -126,11 +140,10 @@ jobs:
 
     - name: Install Chezmoi
       run: |
-        CHEZMOI_VERSION="2.69.4"
         BIN_DIR="$(pwd)/bin"
         mkdir -p "$BIN_DIR"
-        curl -fsSL "https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_linux_amd64.tar.gz" -o /tmp/chezmoi.tar.gz
-        curl -fsSL "https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_checksums.txt" -o /tmp/checksums.txt
+        curl -fsSL "https://github.com/twpayne/chezmoi/releases/download/v${{ env.CHEZMOI_VERSION }}/chezmoi_${{ env.CHEZMOI_VERSION }}_linux_amd64.tar.gz" -o /tmp/chezmoi.tar.gz
+        curl -fsSL "https://github.com/twpayne/chezmoi/releases/download/v${{ env.CHEZMOI_VERSION }}/chezmoi_${{ env.CHEZMOI_VERSION }}_checksums.txt" -o /tmp/checksums.txt
         cd /tmp && sha256sum --check --ignore-missing checksums.txt
         tar xzf /tmp/chezmoi.tar.gz -C "$BIN_DIR" chezmoi
         echo "$BIN_DIR" >> $GITHUB_PATH
@@ -164,6 +177,9 @@ jobs:
     name: Shellcheck Templates
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [lint]
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout code
@@ -173,11 +189,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y shellcheck
-        CHEZMOI_VERSION="2.69.4"
         BIN_DIR="$(pwd)/bin"
         mkdir -p "$BIN_DIR"
-        curl -fsSL "https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_linux_amd64.tar.gz" -o /tmp/chezmoi.tar.gz
-        curl -fsSL "https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_checksums.txt" -o /tmp/checksums.txt
+        curl -fsSL "https://github.com/twpayne/chezmoi/releases/download/v${{ env.CHEZMOI_VERSION }}/chezmoi_${{ env.CHEZMOI_VERSION }}_linux_amd64.tar.gz" -o /tmp/chezmoi.tar.gz
+        curl -fsSL "https://github.com/twpayne/chezmoi/releases/download/v${{ env.CHEZMOI_VERSION }}/chezmoi_${{ env.CHEZMOI_VERSION }}_checksums.txt" -o /tmp/checksums.txt
         cd /tmp && sha256sum --check --ignore-missing checksums.txt
         tar xzf /tmp/chezmoi.tar.gz -C "$BIN_DIR" chezmoi
         echo "$BIN_DIR" >> $GITHUB_PATH
