@@ -2,7 +2,7 @@
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
 # Enable these functions when Microsoft workflow is enabled
-{{ if eq .enable_microsoft_gtd true -}}
+{{ if and (hasKey . "enable_microsoft_gtd") .enable_microsoft_gtd -}}
 
 # ==================================
 # Microsoft Integration Setup
@@ -16,13 +16,13 @@ MS_ONENOTE_URL="https://www.onenote.com/notebooks"
 MS_TEAMS_URL="https://teams.microsoft.com"
 MS_PLANNER_URL="https://tasks.office.com"
 MS_ONEDRIVE_URL="https://onedrive.live.com"
-MS_SHAREPOINT_URL="{{ .preferences.sharepoint_url | default "https://your-tenant.sharepoint.com" }}"
+MS_SHAREPOINT_URL="{{ if and (hasKey . "preferences") (hasKey .preferences "sharepoint_url") }}{{ .preferences.sharepoint_url }}{{ else }}https://your-tenant.sharepoint.com{{ end }}"
 
 # Microsoft Cloud Azure Portal
 MS_AZURE_PORTAL="https://portal.azure.com"
 
 # Microsoft GTD folder structure for OneDrive/SharePoint
-GTD_MS_ROOT="{{ .preferences.ms_gtd_folder | default "GTD System" }}"
+GTD_MS_ROOT="{{ if and (hasKey . "preferences") (hasKey .preferences "ms_gtd_folder") }}{{ .preferences.ms_gtd_folder }}{{ else }}GTD System{{ end }}"
 GTD_MS_INBOX="${GTD_MS_ROOT}/Inbox"
 GTD_MS_PROJECTS="${GTD_MS_ROOT}/Projects"
 GTD_MS_REFERENCE="${GTD_MS_ROOT}/Reference"
@@ -44,11 +44,7 @@ msoutlook-open() {
     outlook_url="${outlook_url}/inbox/${folder}"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$outlook_url"
-  else
-    xdg-open "$outlook_url" &> /dev/null
-  fi
+  _open_url "$outlook_url"
 
   echo "Opening Microsoft Outlook"
 }
@@ -69,11 +65,7 @@ msoutlook-search() {
   # Build the search URL
   local outlook_search_url="${MS_OUTLOOK_URL}/?search=${encoded_query}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$outlook_search_url"
-  else
-    xdg-open "$outlook_search_url" &> /dev/null
-  fi
+  _open_url "$outlook_search_url"
 
   echo "Searching Outlook for: $search_query"
 }
@@ -98,11 +90,7 @@ msoutlook-compose() {
   # Build the compose URL
   local outlook_compose_url="${MS_OUTLOOK_URL}/deeplink/compose?to=${encoded_to}&subject=${encoded_subject}&body=${encoded_body}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$outlook_compose_url"
-  else
-    xdg-open "$outlook_compose_url" &> /dev/null
-  fi
+  _open_url "$outlook_compose_url"
 
   echo "Creating email to $to in Outlook"
 }
@@ -137,11 +125,7 @@ mscalendar-open() {
 
   local calendar_url="${MS_CALENDAR_URL}/view/${calendar_view}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$calendar_url"
-  else
-    xdg-open "$calendar_url" &> /dev/null
-  fi
+  _open_url "$calendar_url"
 
   echo "Opening Microsoft Calendar in $view view"
 }
@@ -185,11 +169,7 @@ mscalendar-new() {
 
   local calendar_new_url="${MS_CALENDAR_URL}/deeplink/compose?subject=${encoded_title}&startdt=${formatted_start}&enddt=${formatted_end}&location=${encoded_location}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$calendar_new_url"
-  else
-    xdg-open "$calendar_new_url" &> /dev/null
-  fi
+  _open_url "$calendar_new_url"
 
   echo "Creating new calendar event: $title"
 }
@@ -199,11 +179,7 @@ mscalendar-today() {
   # Build URL for today's calendar view
   local calendar_url="${MS_CALENDAR_URL}/view/day"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$calendar_url"
-  else
-    xdg-open "$calendar_url" &> /dev/null
-  fi
+  _open_url "$calendar_url"
 
   echo "Opening Microsoft Calendar for today"
 }
@@ -226,11 +202,7 @@ mstodo-open() {
     todo_url="${todo_url}/lists/${encoded_list}"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$todo_url"
-  else
-    xdg-open "$todo_url" &> /dev/null
-  fi
+  _open_url "$todo_url"
 
   echo "Opening Microsoft To Do"
 }
@@ -240,11 +212,7 @@ mstodo-myday() {
   # URL for My Day view
   local todo_myday_url="${MS_TODO_URL}/myday"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$todo_myday_url"
-  else
-    xdg-open "$todo_myday_url" &> /dev/null
-  fi
+  _open_url "$todo_myday_url"
 
   echo "Opening Microsoft To Do - My Day view"
 }
@@ -254,11 +222,7 @@ mstodo-important() {
   # URL for Important tasks
   local todo_important_url="${MS_TODO_URL}/important"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$todo_important_url"
-  else
-    xdg-open "$todo_important_url" &> /dev/null
-  fi
+  _open_url "$todo_important_url"
 
   echo "Opening Microsoft To Do - Important tasks"
 }
@@ -268,11 +232,7 @@ mstodo-planned() {
   # URL for Planned tasks
   local todo_planned_url="${MS_TODO_URL}/planned"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$todo_planned_url"
-  else
-    xdg-open "$todo_planned_url" &> /dev/null
-  fi
+  _open_url "$todo_planned_url"
 
   echo "Opening Microsoft To Do - Planned tasks"
 }
@@ -283,11 +243,7 @@ mstodo-planned() {
 
 # Open Microsoft OneNote
 msonenote-open() {
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "${MS_ONENOTE_URL}"
-  else
-    xdg-open "${MS_ONENOTE_URL}" &> /dev/null
-  fi
+  _open_url "${MS_ONENOTE_URL}"
 
   echo "Opening Microsoft OneNote"
 }
@@ -308,11 +264,7 @@ msonenote-new-notebook() {
   # Build the URL (this will open OneNote, but won't automatically create the notebook)
   local onenote_url="${MS_ONENOTE_URL}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$onenote_url"
-  else
-    xdg-open "$onenote_url" &> /dev/null
-  fi
+  _open_url "$onenote_url"
 
   echo "Opening Microsoft OneNote"
   echo "Note: OneNote web doesn't support direct notebook creation via URL."
@@ -339,11 +291,7 @@ msonedrive-open() {
     echo "Opening OneDrive"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$onedrive_url"
-  else
-    xdg-open "$onedrive_url" &> /dev/null
-  fi
+  _open_url "$onedrive_url"
 }
 
 # Open Microsoft OneDrive documents
@@ -351,11 +299,7 @@ msonedrive-docs() {
   # URL for OneDrive documents
   local onedrive_docs_url="${MS_ONEDRIVE_URL}/?id=documents"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$onedrive_docs_url"
-  else
-    xdg-open "$onedrive_docs_url" &> /dev/null
-  fi
+  _open_url "$onedrive_docs_url"
 
   echo "Opening OneDrive Documents folder"
 }
@@ -367,11 +311,7 @@ msonedrive-docs() {
 # Open Microsoft Teams
 msteams-open() {
   # Open Teams in the browser
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "${MS_TEAMS_URL}"
-  else
-    xdg-open "${MS_TEAMS_URL}" &> /dev/null
-  fi
+  _open_url "${MS_TEAMS_URL}"
 
   echo "Opening Microsoft Teams in browser"
 }
@@ -392,11 +332,7 @@ msteams-chat() {
   # Build the URL for Teams chat
   local teams_chat_url="${MS_TEAMS_URL}/l/chat/0/0?users=${encoded_email}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$teams_chat_url"
-  else
-    xdg-open "$teams_chat_url" &> /dev/null
-  fi
+  _open_url "$teams_chat_url"
 
   echo "Opening Teams chat with $person"
 }
@@ -408,11 +344,7 @@ msteams-chat() {
 # Open Microsoft Planner
 msplanner-open() {
   # Open Planner in the browser
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "${MS_PLANNER_URL}"
-  else
-    xdg-open "${MS_PLANNER_URL}" &> /dev/null
-  fi
+  _open_url "${MS_PLANNER_URL}"
 
   echo "Opening Microsoft Planner"
 }
@@ -433,11 +365,7 @@ mssharepoint-open() {
     sharepoint_url="${sharepoint_url}/${site_path}"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$sharepoint_url"
-  else
-    xdg-open "$sharepoint_url" &> /dev/null
-  fi
+  _open_url "$sharepoint_url"
 
   echo "Opening SharePoint${site_path:+ site: $site_path}"
 }
@@ -458,11 +386,7 @@ msazure-open() {
     azure_url="${azure_url}/#@/resource/${resource}"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$azure_url"
-  else
-    xdg-open "$azure_url" &> /dev/null
-  fi
+  _open_url "$azure_url"
 
   echo "Opening Azure Portal${resource:+ resource: $resource}"
 }

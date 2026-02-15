@@ -6,15 +6,15 @@ set -euo pipefail
 
 # Create productivity directories if enabled
 {{ if .enable_productivity -}}
-mkdir -p "{{ .preferences.task_dir | default "$HOME/.tasks" }}"
-mkdir -p "{{ .preferences.notes_dir | default "$HOME/.notes" }}"
-mkdir -p "{{ .preferences.meeting_dir | default "$HOME/.notes/meetings" }}"
-mkdir -p "{{ .preferences.time_track_dir | default "$HOME/.timetrack" }}"
+mkdir -p "{{ if and (hasKey . "preferences") (hasKey .preferences "task_dir") }}{{ .preferences.task_dir }}{{ else }}$HOME/.tasks{{ end }}"
+mkdir -p "{{ if and (hasKey . "preferences") (hasKey .preferences "notes_dir") }}{{ .preferences.notes_dir }}{{ else }}$HOME/.notes{{ end }}"
+mkdir -p "{{ if and (hasKey . "preferences") (hasKey .preferences "meeting_dir") }}{{ .preferences.meeting_dir }}{{ else }}$HOME/.notes/meetings{{ end }}"
+mkdir -p "{{ if and (hasKey . "preferences") (hasKey .preferences "time_track_dir") }}{{ .preferences.time_track_dir }}{{ else }}$HOME/.timetrack{{ end }}"
 {{ end -}}
 
 # Set up the projects directory if workflows are enabled
 {{ if .enable_workflows -}}
-mkdir -p "{{ .preferences.projects_dir | default "$HOME/Projects" }}"
+mkdir -p "{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}"
 {{ end -}}
 
 # Install required tools based on OS

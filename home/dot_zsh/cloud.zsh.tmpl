@@ -1,7 +1,7 @@
 # Cloud provider configurations
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if .cloud.aws -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "aws") .cloud.aws -}}
 # AWS Configuration
 export AWS_REGION="${AWS_REGION:-us-west-2}"
 export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-$AWS_REGION}"
@@ -27,7 +27,7 @@ aws-who() {
 }
 {{ end -}}
 
-{{ if .cloud.azure -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "azure") .cloud.azure -}}
 # Azure Configuration
 export AZURE_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/azure"
 
@@ -50,7 +50,7 @@ az-set-subscription() {
 }
 {{ end -}}
 
-{{ if .cloud.gcp -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "gcp") .cloud.gcp -}}
 # Google Cloud Configuration
 export CLOUDSDK_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/gcloud"
 
@@ -82,7 +82,7 @@ gcp-who() {
 }
 {{ end -}}
 
-{{ if .cloud.digitalocean -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "digitalocean") .cloud.digitalocean -}}
 # DigitalOcean Configuration
 export DIGITALOCEAN_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/doctl"
 
@@ -167,7 +167,7 @@ do-delete-droplet() {
   fi
 
   echo "Warning: This will permanently delete the droplet with ID $droplet_id."
-  read -p "Are you sure you want to continue? (y/N) " confirm
+  read "confirm?Are you sure you want to continue? (y/N) "
 
   if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     echo "Operation canceled."
@@ -366,7 +366,7 @@ do-app-create() {
   if [[ ! -f "Dockerfile" && ! -f "docker-compose.yml" && ! -f "package.json" && ! -f "requirements.txt" ]]; then
     echo "Warning: No Dockerfile, docker-compose.yml, package.json, or requirements.txt found in the current directory."
     echo "DigitalOcean App Platform may not be able to detect the application type."
-    read -p "Continue? (y/N) " confirm
+    read "confirm?Continue? (y/N) "
 
     if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
       echo "Operation canceled."
@@ -390,7 +390,7 @@ do-list-regions() {
 }
 {{ end -}}
 
-{{ if .cloud.oracle -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "oracle") .cloud.oracle -}}
 # Oracle Cloud Configuration
 export OCI_CLI_CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/oci/config"
 export OCI_CLI_RC_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/oci/ocirc"
@@ -405,7 +405,7 @@ oci-list-compartments() {
 }
 {{ end -}}
 
-{{ if .cloud.linode -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "linode") .cloud.linode -}}
 # Linode Configuration
 export LINODE_CLI_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/linode-cli"
 
@@ -431,7 +431,7 @@ cloud-ports() {
 # Terraform aliases and functions are in hashicorp_workflows.zsh.tmpl
 
 # Kubernetes aliases and functions
-{{ if .enable_kubernetes -}}
+{{ if and (hasKey . "enable_kubernetes") .enable_kubernetes -}}
 alias k='kubectl'
 alias kgp='kubectl get pods'
 alias kgs='kubectl get services'

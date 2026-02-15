@@ -1,14 +1,14 @@
 # Ruby Development Workflows
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if or (eq .preferences.enable_ruby true) (eq .enable_dev_tools true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_ruby") .preferences.enable_ruby) (and (hasKey . "enable_dev_tools") .enable_dev_tools) -}}
 # Ruby environment configuration
 export RBENV_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/rbenv"
 export PATH="$RBENV_ROOT/bin:$PATH"
 export PATH="$RBENV_ROOT/shims:$PATH"
 
 # Initialize rbenv if available
-if command -v rbenv &>/dev/null; then
+if (( $+commands[rbenv] )); then
   eval "$(rbenv init -)"
 fi
 
@@ -49,7 +49,7 @@ ruby-init() {
     return 1
   fi
 
-  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
 
   # Create project directory
   mkdir -p "$project_dir"
@@ -59,9 +59,9 @@ ruby-init() {
   git init
 
   # Set Ruby version
-  if command -v rbenv &>/dev/null; then
+  if (( $+commands[rbenv] )); then
     rbenv local "$ruby_version"
-  elif command -v chruby &>/dev/null; then
+  elif (( $+commands[chruby] )); then
     echo "$ruby_version" > .ruby-version
   fi
 
@@ -218,7 +218,7 @@ rails-init() {
     gem install rails
   fi
 
-  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
 
   mkdir -p "$(dirname "$project_dir")"
 
@@ -490,7 +490,7 @@ rails-api() {
 
   rails-init "$project_name" postgresql --api
 
-  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
   cd "$project_dir" || return 1
 
   # Add API gems
@@ -571,7 +571,7 @@ rails-erd() {
     bundle install
   fi
 
-  if ! command -v dot &>/dev/null; then
+  if ! (( $+commands[dot] )); then
     echo "Error: graphviz is not installed."
     echo "Please install graphviz first."
     {{ if eq .chezmoi.os "darwin" }}
@@ -587,11 +587,7 @@ rails-erd() {
 
   if [[ -f erd.pdf ]]; then
     echo "ERD generated at erd.pdf"
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      open erd.pdf
-    else
-      xdg-open erd.pdf 2>/dev/null || echo "Cannot open: erd.pdf"
-    fi
+    _open_url erd.pdf || echo "Cannot open: erd.pdf"
   else
     echo "ERD generation failed."
   fi
@@ -612,12 +608,12 @@ ruby-gem() {
     return 1
   fi
 
-  if ! command -v bundler &>/dev/null; then
+  if ! (( $+commands[bundler] )); then
     echo "Bundler not found. Installing..."
     gem install bundler
   fi
 
-  local gem_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$gem_name"
+  local gem_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$gem_name"
 
   echo "Creating new Ruby gem: $gem_name"
   bundler gem "$gem_dir"
@@ -625,13 +621,17 @@ ruby-gem() {
   cd "$gem_dir" || return 1
 
   # Update the gemspec with better defaults
-  sed -i.bak "s/spec.summary.*/spec.summary = \"${gem_name} gem\"/" "${gem_name}.gemspec"
-  sed -i.bak "s/spec.description.*/spec.description = \"A detailed description of ${gem_name}.\"/" "${gem_name}.gemspec"
-  sed -i.bak "s|spec.homepage.*|spec.homepage = \"https://github.com/$(git config user.name || echo "username")/${gem_name}\"|" "${gem_name}.gemspec"
-  rm -f "${gem_name}.gemspec.bak"
-
-  # Add development dependencies
-  sed -i.bak "/add_development_dependency/d" "${gem_name}.gemspec"
+  if (( IS_MACOS )); then
+    sed -i '' "s/spec.summary.*/spec.summary = \"${gem_name} gem\"/" "${gem_name}.gemspec"
+    sed -i '' "s/spec.description.*/spec.description = \"A detailed description of ${gem_name}.\"/" "${gem_name}.gemspec"
+    sed -i '' "s|spec.homepage.*|spec.homepage = \"https://github.com/$(git config user.name || echo "username")/${gem_name}\"|" "${gem_name}.gemspec"
+    sed -i '' "/add_development_dependency/d" "${gem_name}.gemspec"
+  else
+    sed -i "s/spec.summary.*/spec.summary = \"${gem_name} gem\"/" "${gem_name}.gemspec"
+    sed -i "s/spec.description.*/spec.description = \"A detailed description of ${gem_name}.\"/" "${gem_name}.gemspec"
+    sed -i "s|spec.homepage.*|spec.homepage = \"https://github.com/$(git config user.name || echo "username")/${gem_name}\"|" "${gem_name}.gemspec"
+    sed -i "/add_development_dependency/d" "${gem_name}.gemspec"
+  fi
   cat >> "${gem_name}.gemspec" << 'EOF'
   spec.add_development_dependency "rspec", "~> 3.0"
   spec.add_development_dependency "rubocop", "~> 1.0"
@@ -709,7 +709,7 @@ sinatra-init() {
     return 1
   fi
 
-  local app_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$app_name"
+  local app_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$app_name"
 
   # Create project directory
   mkdir -p "$app_dir"

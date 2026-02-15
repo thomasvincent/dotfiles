@@ -6,27 +6,27 @@
     "PKief.material-icon-theme",
     "editorconfig.editorconfig",
     "github.github-vscode-theme",
-    {{ if .preferences.enable_rust -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "enable_rust") .preferences.enable_rust -}}
     "rust-lang.rust-analyzer",
     "serayuzgur.crates",
     "tamasfe.even-better-toml",
     "vadimcn.vscode-lldb",
     {{ end -}}
-    {{ if .preferences.enable_ruby -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "enable_ruby") .preferences.enable_ruby -}}
     "rebornix.ruby",
     "castwide.solargraph",
     "kaiwood.endwise",
     "wingrunr21.vscode-ruby",
     {{ end -}}
-    {{ if .preferences.enable_hashicorp -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "enable_hashicorp") .preferences.enable_hashicorp -}}
     "hashicorp.terraform",
     "hashicorp.hcl",
     "ms-azuretools.vscode-docker",
     {{ end -}}
-    {{ if .cloud.aws -}}
+    {{ if and (hasKey . "cloud") (hasKey .cloud "aws") .cloud.aws -}}
     "amazonwebservices.aws-toolkit-vscode",
     {{ end -}}
-    {{ if .cloud.gcp -}}
+    {{ if and (hasKey . "cloud") (hasKey .cloud "gcp") .cloud.gcp -}}
     "googlecloudtools.cloudcode",
     {{ end -}}
     "ms-vscode.vscode-typescript-next",

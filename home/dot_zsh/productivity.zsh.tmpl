@@ -13,7 +13,7 @@ USE_MACOS_REMINDERS=false
 {{ end -}}
 
 # Simple task manager using plain text files as fallback
-TASK_DIR="{{ .preferences.task_dir | default "$HOME/.tasks" }}"
+TASK_DIR="{{ if and (hasKey . "preferences") (hasKey .preferences "task_dir") }}{{ .preferences.task_dir }}{{ else }}$HOME/.tasks{{ end }}"
 TASK_FILE="$TASK_DIR/tasks.txt"
 ARCHIVE_FILE="$TASK_DIR/archive.txt"
 
@@ -159,8 +159,11 @@ EOF
     echo "[$date_completed] DONE: $task" >> "$ARCHIVE_FILE"
 
     # Remove the task from the task file
-    sed -i.bak "${task_num}d" "$TASK_FILE"
-    rm "$TASK_FILE.bak"
+    if (( IS_MACOS )); then
+      sed -i '' "${task_num}d" "$TASK_FILE"
+    else
+      sed -i "${task_num}d" "$TASK_FILE"
+    fi
 
     echo "Task completed: $task"
   fi
@@ -307,8 +310,8 @@ USE_MACOS_NOTES=true
 USE_MACOS_NOTES=false
 {{ end -}}
 
-NOTES_DIR="{{ .preferences.notes_dir | default "$HOME/.notes" }}"
-DEFAULT_NOTES_FOLDER="{{ .preferences.notes_folder | default "CLI Notes" }}"
+NOTES_DIR="{{ if and (hasKey . "preferences") (hasKey .preferences "notes_dir") }}{{ .preferences.notes_dir }}{{ else }}$HOME/.notes{{ end }}"
+DEFAULT_NOTES_FOLDER="{{ if and (hasKey . "preferences") (hasKey .preferences "notes_folder") }}{{ .preferences.notes_folder }}{{ else }}CLI Notes{{ end }}"
 
 # Initialize notes directory if it doesn't exist
 [[ ! -d "$NOTES_DIR" ]] && mkdir -p "$NOTES_DIR"
@@ -378,13 +381,13 @@ EOF
     fi
 
     # Open the note in the default editor
-    {{ if eq .preferences.editor "vscode" -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vscode") -}}
     code "$NOTES_DIR/$filename"
-    {{ else if eq .preferences.editor "vim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vim") -}}
     vim "$NOTES_DIR/$filename"
-    {{ else if eq .preferences.editor "neovim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "neovim") -}}
     nvim "$NOTES_DIR/$filename"
-    {{ else if eq .preferences.editor "emacs" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "emacs") -}}
     emacs "$NOTES_DIR/$filename"
     {{ else -}}
     echo "Note created at $NOTES_DIR/$filename"
@@ -503,13 +506,13 @@ EOF
     fi
 
     # View the note
-    {{ if eq .preferences.editor "vscode" -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vscode") -}}
     code "$note_file"
-    {{ else if eq .preferences.editor "vim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vim") -}}
     vim "$note_file"
-    {{ else if eq .preferences.editor "neovim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "neovim") -}}
     nvim "$note_file"
-    {{ else if eq .preferences.editor "emacs" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "emacs") -}}
     emacs "$note_file"
     {{ else -}}
     # Fallback to cat with paging
@@ -602,8 +605,8 @@ EOF
 # ==================================
 
 # Default settings
-MEETING_DIR="{{ .preferences.meeting_dir | default "$NOTES_DIR/meetings" }}"
-MEETING_FOLDER="{{ .preferences.meeting_folder | default "Meetings" }}"
+MEETING_DIR="{{ if and (hasKey . "preferences") (hasKey .preferences "meeting_dir") }}{{ .preferences.meeting_dir }}{{ else }}$NOTES_DIR/meetings{{ end }}"
+MEETING_FOLDER="{{ if and (hasKey . "preferences") (hasKey .preferences "meeting_folder") }}{{ .preferences.meeting_folder }}{{ else }}Meetings{{ end }}"
 
 # Initialize meeting notes directory if it doesn't exist (for non-macOS systems)
 [[ ! -d "$MEETING_DIR" ]] && mkdir -p "$MEETING_DIR"
@@ -696,13 +699,13 @@ EOF
     echo "- [ ] " >> "$MEETING_DIR/$filename"
 
     # Open the meeting note in the default editor
-    {{ if eq .preferences.editor "vscode" -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vscode") -}}
     code "$MEETING_DIR/$filename"
-    {{ else if eq .preferences.editor "vim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vim") -}}
     vim "$MEETING_DIR/$filename"
-    {{ else if eq .preferences.editor "neovim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "neovim") -}}
     nvim "$MEETING_DIR/$filename"
-    {{ else if eq .preferences.editor "emacs" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "emacs") -}}
     emacs "$MEETING_DIR/$filename"
     {{ else -}}
     echo "Meeting note created at $MEETING_DIR/$filename"
@@ -819,13 +822,13 @@ EOF
     fi
 
     # View the meeting note
-    {{ if eq .preferences.editor "vscode" -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vscode") -}}
     code "$note_file"
-    {{ else if eq .preferences.editor "vim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vim") -}}
     vim "$note_file"
-    {{ else if eq .preferences.editor "neovim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "neovim") -}}
     nvim "$note_file"
-    {{ else if eq .preferences.editor "emacs" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "emacs") -}}
     emacs "$note_file"
     {{ else -}}
     # Fallback to cat with paging
@@ -1001,7 +1004,7 @@ EOF
 # Time Tracking
 # ==================================
 
-TIME_TRACK_DIR="{{ .preferences.time_track_dir | default "$HOME/.timetrack" }}"
+TIME_TRACK_DIR="{{ if and (hasKey . "preferences") (hasKey .preferences "time_track_dir") }}{{ .preferences.time_track_dir }}{{ else }}$HOME/.timetrack{{ end }}"
 TIME_TRACK_FILE="$TIME_TRACK_DIR/time_entries.csv"
 CURRENT_TASK_FILE="$TIME_TRACK_DIR/current_task"
 
@@ -1171,10 +1174,10 @@ time-summary() {
 # ==================================
 
 # Default pomodoro settings
-POMODORO_WORK={{ .preferences.pomodoro_work | default 25 }}  # Work period in minutes
-POMODORO_BREAK={{ .preferences.pomodoro_break | default 5 }}  # Break period in minutes
-POMODORO_LONGBREAK={{ .preferences.pomodoro_longbreak | default 15 }}  # Long break period in minutes
-POMODORO_CYCLES={{ .preferences.pomodoro_cycles | default 4 }}  # Number of work periods before a long break
+POMODORO_WORK={{ if and (hasKey . "preferences") (hasKey .preferences "pomodoro_work") }}{{ .preferences.pomodoro_work }}{{ else }}25{{ end }}  # Work period in minutes
+POMODORO_BREAK={{ if and (hasKey . "preferences") (hasKey .preferences "pomodoro_break") }}{{ .preferences.pomodoro_break }}{{ else }}5{{ end }}  # Break period in minutes
+POMODORO_LONGBREAK={{ if and (hasKey . "preferences") (hasKey .preferences "pomodoro_longbreak") }}{{ .preferences.pomodoro_longbreak }}{{ else }}15{{ end }}  # Long break period in minutes
+POMODORO_CYCLES={{ if and (hasKey . "preferences") (hasKey .preferences "pomodoro_cycles") }}{{ .preferences.pomodoro_cycles }}{{ else }}4{{ end }}  # Number of work periods before a long break
 
 pomodoro() {
   local task=$1

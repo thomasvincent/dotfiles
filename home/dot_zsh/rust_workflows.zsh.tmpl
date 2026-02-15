@@ -1,7 +1,7 @@
 # Rust Development Workflows
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if or (eq .preferences.enable_rust true) (eq .enable_dev_tools true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_rust") .preferences.enable_rust) (and (hasKey . "enable_dev_tools") .enable_dev_tools) -}}
 # Rust cargo aliases and environment
 export CARGO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/cargo"
 export RUSTUP_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/rustup"
@@ -33,7 +33,7 @@ rust-init() {
 
   _require_cmd "cargo" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh" || return 1
 
-  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
 
   mkdir -p "$(dirname "$project_dir")"
 
@@ -148,7 +148,7 @@ rust-project() {
   # First create a basic project
   rust-init "$project_name" "$project_type" || return 1
 
-  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
   cd "$project_dir" || return 1
 
   # Add common dependencies
@@ -281,7 +281,7 @@ rust-cli() {
 
   rust-init "$app_name" || return 1
 
-  local app_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$app_name"
+  local app_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$app_name"
   cd "$app_dir" || return 1
 
   # Add CLI-related dependencies

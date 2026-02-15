@@ -1,7 +1,7 @@
 # AI/LLM Workflows
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if .preferences.enable_ai -}}
+{{ if and (hasKey . "preferences") (hasKey .preferences "enable_ai") .preferences.enable_ai -}}
 
 # Tool availability guard
 if ! command -v curl &>/dev/null || ! command -v jq &>/dev/null; then
@@ -52,13 +52,13 @@ _ai-validate-provider() {
   fi
 }
 
-# _ai-require-keychain() - Validate provider + macOS for Keychain ops
+# _ai-require-keychain() - Validate provider + macOS/Linux for Keychain ops
 # Returns: 0 if OK, 1 if not
 _ai-require-keychain() {
   local provider="$1"
   _ai-validate-provider "$provider" || return 1
-  if [[ "$OSTYPE" != darwin* ]]; then
-    echo "Error: Keychain storage only supported on macOS" >&2
+  if [[ "$OSTYPE" != darwin* ]] && ! (( $+commands[secret-tool] )); then
+    echo "Error: Keychain storage requires macOS or secret-tool (Linux)" >&2
     return 1
   fi
 }
@@ -80,6 +80,14 @@ _ai-get-key() {
   if [[ "$OSTYPE" == darwin* ]]; then
     local key
     key=$(security find-generic-password -s "ai-${provider}" -w 2>/dev/null)
+    if [[ -n "$key" ]]; then
+      echo "$key"
+      return 0
+    fi
+  # Linux secret-tool fallback
+  elif (( $+commands[secret-tool] )); then
+    local key
+    key=$(secret-tool lookup service "ai-${provider}" account "$USER" 2>/dev/null)
     if [[ -n "$key" ]]; then
       echo "$key"
       return 0
@@ -107,12 +115,21 @@ ai-set-key() {
     return 1
   fi
 
-  # Store with security
-  if security add-generic-password -U -s "ai-${provider}" -a "$USER" -w "$key" 2>/dev/null; then
-    echo "Key stored successfully for ${provider}" >&2
-  else
-    echo "Error: Failed to store key" >&2
-    return 1
+  # Store with security (macOS) or secret-tool (Linux)
+  if [[ "$OSTYPE" == darwin* ]]; then
+    if security add-generic-password -U -s "ai-${provider}" -a "$USER" -w "$key" 2>/dev/null; then
+      echo "Key stored successfully for ${provider}" >&2
+    else
+      echo "Error: Failed to store key" >&2
+      return 1
+    fi
+  elif (( $+commands[secret-tool] )); then
+    if echo -n "$key" | secret-tool store --label="AI ${provider} API Key" service "ai-${provider}" account "$USER" 2>/dev/null; then
+      echo "Key stored successfully for ${provider}" >&2
+    else
+      echo "Error: Failed to store key" >&2
+      return 1
+    fi
   fi
 }
 
@@ -123,11 +140,20 @@ ai-del-key() {
 
   _ai-require-keychain "$provider" || return 1
 
-  if security delete-generic-password -s "ai-${provider}" 2>/dev/null; then
-    echo "Key removed for ${provider}" >&2
-  else
-    echo "Error: No key found for ${provider}" >&2
-    return 1
+  if [[ "$OSTYPE" == darwin* ]]; then
+    if security delete-generic-password -s "ai-${provider}" 2>/dev/null; then
+      echo "Key removed for ${provider}" >&2
+    else
+      echo "Error: No key found for ${provider}" >&2
+      return 1
+    fi
+  elif (( $+commands[secret-tool] )); then
+    if secret-tool clear service "ai-${provider}" account "$USER" 2>/dev/null; then
+      echo "Key removed for ${provider}" >&2
+    else
+      echo "Error: No key found for ${provider}" >&2
+      return 1
+    fi
   fi
 }
 

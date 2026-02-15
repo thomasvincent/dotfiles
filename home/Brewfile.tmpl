@@ -41,12 +41,12 @@ brew "hub"
 brew "awscli"
 brew "aws-iam-authenticator"
 brew "gcloud"
-{{ if .cloud.oracle -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "oracle") .cloud.oracle -}}
 brew "oci-cli"
 {{ end -}}
 
 # HashiCorp Tools
-{{ if .preferences.enable_hashicorp -}}
+{{ if and (hasKey . "preferences") (hasKey .preferences "enable_hashicorp") .preferences.enable_hashicorp -}}
 brew "hashicorp/tap/terraform"
 brew "hashicorp/tap/vault"
 brew "hashicorp/tap/consul"
@@ -75,23 +75,23 @@ cask "slack"
 cask "zoom"
 
 # Cloud Provider GUIs
-{{ if .cloud.aws -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "aws") .cloud.aws -}}
 cask "aws-vault"
 {{ end -}}
-{{ if .cloud.gcp -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "gcp") .cloud.gcp -}}
 cask "google-cloud-sdk"
 {{ end -}}
-{{ if .cloud.oracle -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "oracle") .cloud.oracle -}}
 cask "oracle-cloud-cli"
 {{ end -}}
 
 # Development Tools
 cask "intellij-idea-ce"
 cask "jetbrains-toolbox"
-{{ if .preferences.enable_ruby -}}
+{{ if and (hasKey . "preferences") (hasKey .preferences "enable_ruby") .preferences.enable_ruby -}}
 cask "rubymine"
 {{ end -}}
-{{ if .preferences.enable_rust -}}
+{{ if and (hasKey . "preferences") (hasKey .preferences "enable_rust") .preferences.enable_rust -}}
 cask "clion"
 {{ end -}}
 cask "fork" # Git client

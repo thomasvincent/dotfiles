@@ -9,8 +9,8 @@
 # ==================================
 
 # Initialize constants
-GTD_INBOX_FOLDER="{{ .preferences.gtd_inbox_folder | default "GTD/Inbox" }}"
-GTD_PROJECTS_FOLDER="{{ .preferences.gtd_projects_folder | default "GTD/Projects" }}"
+GTD_INBOX_FOLDER="{{ if and (hasKey . "preferences") (hasKey .preferences "gtd_inbox_folder") }}{{ .preferences.gtd_inbox_folder }}{{ else }}GTD/Inbox{{ end }}"
+GTD_PROJECTS_FOLDER="{{ if and (hasKey . "preferences") (hasKey .preferences "gtd_projects_folder") }}{{ .preferences.gtd_projects_folder }}{{ else }}GTD/Projects{{ end }}"
 
 # ==================================
 # Reminders App Integrations
@@ -977,10 +977,10 @@ gtd-process-email() {
 # Create a task from an email
 gtd-email-to-task() {
   # Show prompts for the user to input details
-  read -p "Task description: " task_description
-  read -p "List name (default: Inbox): " list_name
+  read "task_description?Task description: "
+  read "list_name?List name (default: Inbox): "
   list_name=${list_name:-"Inbox"}
-  read -p "Due date (optional): " due_date
+  read "due_date?Due date (optional): "
 
   # Add the task
   reminders-add "$task_description" "$list_name" "$due_date"

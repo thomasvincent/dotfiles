@@ -2,7 +2,7 @@
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
 # SSH Agent Configuration
-{{ if .security.use_ssh_agent -}}
+{{ if and (hasKey . "security") (hasKey .security "use_ssh_agent") .security.use_ssh_agent -}}
 # Start SSH agent if not running
 if [[ -z "$SSH_AUTH_SOCK" && -z "$SSH_CONNECTION" ]]; then
   ssh_agent_env="$HOME/.ssh/agent.env"
@@ -27,7 +27,7 @@ fi
 {{ end -}}
 
 # GPG Configuration
-{{ if .security.gpg_signing -}}
+{{ if and (hasKey . "security") (hasKey .security "gpg_signing") .security.gpg_signing -}}
 # Set up GPG for signing commits
 export GPG_TTY="$(tty)"
 
@@ -35,9 +35,9 @@ export GPG_TTY="$(tty)"
 # macOS specific GPG configuration
 export GNUPGHOME="${XDG_DATA_HOME:-$HOME/.local/share}/gnupg"
 
-{{ if .security.use_keychain -}}
+{{ if and (hasKey . "security") (hasKey .security "use_keychain") .security.use_keychain -}}
 # Use macOS keychain for GPG
-if command -v gpgconf >/dev/null; then
+if (( $+commands[gpgconf] )); then
   export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
   gpgconf --launch gpg-agent
 fi
@@ -55,9 +55,9 @@ gpg-add-key() {
 }
 {{ end -}}
 
-{{ if .security.use_1password -}}
+{{ if and (hasKey . "security") (hasKey .security "use_1password") .security.use_1password -}}
 # 1Password integration
-if command -v op >/dev/null; then
+if (( $+commands[op] )); then
   # 1Password SSH agent
   export SSH_AUTH_SOCK=~/.1password/agent.sock
 
@@ -76,9 +76,9 @@ if command -v op >/dev/null; then
 fi
 {{ end -}}
 
-{{ if .security.use_yubikey -}}
+{{ if and (hasKey . "security") (hasKey .security "use_yubikey") .security.use_yubikey -}}
 # YubiKey configuration
-if command -v ykman >/dev/null; then
+if (( $+commands[ykman] )); then
   # YubiKey functions
   yubikey-status() {
     ykman info
@@ -125,14 +125,14 @@ decrypt-file() {
 security-check() {
   echo "Checking for security tools..."
 
-  command -v gpg >/dev/null && echo "✅ GPG is installed" || echo "❌ GPG is not installed"
-  command -v ssh-agent >/dev/null && echo "✅ SSH agent is installed" || echo "❌ SSH agent is not installed"
+  (( $+commands[gpg] )) && echo "✅ GPG is installed" || echo "❌ GPG is not installed"
+  (( $+commands[ssh-agent] )) && echo "✅ SSH agent is installed" || echo "❌ SSH agent is not installed"
 
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    command -v security >/dev/null && echo "✅ macOS keychain CLI tools are installed" || echo "❌ macOS keychain CLI tools are not installed"
+    (( $+commands[security] )) && echo "✅ macOS keychain CLI tools are installed" || echo "❌ macOS keychain CLI tools are not installed"
   fi
 
-  command -v openssl >/dev/null && echo "✅ OpenSSL is installed" || echo "❌ OpenSSL is not installed"
+  (( $+commands[openssl] )) && echo "✅ OpenSSL is installed" || echo "❌ OpenSSL is not installed"
 }
 
 # Security aliases

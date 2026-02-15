@@ -1,7 +1,7 @@
 # HashiCorp Toolchain Workflows
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if or (eq .preferences.enable_hashicorp true) (eq .enable_dev_tools true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_hashicorp") .preferences.enable_hashicorp) (and (hasKey . "enable_dev_tools") .enable_dev_tools) -}}
 # =====================
 # Terraform Workflows
 # =====================
@@ -90,7 +90,7 @@ tf-project() {
     return 1
   fi
 
-  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
 
   # Create project directory
   mkdir -p "$project_dir"
@@ -568,11 +568,7 @@ tf-visualize() {
   echo "Terraform graph generated: $pngfile"
 
   # Open the PNG file if possible
-  if command -v open &>/dev/null; then
-    open "$pngfile"
-  elif command -v xdg-open &>/dev/null; then
-    xdg-open "$pngfile"
-  fi
+  _open_url "$pngfile"
 }
 
 # Generate Terraform documentation
@@ -1154,11 +1150,11 @@ consul-register() {
 EOF
 
   if [[ -n "$tags" ]]; then
-    IFS=',' read -ra TAG_ARRAY <<< "$tags"
+    TAG_ARRAY=( ${(@s:,:)tags} )
     echo "  \"Tags\": [" >> "$service_file"
 
-    for i in "${!TAG_ARRAY[@]}"; do
-      if [[ $i -eq $((${#TAG_ARRAY[@]}-1)) ]]; then
+    for i in {1..${#TAG_ARRAY[@]}}; do
+      if [[ $i -eq ${#TAG_ARRAY[@]} ]]; then
         echo "    \"${TAG_ARRAY[$i]}\"" >> "$service_file"
       else
         echo "    \"${TAG_ARRAY[$i]}\"," >> "$service_file"
@@ -1845,7 +1841,7 @@ waypoint-template() {
     return 1
   fi
 
-  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
 
   mkdir -p "$project_dir"
   cd "$project_dir" || return 1

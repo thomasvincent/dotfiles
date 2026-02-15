@@ -7,7 +7,7 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # Set default editor
-export EDITOR='{{ .preferences.editor | default "vim" }}'
+export EDITOR='{{ if and (hasKey . "preferences") (hasKey .preferences "editor") }}{{ .preferences.editor }}{{ else }}vim{{ end }}'
 
 # Load plugins and modules
 source "$HOME/.zsh/aliases.zsh"
@@ -21,7 +21,7 @@ source "$HOME/.zsh/keybindings.zsh"
 source "$HOME/.zsh/cloud.zsh"
 {{- end }}
 
-{{- if .security.gpg_signing | or .security.use_ssh_agent | or .security.use_keychain | or .security.use_1password | or .security.use_yubikey }}
+{{- if or (and (hasKey . "security") (hasKey .security "gpg_signing") .security.gpg_signing) (and (hasKey . "security") (hasKey .security "use_ssh_agent") .security.use_ssh_agent) (and (hasKey . "security") (hasKey .security "use_keychain") .security.use_keychain) (and (hasKey . "security") (hasKey .security "use_1password") .security.use_1password) (and (hasKey . "security") (hasKey .security "use_yubikey") .security.use_yubikey) }}
 source "$HOME/.zsh/security.zsh"
 {{- end }}
 
@@ -50,57 +50,57 @@ source "$HOME/.zsh/app_workflows.zsh"
 {{- end }}
 
 # Ansible workflows
-{{- if or .preferences.enable_ansible .enable_dev_tools }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_ansible") .preferences.enable_ansible) (and (hasKey . "enable_dev_tools") .enable_dev_tools) }}
 source "$HOME/.zsh/ansible_workflows.zsh"
 {{- end }}
 
 # Java/Gradle workflows
-{{- if or .preferences.enable_java .enable_dev_tools }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_java") .preferences.enable_java) (and (hasKey . "enable_dev_tools") .enable_dev_tools) }}
 source "$HOME/.zsh/java_gradle_workflows.zsh"
 {{- end }}
 
 # Groovy workflows
-{{- if or .preferences.enable_groovy .enable_dev_tools }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_groovy") .preferences.enable_groovy) (and (hasKey . "enable_dev_tools") .enable_dev_tools) }}
 source "$HOME/.zsh/groovy_workflows.zsh"
 {{- end }}
 
 # AI/LLM workflows
-{{- if .preferences.enable_ai }}
+{{- if and (hasKey . "preferences") (hasKey .preferences "enable_ai") .preferences.enable_ai }}
 [[ -f "$HOME/.zsh/ai_workflows.zsh" ]] && source "$HOME/.zsh/ai_workflows.zsh"
 {{- end }}
 
 # Rails workflows
-{{- if or .preferences.enable_rails .enable_dev_tools }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_rails") .preferences.enable_rails) (and (hasKey . "enable_dev_tools") .enable_dev_tools) }}
 source "$HOME/.zsh/rails_workflows.zsh"
 {{- end }}
 
 # OmniFocus workflows
-{{- if or .preferences.enable_omnifocus .enable_productivity }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_omnifocus") .preferences.enable_omnifocus) (and (hasKey . "enable_productivity") .enable_productivity) }}
 source "$HOME/.zsh/omnifocus_workflows.zsh"
 {{- end }}
 
 # Rust workflows
-{{- if or .preferences.enable_rust .enable_dev_tools }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_rust") .preferences.enable_rust) (and (hasKey . "enable_dev_tools") .enable_dev_tools) }}
 source "$HOME/.zsh/rust_workflows.zsh"
 {{- end }}
 
 # Ruby workflows
-{{- if or .preferences.enable_ruby .enable_dev_tools }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_ruby") .preferences.enable_ruby) (and (hasKey . "enable_dev_tools") .enable_dev_tools) }}
 source "$HOME/.zsh/ruby_workflows.zsh"
 {{- end }}
 
 # HashiCorp workflows
-{{- if or .preferences.enable_hashicorp .enable_dev_tools }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_hashicorp") .preferences.enable_hashicorp) (and (hasKey . "enable_dev_tools") .enable_dev_tools) }}
 source "$HOME/.zsh/hashicorp_workflows.zsh"
 {{- end }}
 
 # VS Code workflows
-{{- if or .preferences.enable_vscode .enable_editors }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_vscode") .preferences.enable_vscode) (and (hasKey . "enable_editors") .enable_editors) }}
 source "$HOME/.zsh/vscode_workflows.zsh"
 {{- end }}
 
 # GitHub workflows
-{{- if or .preferences.enable_github .enable_dev_tools }}
+{{- if or (and (hasKey . "preferences") (hasKey .preferences "enable_github") .preferences.enable_github) (and (hasKey . "enable_dev_tools") .enable_dev_tools) }}
 source "$HOME/.zsh/github_workflows.zsh"
 {{- end }}
 

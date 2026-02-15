@@ -5,13 +5,13 @@
 # Rails Development Workflows
 # ==================================
 
-{{ if or (eq .preferences.enable_rails true) (eq .enable_dev_tools true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_rails") .preferences.enable_rails) (and (hasKey . "enable_dev_tools") .enable_dev_tools) -}}
 # Initialize a new Rails project with common configurations
 rails-init-project() {
   local project_name=$1
   local db_type=${2:-"postgresql"}
   local options=${@:3}
-  local directory=${4:-"{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"}
+  local directory=${4:-"{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"}
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: rails-init-project <project-name> [db-type] [options] [directory]"
@@ -99,7 +99,11 @@ end
 EOF
 
     # Update rails_helper.rb to require support files
-    sed -i '' '/^# Dir\[Rails\.root\.join/s/^# //' spec/rails_helper.rb
+    if (( IS_MACOS )); then
+      sed -i '' '/^# Dir\[Rails\.root\.join/s/^# //' spec/rails_helper.rb
+    else
+      sed -i '/^# Dir\[Rails\.root\.join/s/^# //' spec/rails_helper.rb
+    fi
   fi
 
   # Create .env files
@@ -280,19 +284,36 @@ EOF
 
   # Replace PostgreSQL with MySQL in docker-compose.yml if needed
   if [[ "$db_type" == "mysql" ]]; then
-    sed -i '' 's/postgres:14/mysql:8/' docker-compose.yml
-    sed -i '' 's/POSTGRES_PASSWORD/MYSQL_ROOT_PASSWORD/' docker-compose.yml
-    sed -i '' 's/POSTGRES_USER/MYSQL_USER/' docker-compose.yml
-    sed -i '' 's/POSTGRES_DB/MYSQL_DATABASE/' docker-compose.yml
-    sed -i '' 's/var\/lib\/postgresql\/data/var\/lib\/mysql/' docker-compose.yml
-    sed -i '' 's/postgres:\/\/postgres:postgres@db:5432/mysql2:\/\/postgres:postgres@db:3306/' docker-compose.yml
-    sed -i '' 's/5432:5432/3306:3306/' docker-compose.yml
+    if (( IS_MACOS )); then
+      sed -i '' 's/postgres:14/mysql:8/' docker-compose.yml
+      sed -i '' 's/POSTGRES_PASSWORD/MYSQL_ROOT_PASSWORD/' docker-compose.yml
+      sed -i '' 's/POSTGRES_USER/MYSQL_USER/' docker-compose.yml
+      sed -i '' 's/POSTGRES_DB/MYSQL_DATABASE/' docker-compose.yml
+      sed -i '' 's/var\/lib\/postgresql\/data/var\/lib\/mysql/' docker-compose.yml
+      sed -i '' 's/postgres:\/\/postgres:postgres@db:5432/mysql2:\/\/postgres:postgres@db:3306/' docker-compose.yml
+      sed -i '' 's/5432:5432/3306:3306/' docker-compose.yml
+    else
+      sed -i 's/postgres:14/mysql:8/' docker-compose.yml
+      sed -i 's/POSTGRES_PASSWORD/MYSQL_ROOT_PASSWORD/' docker-compose.yml
+      sed -i 's/POSTGRES_USER/MYSQL_USER/' docker-compose.yml
+      sed -i 's/POSTGRES_DB/MYSQL_DATABASE/' docker-compose.yml
+      sed -i 's/var\/lib\/postgresql\/data/var\/lib\/mysql/' docker-compose.yml
+      sed -i 's/postgres:\/\/postgres:postgres@db:5432/mysql2:\/\/postgres:postgres@db:3306/' docker-compose.yml
+      sed -i 's/5432:5432/3306:3306/' docker-compose.yml
+    fi
   elif [[ "$db_type" == "sqlite3" ]]; then
     # For SQLite, remove the database service and simplify
-    sed -i '' '/^  db:/,/^  redis:/d' docker-compose.yml
-    sed -i '' 's/      - db//g' docker-compose.yml
-    sed -i '' '/DATABASE_URL/d' docker-compose.yml
-    sed -i '' 's/  postgres_data://g' docker-compose.yml
+    if (( IS_MACOS )); then
+      sed -i '' '/^  db:/,/^  redis:/d' docker-compose.yml
+      sed -i '' 's/      - db//g' docker-compose.yml
+      sed -i '' '/DATABASE_URL/d' docker-compose.yml
+      sed -i '' 's/  postgres_data://g' docker-compose.yml
+    else
+      sed -i '/^  db:/,/^  redis:/d' docker-compose.yml
+      sed -i 's/      - db//g' docker-compose.yml
+      sed -i '/DATABASE_URL/d' docker-compose.yml
+      sed -i 's/  postgres_data://g' docker-compose.yml
+    fi
   fi
 
   # Create bin/setup-dev script
@@ -413,10 +434,10 @@ EOF
 
         # Add factory attributes based on fields if provided
         if [[ -n "$fields" ]]; then
-          IFS=' ' read -ra FIELD_PARTS <<< "$fields"
+          FIELD_PARTS=( ${(@s: :)fields} )
           for field in "${FIELD_PARTS[@]}"; do
             # Split field into name and type
-            IFS=':' read -ra FIELD_INFO <<< "$field"
+            FIELD_INFO=( ${(@s.:.)field} )
             local field_name="${FIELD_INFO[0]}"
             local field_type="${FIELD_INFO[1]}"
 
@@ -496,10 +517,10 @@ EOF
         if [[ -n "$fields" ]]; then
           echo "  describe 'validations' do" >> "$model_spec_file"
 
-          IFS=' ' read -ra FIELD_PARTS <<< "$fields"
+          FIELD_PARTS=( ${(@s: :)fields} )
           for field in "${FIELD_PARTS[@]}"; do
             # Split field into name and type
-            IFS=':' read -ra FIELD_INFO <<< "$field"
+            FIELD_INFO=( ${(@s.:.)field} )
             local field_name="${FIELD_INFO[0]}"
 
             # Check if field has a presence validation
@@ -688,7 +709,7 @@ rails-init-api() {
   local project_name=$1
   local db_type=${2:-"postgresql"}
   local options=${@:3}
-  local directory=${4:-"{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"}
+  local directory=${4:-"{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"}
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: rails-init-api <project-name> [db-type] [options] [directory]"
@@ -781,7 +802,11 @@ end
 EOF
 
     # Update rails_helper.rb to require support files
-    sed -i '' '/^# Dir\[Rails\.root\.join/s/^# //' spec/rails_helper.rb
+    if (( IS_MACOS )); then
+      sed -i '' '/^# Dir\[Rails\.root\.join/s/^# //' spec/rails_helper.rb
+    else
+      sed -i '/^# Dir\[Rails\.root\.join/s/^# //' spec/rails_helper.rb
+    fi
 
     # Add FactoryBot configuration
     cat > spec/support/factory_bot.rb << 'EOF'
@@ -1138,19 +1163,36 @@ EOF
 
   # Replace PostgreSQL with MySQL in docker-compose.yml if needed
   if [[ "$db_type" == "mysql" ]]; then
-    sed -i '' 's/postgres:14/mysql:8/' docker-compose.yml
-    sed -i '' 's/POSTGRES_PASSWORD/MYSQL_ROOT_PASSWORD/' docker-compose.yml
-    sed -i '' 's/POSTGRES_USER/MYSQL_USER/' docker-compose.yml
-    sed -i '' 's/POSTGRES_DB/MYSQL_DATABASE/' docker-compose.yml
-    sed -i '' 's/var\/lib\/postgresql\/data/var\/lib\/mysql/' docker-compose.yml
-    sed -i '' 's/postgres:\/\/postgres:postgres@db:5432/mysql2:\/\/postgres:postgres@db:3306/' docker-compose.yml
-    sed -i '' 's/5432:5432/3306:3306/' docker-compose.yml
+    if (( IS_MACOS )); then
+      sed -i '' 's/postgres:14/mysql:8/' docker-compose.yml
+      sed -i '' 's/POSTGRES_PASSWORD/MYSQL_ROOT_PASSWORD/' docker-compose.yml
+      sed -i '' 's/POSTGRES_USER/MYSQL_USER/' docker-compose.yml
+      sed -i '' 's/POSTGRES_DB/MYSQL_DATABASE/' docker-compose.yml
+      sed -i '' 's/var\/lib\/postgresql\/data/var\/lib\/mysql/' docker-compose.yml
+      sed -i '' 's/postgres:\/\/postgres:postgres@db:5432/mysql2:\/\/postgres:postgres@db:3306/' docker-compose.yml
+      sed -i '' 's/5432:5432/3306:3306/' docker-compose.yml
+    else
+      sed -i 's/postgres:14/mysql:8/' docker-compose.yml
+      sed -i 's/POSTGRES_PASSWORD/MYSQL_ROOT_PASSWORD/' docker-compose.yml
+      sed -i 's/POSTGRES_USER/MYSQL_USER/' docker-compose.yml
+      sed -i 's/POSTGRES_DB/MYSQL_DATABASE/' docker-compose.yml
+      sed -i 's/var\/lib\/postgresql\/data/var\/lib\/mysql/' docker-compose.yml
+      sed -i 's/postgres:\/\/postgres:postgres@db:5432/mysql2:\/\/postgres:postgres@db:3306/' docker-compose.yml
+      sed -i 's/5432:5432/3306:3306/' docker-compose.yml
+    fi
   elif [[ "$db_type" == "sqlite3" ]]; then
     # For SQLite, remove the database service and simplify
-    sed -i '' '/^  db:/,/^  redis:/d' docker-compose.yml
-    sed -i '' 's/      - db//g' docker-compose.yml
-    sed -i '' '/DATABASE_URL/d' docker-compose.yml
-    sed -i '' 's/  postgres_data://g' docker-compose.yml
+    if (( IS_MACOS )); then
+      sed -i '' '/^  db:/,/^  redis:/d' docker-compose.yml
+      sed -i '' 's/      - db//g' docker-compose.yml
+      sed -i '' '/DATABASE_URL/d' docker-compose.yml
+      sed -i '' 's/  postgres_data://g' docker-compose.yml
+    else
+      sed -i '/^  db:/,/^  redis:/d' docker-compose.yml
+      sed -i 's/      - db//g' docker-compose.yml
+      sed -i '/DATABASE_URL/d' docker-compose.yml
+      sed -i 's/  postgres_data://g' docker-compose.yml
+    fi
   fi
 
   # Create bin/setup-dev script
@@ -1257,7 +1299,7 @@ rails-gen-api-resource() {
     cat > "$controller_file" << EOF
 module Api
   module V1
-    class ${resource_name^}Controller < BaseController
+    class ${(C)resource_name}Controller < BaseController
       before_action :set_${resource_singular}, only: [:show, :update, :destroy]
 
       # GET /api/v1/${resource_name}
@@ -1319,10 +1361,10 @@ EOF
     if [[ -n "$fields" ]]; then
       local permitted_params=""
 
-      IFS=' ' read -ra FIELD_PARTS <<< "$fields"
+      FIELD_PARTS=( ${(@s: :)fields} )
       for field in "${FIELD_PARTS[@]}"; do
         # Split field into name and type
-        IFS=':' read -ra FIELD_INFO <<< "$field"
+        FIELD_INFO=( ${(@s.:.)field} )
         local field_name="${FIELD_INFO[0]}"
 
         # Append field to permitted params
@@ -1334,10 +1376,18 @@ EOF
       done
 
       # Replace the placeholder with the actual permitted params
-      sed -i '' "s/\${permitted_params}/$permitted_params/" "$controller_file"
+      if (( IS_MACOS )); then
+        sed -i '' "s/\${permitted_params}/$permitted_params/" "$controller_file"
+      else
+        sed -i "s/\${permitted_params}/$permitted_params/" "$controller_file"
+      fi
     else
       # If no fields provided, use a generic placeholder
-      sed -i '' "s/\${permitted_params}/*/" "$controller_file"
+      if (( IS_MACOS )); then
+        sed -i '' "s/\${permitted_params}/*/" "$controller_file"
+      else
+        sed -i "s/\${permitted_params}/*/" "$controller_file"
+      fi
     fi
   fi
 
@@ -1349,29 +1399,42 @@ EOF
       # Add the resource to the v1 namespace
       if grep -q "end # end v1" "$routes_file"; then
         # Add before the v1 namespace end comment
-        sed -i '' "/end # end v1/i\\
+        if (( IS_MACOS )); then
+          sed -i '' "/end # end v1/i\\
       resources :${resource_name}\\
 " "$routes_file"
+        else
+          sed -i "/end # end v1/i\\      resources :${resource_name}" "$routes_file"
+        fi
       elif grep -q "end # v1" "$routes_file"; then
         # Add before the v1 namespace end comment
-        sed -i '' "/end # v1/i\\
+        if (( IS_MACOS )); then
+          sed -i '' "/end # v1/i\\
       resources :${resource_name}\\
 " "$routes_file"
+        else
+          sed -i "/end # v1/i\\      resources :${resource_name}" "$routes_file"
+        fi
       else
         # Add before the first end after namespace :v1
         ruby -i -pe 'gsub(/namespace :v1 do\n([^\n]*\n)*(  end)/, "namespace :v1 do\n\\1    resources :'"${resource_name}"'\n\\2")' "$routes_file"
       fi
     else
       # Add the v1 namespace with the resource
-      sed -i '' "/namespace :api do/a\\
+      if (( IS_MACOS )); then
+        sed -i '' "/namespace :api do/a\\
     namespace :v1 do\\
       resources :${resource_name}\\
     end # end v1\\
 " "$routes_file"
+      else
+        sed -i "/namespace :api do/a\\    namespace :v1 do\\n      resources :${resource_name}\\n    end # end v1" "$routes_file"
+      fi
     fi
   else
     # Add the entire API namespace structure
-    sed -i '' "/Rails.application.routes.draw do/a\\
+    if (( IS_MACOS )); then
+      sed -i '' "/Rails.application.routes.draw do/a\\
   # API routes\\
   namespace :api do\\
     namespace :v1 do\\
@@ -1379,6 +1442,9 @@ EOF
     end # end v1\\
   end # end api\\
 " "$routes_file"
+    else
+      sed -i "/Rails.application.routes.draw do/a\\  # API routes\\n  namespace :api do\\n    namespace :v1 do\\n      resources :${resource_name}\\n    end # end v1\\n  end # end api" "$routes_file"
+    fi
   fi
 
   # Generate serializer if jsonapi-serializer gem is available
@@ -1396,10 +1462,10 @@ EOF
 
     # Add attributes based on fields
     if [[ -n "$fields" ]]; then
-      IFS=' ' read -ra FIELD_PARTS <<< "$fields"
+      FIELD_PARTS=( ${(@s: :)fields} )
       for field in "${FIELD_PARTS[@]}"; do
         # Split field into name and type
-        IFS=':' read -ra FIELD_INFO <<< "$field"
+        FIELD_INFO=( ${(@s.:.)field} )
         local field_name="${FIELD_INFO[0]}"
 
         # Add attribute to serializer
@@ -1416,9 +1482,15 @@ EOF
     echo "end" >> "$serializer_file"
 
     # Update the controller to use the serializer
-    sed -i '' "s/render json: @${resource_name}/render json: ${model_class}Serializer.new(@${resource_name}).serializable_hash/" "$controller_file"
-    sed -i '' "s/render json: @${resource_singular}, status: :created/render json: ${model_class}Serializer.new(@${resource_singular}).serializable_hash, status: :created/" "$controller_file"
-    sed -i '' "s/render json: @${resource_singular}$/render json: ${model_class}Serializer.new(@${resource_singular}).serializable_hash/" "$controller_file"
+    if (( IS_MACOS )); then
+      sed -i '' "s/render json: @${resource_name}/render json: ${model_class}Serializer.new(@${resource_name}).serializable_hash/" "$controller_file"
+      sed -i '' "s/render json: @${resource_singular}, status: :created/render json: ${model_class}Serializer.new(@${resource_singular}).serializable_hash, status: :created/" "$controller_file"
+      sed -i '' "s/render json: @${resource_singular}$/render json: ${model_class}Serializer.new(@${resource_singular}).serializable_hash/" "$controller_file"
+    else
+      sed -i "s/render json: @${resource_name}/render json: ${model_class}Serializer.new(@${resource_name}).serializable_hash/" "$controller_file"
+      sed -i "s/render json: @${resource_singular}, status: :created/render json: ${model_class}Serializer.new(@${resource_singular}).serializable_hash, status: :created/" "$controller_file"
+      sed -i "s/render json: @${resource_singular}$/render json: ${model_class}Serializer.new(@${resource_singular}).serializable_hash/" "$controller_file"
+    fi
   fi
 
   # Check if RSpec is used in this project
@@ -1431,7 +1503,7 @@ EOF
     cat > "$request_spec_file" << EOF
 require 'rails_helper'
 
-RSpec.describe "Api::V1::${resource_name^}", type: :request do
+RSpec.describe "Api::V1::${(C)resource_name}", type: :request do
   let(:valid_headers) do
     {}
   end
@@ -1677,7 +1749,7 @@ rails-db-migrate() {
   echo "Running migrations in $env environment..."
 
   if [[ "$env" == "production" ]]; then
-    read -p "Are you sure you want to run migrations in production? (y/n) " confirm
+    read "confirm?Are you sure you want to run migrations in production? (y/n) "
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
       echo "Migration cancelled."
       return 1
@@ -1720,7 +1792,7 @@ rails-db() {
       fi
 
       echo "Resetting $env database (all data will be lost)..."
-      read -p "Are you sure? (y/n) " confirm
+      read "confirm?Are you sure? (y/n) "
       if [[ "$confirm" =~ ^[Yy]$ ]]; then
         RAILS_ENV=$env rails db:drop db:create db:migrate db:seed
       else
@@ -1739,7 +1811,7 @@ rails-db() {
       fi
 
       echo "Dropping $env database (all data will be lost)..."
-      read -p "Are you sure? (y/n) " confirm
+      read "confirm?Are you sure? (y/n) "
       if [[ "$confirm" =~ ^[Yy]$ ]]; then
         RAILS_ENV=$env rails db:drop
       else
@@ -1802,7 +1874,7 @@ rails-db() {
       fi
 
       echo "Restoring $env database from $backup_file..."
-      read -p "This will overwrite all data in the $env database. Continue? (y/n) " confirm
+      read "confirm?This will overwrite all data in the $env database. Continue? (y/n) "
       if [[ "$confirm" =~ ^[Yy]$ ]]; then
         # Check if this is a PostgreSQL or MySQL database
         if grep -q "adapter: postgresql" config/database.yml; then
