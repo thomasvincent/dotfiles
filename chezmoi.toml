@@ -100,12 +100,17 @@
         enable_hashicorp = true    # Enable HashiCorp toolchain support
         enable_vscode = true       # Enable VS Code integration
         enable_github = true       # Enable GitHub integration
+        enable_ai = true           # Enable AI/LLM workflow functions
 
         # Pomodoro timer settings
         pomodoro_work = 25  # Work period in minutes
         pomodoro_break = 5  # Short break period in minutes
         pomodoro_longbreak = 15  # Long break period in minutes
         pomodoro_cycles = 4  # Number of work periods before a long break
+
+    # AI/LLM settings
+    [data.ai]
+        default_provider = "claude"  # Options: claude, openai, gemini
 
     # Security settings
     [data.security]

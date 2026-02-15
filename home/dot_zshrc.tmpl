@@ -64,6 +64,11 @@ source "$HOME/.zsh/java_gradle_workflows.zsh"
 source "$HOME/.zsh/groovy_workflows.zsh"
 {{- end }}
 
+# AI/LLM workflows
+{{- if .preferences.enable_ai }}
+[[ -f "$HOME/.zsh/ai_workflows.zsh" ]] && source "$HOME/.zsh/ai_workflows.zsh"
+{{- end }}
+
 # Rails workflows
 {{- if or .preferences.enable_rails .enable_dev_tools }}
 source "$HOME/.zsh/rails_workflows.zsh"

@@ -19,6 +19,7 @@ load test_helper/common-setup
 }
 
 @test "CI workflow is valid YAML" {
+    python3 -c "import yaml" 2>/dev/null || skip "PyYAML not installed"
     python3 -c "import yaml; yaml.safe_load(open('${REPO_DIR}/.github/workflows/ci.yml'))"
 }
 

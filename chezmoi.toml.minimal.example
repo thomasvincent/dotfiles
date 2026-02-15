@@ -57,6 +57,10 @@
     notes_dir = ""
     meeting_dir = ""
     time_track_dir = ""
+    enable_ai = false            # AI/LLM workflow functions
+
+  [data.ai]
+    default_provider = "claude"  # Options: claude, openai, gemini
 
     # GTD-specific directories (empty for minimal)
     notes_folder = ""

@@ -57,6 +57,10 @@
     notes_dir = "$HOME/Documents/Work/Notes"
     meeting_dir = "$HOME/Documents/Work/Meetings"
     time_track_dir = "$HOME/.timetrack"
+    enable_ai = true             # AI/LLM workflow functions
+
+  [data.ai]
+    default_provider = "openai"  # Options: claude, openai, gemini
 
     # GTD-specific directories
     notes_folder = "Work Notes"

@@ -63,10 +63,14 @@
     enable_hashicorp = false
     enable_vscode = true
     enable_github = true
+    enable_ai = true
     pomodoro_work = 25
     pomodoro_break = 5
     pomodoro_longbreak = 15
     pomodoro_cycles = 4
+
+[data.ai]
+    default_provider = "claude"
 
 [data.security]
     gpg_signing = true

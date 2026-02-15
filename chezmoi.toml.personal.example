@@ -83,6 +83,10 @@
     enable_hashicorp = true        # Terraform, Vault, etc.
     enable_vscode = true
     enable_github = true
+    enable_ai = true             # AI/LLM workflow functions
+
+  [data.ai]
+    default_provider = "claude"  # Options: claude, openai, gemini
 
     # Pomodoro timer settings
     pomodoro_work = 25

@@ -1,0 +1,559 @@
+# AI/LLM Workflows
+# Managed by chezmoi - DO NOT EDIT DIRECTLY
+
+{{ if .preferences.enable_ai -}}
+
+# Tool availability guard
+if ! command -v curl &>/dev/null || ! command -v jq &>/dev/null; then
+  return 0
+fi
+
+# Default provider from chezmoi
+{{ if and (hasKey . "ai") (hasKey .ai "default_provider") .ai.default_provider -}}
+AI_DEFAULT_PROVIDER="{{ .ai.default_provider }}"
+{{ else -}}
+AI_DEFAULT_PROVIDER="claude"
+{{ end -}}
+
+# Supported providers (single source of truth)
+typeset -ra _AI_PROVIDERS=(claude openai gemini)
+typeset -rA _AI_ENV_VAR=(
+  claude ANTHROPIC_API_KEY
+  openai OPENAI_API_KEY
+  gemini GEMINI_API_KEY
+)
+typeset -rA _AI_DEFAULT_MODEL=(
+  claude claude-sonnet-4-5-20250929
+  openai gpt-4o
+  gemini gemini-2.0-flash
+)
+typeset -rA _AI_MODEL_ENV=(
+  claude AI_CLAUDE_MODEL
+  openai AI_OPENAI_MODEL
+  gemini AI_GEMINI_MODEL
+)
+typeset -rA _AI_EXTRACT=(
+  claude '.content[0].text'
+  openai '.choices[0].message.content'
+  gemini '.candidates[0].content.parts[0].text'
+)
+
+# _ai-validate-provider() - Check provider name
+# Returns: 0 if valid, 1 if not (with error message)
+_ai-validate-provider() {
+  local provider="$1"
+  if [[ -z "$provider" ]]; then
+    echo "Error: Provider required. Use: ${(j:, :)_AI_PROVIDERS}" >&2
+    return 1
+  fi
+  if (( ! ${_AI_PROVIDERS[(Ie)$provider]} )); then
+    echo "Error: Unknown provider '$provider'. Use: ${(j:, :)_AI_PROVIDERS}" >&2
+    return 1
+  fi
+}
+
+# _ai-require-keychain() - Validate provider + macOS for Keychain ops
+# Returns: 0 if OK, 1 if not
+_ai-require-keychain() {
+  local provider="$1"
+  _ai-validate-provider "$provider" || return 1
+  if [[ "$OSTYPE" != darwin* ]]; then
+    echo "Error: Keychain storage only supported on macOS" >&2
+    return 1
+  fi
+}
+
+# _ai-get-key() - API key resolution
+# Args: provider name, env var name
+# Returns: 0 if key found, 1 if not
+_ai-get-key() {
+  local provider="$1"
+  local env_var="$2"
+
+  # Check env var first using zsh indirect expansion
+  if [[ -n "${(P)env_var}" ]]; then
+    echo "${(P)env_var}"
+    return 0
+  fi
+
+  # macOS Keychain fallback
+  if [[ "$OSTYPE" == darwin* ]]; then
+    local key
+    key=$(security find-generic-password -s "ai-${provider}" -w 2>/dev/null)
+    if [[ -n "$key" ]]; then
+      echo "$key"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+# ai-set-key() - Store key in Keychain
+# Usage: ai-set-key <provider>
+ai-set-key() {
+  local provider="$1"
+
+  _ai-require-keychain "$provider" || return 1
+
+  # Read password
+  echo -n "Enter API key for ${provider}: "
+  local key
+  read -rs key
+  echo
+
+  if [[ -z "$key" ]]; then
+    echo "Error: No key provided" >&2
+    return 1
+  fi
+
+  # Store with security
+  if security add-generic-password -U -s "ai-${provider}" -a "$USER" -w "$key" 2>/dev/null; then
+    echo "Key stored successfully for ${provider}" >&2
+  else
+    echo "Error: Failed to store key" >&2
+    return 1
+  fi
+}
+
+# ai-del-key() - Remove key from Keychain
+# Usage: ai-del-key <provider>
+ai-del-key() {
+  local provider="$1"
+
+  _ai-require-keychain "$provider" || return 1
+
+  if security delete-generic-password -s "ai-${provider}" 2>/dev/null; then
+    echo "Key removed for ${provider}" >&2
+  else
+    echo "Error: No key found for ${provider}" >&2
+    return 1
+  fi
+}
+
+# _ai-http-post() - Shared HTTP POST with timeout and retry
+# Args: url, payload, header1 [header2 ...]
+# Outputs response body on success, error on failure
+_ai-http-post() {
+  local url="$1"
+  local payload="$2"
+  shift 2
+  local -a headers=()
+  for h in "$@"; do
+    headers+=(-H "$h")
+  done
+
+  local response http_code attempt
+  for attempt in 1 2; do
+    response=$(curl -sS --max-time 60 --connect-timeout 10 \
+      -w "\n%{http_code}" \
+      -X POST "$url" \
+      "${headers[@]}" \
+      -H "content-type: application/json" \
+      -d "$payload") || {
+      echo "Error: Network request failed" >&2
+      return 1
+    }
+
+    http_code=$(echo "$response" | tail -n1)
+    response=$(echo "$response" | sed '$d')
+
+    if [[ "$http_code" == 429 && "$attempt" -eq 1 ]]; then
+      local wait=5
+      echo "Rate limited, retrying in ${wait}s..." >&2
+      sleep "$wait"
+      continue
+    fi
+    break
+  done
+
+  if [[ "$http_code" != 200 ]]; then
+    echo "Error: API request failed (HTTP $http_code)" >&2
+    echo "$response" | jq -r '.error.message // "Unknown API error"' >&2
+    return 1
+  fi
+
+  echo "$response"
+}
+
+# ai() - Unified entry point
+ai() {
+  local -a model tokens system_prompt file raw
+  zparseopts -D -E -- m:=model t:=tokens s:=system_prompt f:=file r=raw
+
+  local provider
+  if (( ${_AI_PROVIDERS[(Ie)${1:-}]} )); then
+    provider="$1"; shift
+  else
+    provider="$AI_DEFAULT_PROVIDER"
+  fi
+
+  local prompt="${*}"
+  local input=""
+
+  # Read from file if -f specified
+  if [[ ${#file} -gt 0 ]]; then
+    local input_file="${file[2]}"
+    if [[ ! -f "$input_file" ]]; then
+      echo "Error: File not found: $input_file" >&2
+      return 1
+    fi
+    input="$(cat "$input_file")"
+  # Read from stdin if piped
+  elif [[ ! -t 0 ]]; then
+    input="$(cat)"
+  fi
+
+  _ai-validate-provider "$provider" || return 1
+
+  if [[ -z "$prompt" && -z "$input" ]]; then
+    echo "Usage: ai <provider> [options] <prompt>" >&2
+    echo "       echo \"text\" | ai <provider> [options] <prompt>" >&2
+    echo "       ai <provider> -f <file> <prompt>" >&2
+    echo "" >&2
+    echo "Providers: ${(j:, :)_AI_PROVIDERS}" >&2
+    echo "Options:" >&2
+    echo "  -m <model>     Model override" >&2
+    echo "  -t <tokens>    Max output tokens (default: 4096)" >&2
+    echo "  -s <system>    System prompt" >&2
+    echo "  -f <file>      Read input from file" >&2
+    echo "  -r             Raw output (no jq formatting)" >&2
+    return 1
+  fi
+
+  # Build full prompt with input context
+  local full_prompt="$prompt"
+  if [[ -n "$input" ]]; then
+    full_prompt="${prompt:+${prompt}
+
+}${input}"
+  fi
+
+  local model_name="${model[2]:-}"
+  local max_tokens="${tokens[2]:-4096}"
+  local sys_prompt="${system_prompt[2]:-}"
+  local raw_output="${#raw}"
+
+  "_ai-call-${provider}" "$full_prompt" "$model_name" "$max_tokens" "$sys_prompt" "$raw_output"
+}
+
+# _ai-call-claude() - Anthropic Messages API
+_ai-call-claude() {
+  local prompt="$1"
+  local _default_model="${${(P)_AI_MODEL_ENV[claude]}:-${_AI_DEFAULT_MODEL[claude]}}"
+  local model="${2:-$_default_model}"
+  local max_tokens="${3:-4096}"
+  local system="${4:-}"
+  local raw_output="${5:-0}"
+
+  local key
+  key=$(_ai-get-key "claude" "${_AI_ENV_VAR[claude]}")
+  if [[ $? -ne 0 || -z "$key" ]]; then
+    echo "Error: ${_AI_ENV_VAR[claude]} not found. Set env var or use ai-set-key claude" >&2
+    return 1
+  fi
+
+  # Build JSON payload safely
+  local payload
+  if [[ -n "$system" ]]; then
+    payload=$(jq -n \
+      --arg model "$model" \
+      --arg max_tokens "$max_tokens" \
+      --arg system "$system" \
+      --arg prompt "$prompt" \
+      '{
+        model: $model,
+        max_tokens: ($max_tokens | tonumber),
+        system: $system,
+        messages: [
+          {
+            role: "user",
+            content: $prompt
+          }
+        ]
+      }')
+  else
+    payload=$(jq -n \
+      --arg model "$model" \
+      --arg max_tokens "$max_tokens" \
+      --arg prompt "$prompt" \
+      '{
+        model: $model,
+        max_tokens: ($max_tokens | tonumber),
+        messages: [
+          {
+            role: "user",
+            content: $prompt
+          }
+        ]
+      }')
+  fi
+
+  # Call API
+  local response
+  response=$(_ai-http-post \
+    "https://api.anthropic.com/v1/messages" \
+    "$payload" \
+    "x-api-key: ${key}" \
+    "anthropic-version: 2023-06-01")
+  local rc=$?
+  unset key
+
+  if [[ $rc -ne 0 ]]; then
+    return 1
+  fi
+
+  # Extract response
+  if [[ "$raw_output" -gt 0 ]]; then
+    echo "$response"
+  else
+    echo "$response" | jq -r "${_AI_EXTRACT[claude]}"
+  fi
+}
+
+# _ai-call-openai() - OpenAI Chat Completions API
+_ai-call-openai() {
+  local prompt="$1"
+  local _default_model="${${(P)_AI_MODEL_ENV[openai]}:-${_AI_DEFAULT_MODEL[openai]}}"
+  local model="${2:-$_default_model}"
+  local max_tokens="${3:-4096}"
+  local system="${4:-}"
+  local raw_output="${5:-0}"
+
+  local key
+  key=$(_ai-get-key "openai" "${_AI_ENV_VAR[openai]}")
+  if [[ $? -ne 0 || -z "$key" ]]; then
+    echo "Error: ${_AI_ENV_VAR[openai]} not found. Set env var or use ai-set-key openai" >&2
+    return 1
+  fi
+
+  # Build messages array
+  local payload
+  if [[ -n "$system" ]]; then
+    payload=$(jq -n \
+      --arg model "$model" \
+      --arg max_tokens "$max_tokens" \
+      --arg system "$system" \
+      --arg prompt "$prompt" \
+      '{
+        model: $model,
+        max_tokens: ($max_tokens | tonumber),
+        messages: [
+          {
+            role: "system",
+            content: $system
+          },
+          {
+            role: "user",
+            content: $prompt
+          }
+        ]
+      }')
+  else
+    payload=$(jq -n \
+      --arg model "$model" \
+      --arg max_tokens "$max_tokens" \
+      --arg prompt "$prompt" \
+      '{
+        model: $model,
+        max_tokens: ($max_tokens | tonumber),
+        messages: [
+          {
+            role: "user",
+            content: $prompt
+          }
+        ]
+      }')
+  fi
+
+  # Call API
+  local response
+  response=$(_ai-http-post \
+    "https://api.openai.com/v1/chat/completions" \
+    "$payload" \
+    "Authorization: Bearer ${key}")
+  local rc=$?
+  unset key
+
+  if [[ $rc -ne 0 ]]; then
+    return 1
+  fi
+
+  # Extract response
+  if [[ "$raw_output" -gt 0 ]]; then
+    echo "$response"
+  else
+    echo "$response" | jq -r "${_AI_EXTRACT[openai]}"
+  fi
+}
+
+# _ai-call-gemini() - Google Gemini API
+_ai-call-gemini() {
+  local prompt="$1"
+  local _default_model="${${(P)_AI_MODEL_ENV[gemini]}:-${_AI_DEFAULT_MODEL[gemini]}}"
+  local model="${2:-$_default_model}"
+  local max_tokens="${3:-4096}"
+  local system="${4:-}"
+  local raw_output="${5:-0}"
+
+  # Validate model name to prevent URL path manipulation
+  if [[ ! "$model" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+    echo "Error: Invalid model name: $model" >&2
+    return 1
+  fi
+
+  local key
+  key=$(_ai-get-key "gemini" "${_AI_ENV_VAR[gemini]}")
+  if [[ $? -ne 0 || -z "$key" ]]; then
+    echo "Error: ${_AI_ENV_VAR[gemini]} not found. Set env var or use ai-set-key gemini" >&2
+    return 1
+  fi
+
+  # Build JSON payload
+  local payload
+  if [[ -n "$system" ]]; then
+    payload=$(jq -n \
+      --arg system "$system" \
+      --arg prompt "$prompt" \
+      --arg max_tokens "$max_tokens" \
+      '{
+        systemInstruction: {
+          parts: [
+            {
+              text: $system
+            }
+          ]
+        },
+        contents: [
+          {
+            parts: [
+              {
+                text: $prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          maxOutputTokens: ($max_tokens | tonumber)
+        }
+      }')
+  else
+    payload=$(jq -n \
+      --arg prompt "$prompt" \
+      --arg max_tokens "$max_tokens" \
+      '{
+        contents: [
+          {
+            parts: [
+              {
+                text: $prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          maxOutputTokens: ($max_tokens | tonumber)
+        }
+      }')
+  fi
+
+  # Call API
+  local response
+  response=$(_ai-http-post \
+    "https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent" \
+    "$payload" \
+    "x-goog-api-key: ${key}")
+  local rc=$?
+  unset key
+
+  if [[ $rc -ne 0 ]]; then
+    return 1
+  fi
+
+  # Extract response
+  if [[ "$raw_output" -gt 0 ]]; then
+    echo "$response"
+  else
+    echo "$response" | jq -r "${_AI_EXTRACT[gemini]}"
+  fi
+}
+
+# Convenience aliases
+ai-summarize() {
+  ai "$AI_DEFAULT_PROVIDER" "Summarize the following concisely:" "$@"
+}
+
+ai-explain() {
+  ai "$AI_DEFAULT_PROVIDER" "Explain this clearly and concisely:" "$@"
+}
+
+ai-review() {
+  ai "$AI_DEFAULT_PROVIDER" -s "You are a senior code reviewer. Be concise." "Review this code:" "$@"
+}
+
+ai-translate() {
+  if [[ -z "${1:-}" ]]; then
+    echo "Usage: ai-translate <language> [text or pipe]" >&2
+    return 1
+  fi
+  local lang="$1"
+  shift
+  ai "$AI_DEFAULT_PROVIDER" "Translate to ${lang}:" "$@"
+}
+
+ai-commit-msg() {
+  if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    echo "Error: Not in a git repository" >&2
+    return 1
+  fi
+  local diff
+  diff=$(git diff --cached)
+  if [[ -z "$diff" ]]; then
+    echo "Error: No staged changes" >&2
+    return 1
+  fi
+  echo "$diff" | ai "$AI_DEFAULT_PROVIDER" -s "Write a concise conventional commit message. First line under 72 chars. Output only the message, nothing else." "Generate a commit message for this diff:"
+}
+
+# Completion function
+_ai() {
+  local -a providers
+  providers=("${_AI_PROVIDERS[@]}")
+
+  case "$CURRENT" in
+    2)
+      _describe 'provider' providers
+      ;;
+    *)
+      _arguments \
+        '-m[Model override]:model:' \
+        '-t[Max tokens]:tokens:' \
+        '-s[System prompt]:system:' \
+        '-f[Input file]:file:_files' \
+        '-r[Raw JSON output]' \
+        '*:prompt:'
+      ;;
+  esac
+}
+compdef _ai ai
+
+_ai-provider() {
+  _describe 'provider' "(${(j:, :)_AI_PROVIDERS})"
+}
+compdef _ai-provider ai-set-key ai-del-key
+
+# ZLE widget: submit command line buffer to AI
+# Usage: type a question, press Ctrl+X a to get AI response
+_ai-zle-widget() {
+  local result
+  result=$(ai "$AI_DEFAULT_PROVIDER" "$BUFFER" 2>/dev/null)
+  if [[ -n "$result" ]]; then
+    BUFFER="$result"
+    CURSOR=${#BUFFER}
+  fi
+  zle redisplay
+}
+zle -N _ai-zle-widget
+bindkey '^Xa' _ai-zle-widget
+
+{{ end -}}
