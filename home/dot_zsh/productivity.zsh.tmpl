@@ -513,7 +513,7 @@ EOF
     emacs "$note_file"
     {{ else -}}
     # Fallback to cat with paging
-    cat "$note_file" | less
+    less "$note_file"
     {{ end -}}
   fi
 }
@@ -829,7 +829,7 @@ EOF
     emacs "$note_file"
     {{ else -}}
     # Fallback to cat with paging
-    cat "$note_file" | less
+    less "$note_file"
     {{ end -}}
   fi
 }

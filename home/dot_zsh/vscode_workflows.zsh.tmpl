@@ -1191,7 +1191,7 @@ vscode-snippet() {
 
   # Process the snippet content for JSON format
   local snippet_content
-  snippet_content=$(cat "$temp_file" | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n')
+  snippet_content=$(sed 's/"/\\"/g; s/$/\\n/' "$temp_file" | tr -d '\n')
 
   # Remove the last \n
   snippet_content=${snippet_content%\\n}
