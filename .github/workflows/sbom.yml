@@ -50,12 +50,12 @@ jobs:
           ./scripts/generate-sbom.sh -f spdx -o sbom-spdx.json
 
       - name: Validate CycloneDX SBOM
-        uses: thomasvincent/validate-sbom-action@3b8a7d5ce5694e1de622570a7e9c6942c126e98f # v1
+        uses: thomasvincent/validate-sbom-action@691aeb90ba3a03910cbc14b618f3c8046e165f0b # v1.1.0
         with:
           input-file: sbom-cyclonedx.json
 
       - name: Validate SPDX SBOM
-        uses: thomasvincent/validate-sbom-action@3b8a7d5ce5694e1de622570a7e9c6942c126e98f # v1
+        uses: thomasvincent/validate-sbom-action@691aeb90ba3a03910cbc14b618f3c8046e165f0b # v1.1.0
         with:
           input-file: sbom-spdx.json
           format: spdx
