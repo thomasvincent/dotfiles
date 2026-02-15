@@ -19,7 +19,7 @@
 # Mail.app functions have been moved to macos_gtd_workflows.zsh.tmpl
 # See that file for: mail-process, mail-new, mail-unread, mail-from-note
 
-{{ if and (eq .macos true) (eq .enable_productivity true) -}}
+{{ if and (hasKey . "macos") .macos (hasKey . "enable_productivity") .enable_productivity -}}
 # Flag important emails matching a search term (not in macos_gtd_workflows)
 mail-flag-search() {
   local search_term=$1
@@ -53,7 +53,7 @@ EOF
 # Slack Workflows
 # ==================================
 
-{{ if (eq .enable_productivity true) -}}
+{{ if and (hasKey . "enable_productivity") .enable_productivity -}}
 # Send a Slack message via webhook
 slack-send() {
   local webhook_url=$1
@@ -197,7 +197,7 @@ EOF
 # Microsoft Teams Workflows
 # ==================================
 
-{{ if and (eq .macos true) (eq .enable_productivity true) -}}
+{{ if and (hasKey . "macos") .macos (hasKey . "enable_productivity") .enable_productivity -}}
 # Open Microsoft Teams and navigate to a channel
 teams-open() {
   local team=$1
@@ -341,7 +341,7 @@ EOF
 # macOS Calendar functions have been moved to macos_gtd_workflows.zsh.tmpl
 # See that file for: calendar-today, calendar-create, calendar-list
 
-{{ if and (eq .macos true) (eq .enable_productivity true) -}}
+{{ if and (hasKey . "macos") .macos (hasKey . "enable_productivity") .enable_productivity -}}
 # Create a new Calendar event (calendar-new wrapper)
 calendar-new() {
   local title=$1
@@ -496,7 +496,7 @@ EOF
 # Office365 Workflows
 # ==================================
 
-{{ if (eq .enable_productivity true) -}}
+{{ if and (hasKey . "enable_productivity") .enable_productivity -}}
 # Open Office365 apps
 office365-open() {
   local app=$1
@@ -538,11 +538,7 @@ office365-open() {
       ;;
   esac
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$app_url"
-  else
-    xdg-open "$app_url" &> /dev/null
-  fi
+  _open_url "$app_url"
 
   echo "Opening Office365 $app"
 }
@@ -579,11 +575,7 @@ office365-new() {
       ;;
   esac
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$doc_url"
-  else
-    xdg-open "$doc_url" &> /dev/null
-  fi
+  _open_url "$doc_url"
 
   echo "Creating new Office365 $doc_type document"
 }
@@ -606,11 +598,7 @@ outlook-compose() {
 
   local outlook_url="https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$outlook_url"
-  else
-    xdg-open "$outlook_url" &> /dev/null
-  fi
+  _open_url "$outlook_url"
 
   echo "Creating email to $to in Outlook"
 }
@@ -628,11 +616,7 @@ onedrive-open() {
     local onedrive_url="https://onedrive.live.com/?id=root&cid=root&qt=sharedby&path=${folder_path}"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$onedrive_url"
-  else
-    xdg-open "$onedrive_url" &> /dev/null
-  fi
+  _open_url "$onedrive_url"
 
   if [[ -z "$folder_path" ]]; then
     echo "Opening OneDrive root folder"

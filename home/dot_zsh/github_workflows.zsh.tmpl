@@ -1,7 +1,7 @@
 # GitHub Workflows
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if or (eq .preferences.enable_github true) (eq .enable_dev_tools true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_github") .preferences.enable_github) (and (hasKey . "enable_dev_tools") .enable_dev_tools) -}}
 # GitHub environment variables
 export GH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gh"
 
@@ -69,10 +69,10 @@ gh-init() {
   fi
 
   echo "Repository created successfully."
-  read -p "Do you want to clone the repository now? (y/N) " clone_repo
+  read "clone_repo?Do you want to clone the repository now? (y/N) "
 
   if [[ "$clone_repo" == "y" || "$clone_repo" == "Y" ]]; then
-    local clone_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$repo_name"
+    local clone_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$repo_name"
     echo "Cloning repository to $clone_dir..."
     mkdir -p "$(dirname "$clone_dir")"
     gh repo clone "$repo_name" "$clone_dir"
@@ -100,7 +100,7 @@ gh-init-current() {
   # Check if directory is a git repository
   if [[ ! -d ".git" ]]; then
     echo "The current directory is not a git repository."
-    read -p "Do you want to initialize a git repository? (y/N) " init_git
+    read "init_git?Do you want to initialize a git repository? (y/N) "
 
     if [[ "$init_git" == "y" || "$init_git" == "Y" ]]; then
       git init
@@ -148,7 +148,7 @@ gh-fork() {
     if [[ "$clone_dir" == /* ]]; then
       full_clone_dir="$clone_dir"
     else
-      full_clone_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$clone_dir"
+      full_clone_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$clone_dir"
     fi
 
     mkdir -p "$(dirname "$full_clone_dir")"
@@ -305,13 +305,13 @@ gh-clone() {
   if [[ -z "$dest_dir" ]]; then
     # Extract repo name from full repo path
     local repo_name=$(echo "$repo" | awk -F/ '{print $NF}')
-    clone_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$repo_name"
+    clone_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$repo_name"
   else
     # Check if dest_dir is absolute or relative
     if [[ "$dest_dir" == /* ]]; then
       clone_dir="$dest_dir"
     else
-      clone_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$dest_dir"
+      clone_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$dest_dir"
     fi
   fi
 
@@ -444,7 +444,7 @@ EOF
 
   echo "Release notes generated successfully in $output_file"
 
-  read -p "Do you want to view the release notes? (y/N) " view_notes
+  read "view_notes?Do you want to view the release notes? (y/N) "
 
   if [[ "$view_notes" == "y" || "$view_notes" == "Y" ]]; then
     if command -v bat &>/dev/null; then
@@ -525,7 +525,7 @@ gh-new-workflow() {
 
   if [[ -f "$workflow_file" ]]; then
     echo "Workflow file already exists: $workflow_file"
-    read -p "Do you want to overwrite it? (y/N) " overwrite
+    read "overwrite?Do you want to overwrite it? (y/N) "
 
     if [[ "$overwrite" != "y" && "$overwrite" != "Y" ]]; then
       echo "Operation cancelled."
@@ -784,7 +784,7 @@ EOF
 
   echo "GitHub Actions workflow created: $workflow_file with $template template"
 
-  read -p "Do you want to view the workflow file? (y/N) " view_file
+  read "view_file?Do you want to view the workflow file? (y/N) "
 
   if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
     if command -v bat &>/dev/null; then
@@ -803,7 +803,7 @@ gh-project-setup() {
   # Check if we're in a git repository
   if [[ ! -d ".git" ]]; then
     echo "The current directory is not a git repository."
-    read -p "Do you want to initialize a git repository? (y/N) " init_git
+    read "init_git?Do you want to initialize a git repository? (y/N) "
 
     if [[ "$init_git" == "y" || "$init_git" == "Y" ]]; then
       git init
@@ -852,7 +852,7 @@ EOF
     echo "Creating LICENSE file..."
 
     local year=$(date +%Y)
-    local user_name="{{ .name | default "$(git config user.name)" }}"
+    local user_name="{{ if hasKey . "name" }}{{ .name }}{{ else }}$(git config user.name){{ end }}"
 
     cat > "LICENSE" << EOF
 MIT License
@@ -1118,7 +1118,7 @@ EOF
 
   echo "GitHub project setup completed successfully."
 
-  read -p "Do you want to push this project to GitHub? (y/N) " push_to_github
+  read "push_to_github?Do you want to push this project to GitHub? (y/N) "
 
   if [[ "$push_to_github" == "y" || "$push_to_github" == "Y" ]]; then
     gh-init-current
@@ -1172,7 +1172,7 @@ gh-codeowners() {
 # These owners will be the default owners for everything in the repo.
 # Unless a later match takes precedence, these users will be requested for
 # review when someone opens a pull request.
-*       @{{ .github_username | default "username" }}
+*       @{{ if hasKey . "github_username" }}{{ .github_username }}{{ else }}username{{ end }}
 
 # Examples:
 # /docs/  @docs-team
@@ -1183,7 +1183,7 @@ EOF
     echo "CODEOWNERS file created at .github/CODEOWNERS"
     echo "Please edit it to add appropriate ownership rules."
 
-    read -p "Do you want to view the CODEOWNERS file? (y/N) " view_file
+    read "view_file?Do you want to view the CODEOWNERS file? (y/N) "
 
     if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
       if command -v bat &>/dev/null; then
@@ -1228,25 +1228,30 @@ gh-badge() {
   echo "GitHub Actions status badge for $workflow on $branch:"
   echo "$badge_markdown"
 
-  read -p "Do you want to add this badge to README.md? (y/N) " add_to_readme
+  read "add_to_readme?Do you want to add this badge to README.md? (y/N) "
 
   if [[ "$add_to_readme" == "y" || "$add_to_readme" == "Y" ]]; then
     if [[ -f README.md ]]; then
       # Check if there are already badges under a badge section
       if grep -q "## Badges" README.md; then
         # Add badge under existing badge section
-        sed -i.bak "/## Badges/a\\
+        if (( IS_MACOS )); then
+          sed -i '' "/## Badges/a\\
 $badge_markdown" README.md
+        else
+          sed -i "/## Badges/a\\$badge_markdown" README.md
+        fi
       else
         # Add a new badge section at the beginning, after the first heading
-        sed -i.bak "0,/^# /s/^# .*/&\\
+        if (( IS_MACOS )); then
+          sed -i '' "0,/^# /s/^# .*/&\\
 \\
 ## Badges\\
 $badge_markdown/" README.md
+        else
+          sed -i "0,/^# /s/^# .*/&\\n\\n## Badges\\n$badge_markdown/" README.md
+        fi
       fi
-
-      # Remove backup file
-      rm README.md.bak 2>/dev/null || true
 
       echo "Badge added to README.md"
     else
@@ -1292,7 +1297,7 @@ EOF
 
   echo "Dependabot configuration created at .github/dependabot.yml"
 
-  read -p "Do you want to customize the dependabot configuration? (y/N) " customize
+  read "customize?Do you want to customize the dependabot configuration? (y/N) "
 
   if [[ "$customize" == "y" || "$customize" == "Y" ]]; then
     if command -v code &>/dev/null; then
@@ -1341,7 +1346,7 @@ EOF
 
   echo "Pull request template created at .github/pull_request_template.md"
 
-  read -p "Do you want to view the PR template? (y/N) " view_file
+  read "view_file?Do you want to view the PR template? (y/N) "
 
   if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
     if command -v bat &>/dev/null; then
@@ -1380,7 +1385,7 @@ EOF
 
   echo "Security policy created at SECURITY.md"
 
-  read -p "Do you want to view the security policy? (y/N) " view_file
+  read "view_file?Do you want to view the security policy? (y/N) "
 
   if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
     if command -v bat &>/dev/null; then

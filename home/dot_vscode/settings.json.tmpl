@@ -1,5 +1,5 @@
 {
-  "workbench.colorTheme": "{{ if eq .preferences.color_scheme "dark" }}GitHub Dark Default{{ else }}GitHub Light Default{{ end }}",
+  "workbench.colorTheme": "{{ if and (hasKey . "preferences") (hasKey .preferences "color_scheme") (eq .preferences.color_scheme "dark") }}GitHub Dark Default{{ else }}GitHub Light Default{{ end }}",
   "workbench.iconTheme": "material-icon-theme",
   "editor.fontFamily": "JetBrains Mono, Menlo, Monaco, 'Courier New', monospace",
   "editor.fontSize": 14,
@@ -36,7 +36,7 @@
   "telemetry.telemetryLevel": "off",
 
   // Language specific settings
-  {{ if .preferences.enable_rust -}}
+  {{ if and (hasKey . "preferences") (hasKey .preferences "enable_rust") .preferences.enable_rust -}}
   // Rust settings
   "rust-analyzer.checkOnSave.command": "clippy",
   "rust-analyzer.inlayHints.enable": true,
@@ -49,7 +49,7 @@
   },
   {{ end -}}
 
-  {{ if .preferences.enable_ruby -}}
+  {{ if and (hasKey . "preferences") (hasKey .preferences "enable_ruby") .preferences.enable_ruby -}}
   // Ruby settings
   "ruby.format": "rubocop",
   "ruby.useBundler": true,
@@ -64,13 +64,13 @@
   },
   {{ end -}}
 
-  {{ if .cloud.aws -}}
+  {{ if and (hasKey . "cloud") (hasKey .cloud "aws") .cloud.aws -}}
   // AWS settings
   "aws.telemetry": false,
   "aws.profile": "default",
   {{ end -}}
 
-  {{ if .preferences.enable_hashicorp -}}
+  {{ if and (hasKey . "preferences") (hasKey .preferences "enable_hashicorp") .preferences.enable_hashicorp -}}
   // HashiCorp settings
   "terraform.languageServer": {
     "enabled": true,
@@ -93,23 +93,23 @@
     "streetsidesoftware.code-spell-checker",
     "eamodio.gitlens",
     "PKief.material-icon-theme",
-    "editorconfig.editorconfig"{{ if .preferences.enable_rust }},
+    "editorconfig.editorconfig"{{ if and (hasKey . "preferences") (hasKey .preferences "enable_rust") .preferences.enable_rust }},
     "rust-lang.rust-analyzer",
     "serayuzgur.crates",
     "tamasfe.even-better-toml",
     "vadimcn.vscode-lldb"
-    {{ end }}{{ if .preferences.enable_ruby }},
+    {{ end }}{{ if and (hasKey . "preferences") (hasKey .preferences "enable_ruby") .preferences.enable_ruby }},
     "rebornix.ruby",
     "castwide.solargraph",
     "kaiwood.endwise",
     "wingrunr21.vscode-ruby"
-    {{ end }}{{ if .preferences.enable_hashicorp }},
+    {{ end }}{{ if and (hasKey . "preferences") (hasKey .preferences "enable_hashicorp") .preferences.enable_hashicorp }},
     "hashicorp.terraform",
     "hashicorp.hcl",
     "ms-azuretools.vscode-docker"
-    {{ end }}{{ if .cloud.aws }},
+    {{ end }}{{ if and (hasKey . "cloud") (hasKey .cloud "aws") .cloud.aws }},
     "amazonwebservices.aws-toolkit-vscode"
-    {{ end }}{{ if .cloud.gcp }},
+    {{ end }}{{ if and (hasKey . "cloud") (hasKey .cloud "gcp") .cloud.gcp }},
     "GoogleCloudTools.cloudcode"
     {{ end }}
   ]

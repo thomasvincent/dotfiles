@@ -5,7 +5,7 @@
 # WordPress Development Workflows
 # ==================================
 
-{{ if or (eq .preferences.enable_wordpress true) (eq .enable_dev_tools true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_wordpress") .preferences.enable_wordpress) (and (hasKey . "enable_dev_tools") .enable_dev_tools) -}}
 # Initialize a WordPress development environment
 wp-init() {
   local project_name=$1
@@ -18,7 +18,7 @@ wp-init() {
     return 1
   fi
 
-  local dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
 
   mkdir -p "$dir"
   cd "$dir" || return 1
@@ -173,7 +173,7 @@ wp-child-theme() {
   local parent_theme=$1
   local child_theme_name=$2
   local child_theme_title=${3:-"$child_theme_name"}
-  local author=${4:-"{{ .name | default "WordPress Developer" }}"}
+  local author=${4:-"{{ if hasKey . "name" }}{{ .name }}{{ else }}WordPress Developer{{ end }}"}
 
   if [[ -z "$parent_theme" || -z "$child_theme_name" ]]; then
     echo "Usage: wp-child-theme <parent-theme-folder> <child-theme-folder> [child-theme-title] [author]"
@@ -330,8 +330,12 @@ wp-install-cli() {
 
     # Add to PATH if it's not already there
     if [[ ! "$PATH" =~ "$HOME/bin" ]]; then
-      echo "export PATH=\"\$HOME/bin:\$PATH\"" >> ~/.zshrc
-      echo "Added $HOME/bin to your PATH. Please restart your terminal or run 'source ~/.zshrc'"
+      echo "NOTE: $HOME/bin is not in your PATH."
+      echo "To add it permanently, add this line to your shell configuration:"
+      echo "  export PATH=\"\$HOME/bin:\$PATH\""
+      echo ""
+      echo "For this session, you can run:"
+      echo "  export PATH=\"\$HOME/bin:\$PATH\""
     fi
 
     echo "WP-CLI installed at $HOME/bin/wp"
@@ -349,7 +353,7 @@ wp-install-cli() {
 # Chef Development Workflows
 # ==================================
 
-{{ if or (eq .preferences.enable_chef true) (eq .enable_dev_tools true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_chef") .preferences.enable_chef) (and (hasKey . "enable_dev_tools") .enable_dev_tools) -}}
 # Initialize a Chef cookbook
 chef-init-cookbook() {
   local cookbook_name=$1
@@ -605,11 +609,11 @@ chef-upload() {
 # Puppet Development Workflows
 # ==================================
 
-{{ if or (eq .preferences.enable_puppet true) (eq .enable_dev_tools true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_puppet") .preferences.enable_puppet) (and (hasKey . "enable_dev_tools") .enable_dev_tools) -}}
 # Initialize a new Puppet module
 puppet-init-module() {
   local module_name=$1
-  local author=${2:-"{{ .name | default "Puppet Developer" }}"}
+  local author=${2:-"{{ if hasKey . "name" }}{{ .name }}{{ else }}Puppet Developer{{ end }}"}
 
   if [[ -z "$module_name" ]]; then
     echo "Usage: puppet-init-module <module-name> [author]"
@@ -700,7 +704,7 @@ puppet-gen-class() {
     echo "PDK not found. Creating class files manually..."
 
     local path_parts
-    IFS=':' read -ra path_parts <<< "$class_name"
+    path_parts=( ${(@s.:.)class_name} )
 
     local module_name
     module_name=$(grep -o '"name": *"[^"]*"' metadata.json | cut -d'"' -f4 | cut -d'-' -f2)

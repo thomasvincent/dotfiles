@@ -43,7 +43,7 @@ echo ""
 # Test TOML files
 echo "Checking TOML files..."
 if command -v python3 &>/dev/null; then
-    for file in "$REPO_DIR"/*.toml "$REPO_DIR"/*.toml.example "$REPO_DIR"/.config/**/*.toml 2>/dev/null; do
+    for file in "$REPO_DIR"/*.toml "$REPO_DIR"/*.toml.example; do
         [[ -f "$file" ]] || continue
         relative="${file#$REPO_DIR/}"
 
@@ -60,7 +60,7 @@ fi
 echo ""
 echo "Checking YAML files..."
 if command -v python3 &>/dev/null; then
-    for file in "$REPO_DIR"/.github/workflows/*.yml "$REPO_DIR"/*.yml "$REPO_DIR"/*.yaml 2>/dev/null; do
+    for file in "$REPO_DIR"/.github/workflows/*.yml "$REPO_DIR"/*.yml "$REPO_DIR"/*.yaml; do
         [[ -f "$file" ]] || continue
         relative="${file#$REPO_DIR/}"
 

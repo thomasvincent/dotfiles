@@ -4,34 +4,34 @@
 {{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
 {{ if eq .chezmoi.os "linux" -}}
 # Linux-specific: Debian/Ubuntu name bat as batcat
-if command -v batcat &>/dev/null; then
+if (( $+commands[batcat] )); then
   alias bat='batcat'
 fi
 
 # Linux-specific: Debian/Ubuntu name fd as fdfind
-if command -v fdfind &>/dev/null; then
+if (( $+commands[fdfind] )); then
   alias fd='fdfind'
 fi
 {{ end -}}
 
 # bat → cat
-command -v bat &>/dev/null && alias cat="bat --style=plain"
+(( $+commands[bat] )) && alias cat="bat --style=plain"
 
 # eza → ls
-if command -v eza &>/dev/null; then
+if (( $+commands[eza] )); then
   alias ls="eza --group-directories-first"
   alias ll="eza -la --group-directories-first --icons=auto"
   alias lt="eza --tree --level=2 --icons=auto"
 fi
 
 # btop → top
-command -v btop &>/dev/null && alias top="btop"
+(( $+commands[btop] )) && alias top="btop"
 
 # prettyping → ping
-command -v prettyping &>/dev/null && alias ping="prettyping --nolegend"
+(( $+commands[prettyping] )) && alias ping="prettyping --nolegend"
 
 # trash → rm
-command -v trash &>/dev/null && alias rm="trash"
+(( $+commands[trash] )) && alias rm="trash"
 
 # Sane defaults for destructive commands
 alias cp='cp -iv'

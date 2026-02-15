@@ -1,7 +1,7 @@
 # VS Code Workflows
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
-{{ if or (eq .preferences.enable_vscode true) (eq .enable_editors true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_vscode") .preferences.enable_vscode) (and (hasKey . "enable_editors") .enable_editors) -}}
 # VS Code environment
 export VSCODE_EXTENSIONS="${XDG_DATA_HOME:-$HOME/.local/share}/code/extensions"
 
@@ -32,7 +32,7 @@ vsproj() {
     return 0
   fi
 
-  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
 
   if [[ ! -d "$project_dir" ]]; then
     echo "Project directory not found: $project_dir"

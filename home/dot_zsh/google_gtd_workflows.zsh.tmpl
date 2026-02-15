@@ -2,18 +2,18 @@
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
 # Enable these functions when Google productivity workflow is enabled
-{{ if eq .enable_google_gtd true -}}
+{{ if and (hasKey . "enable_google_gtd") .enable_google_gtd -}}
 
 # ==================================
 # Google Integration Setup
 # ==================================
 
 # Google service account credentials path (if using API automation)
-GOOGLE_CREDENTIALS_PATH="{{ .preferences.google_credentials_path | default "$HOME/.config/google/credentials.json" }}"
-GOOGLE_AUTH_TOKEN_PATH="{{ .preferences.google_auth_token_path | default "$HOME/.config/google/token.json" }}"
+GOOGLE_CREDENTIALS_PATH="{{ if and (hasKey . "preferences") (hasKey .preferences "google_credentials_path") }}{{ .preferences.google_credentials_path }}{{ else }}$HOME/.config/google/credentials.json{{ end }}"
+GOOGLE_AUTH_TOKEN_PATH="{{ if and (hasKey . "preferences") (hasKey .preferences "google_auth_token_path") }}{{ .preferences.google_auth_token_path }}{{ else }}$HOME/.config/google/token.json{{ end }}"
 
 # Google GTD folder structure for Drive
-GTD_DRIVE_ROOT="{{ .preferences.google_gtd_drive_folder | default "GTD System" }}"
+GTD_DRIVE_ROOT="{{ if and (hasKey . "preferences") (hasKey .preferences "google_gtd_drive_folder") }}{{ .preferences.google_gtd_drive_folder }}{{ else }}GTD System{{ end }}"
 GTD_DRIVE_INBOX="${GTD_DRIVE_ROOT}/Inbox"
 GTD_DRIVE_PROJECTS="${GTD_DRIVE_ROOT}/Projects"
 GTD_DRIVE_REFERENCE="${GTD_DRIVE_ROOT}/Reference"
@@ -51,11 +51,7 @@ gcal-open() {
     gcal_url="$gcal_url/$date"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$gcal_url"
-  else
-    xdg-open "$gcal_url" &> /dev/null
-  fi
+  _open_url "$gcal_url"
 
   echo "Opening Google Calendar in $view view"
 }
@@ -99,11 +95,7 @@ gcal-new() {
 
   local gcal_url="https://calendar.google.com/calendar/r/eventedit?text=${encoded_title}&dates=${formatted_start}/${formatted_end}&details=${encoded_details}&location=${encoded_location}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$gcal_url"
-  else
-    xdg-open "$gcal_url" &> /dev/null
-  fi
+  _open_url "$gcal_url"
 
   echo "Opening Google Calendar to create event: $title"
 }
@@ -140,11 +132,7 @@ gcal-range() {
 
   local gcal_url="https://calendar.google.com/calendar/r/customview?start=${start_date}&end=${end_date}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$gcal_url"
-  else
-    xdg-open "$gcal_url" &> /dev/null
-  fi
+  _open_url "$gcal_url"
 
   echo "Opening Google Calendar for date range: $start_date to $end_date"
 }
@@ -166,11 +154,7 @@ gtasks-open() {
     tasks_url="${tasks_url}&list=${list}"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$tasks_url"
-  else
-    xdg-open "$tasks_url" &> /dev/null
-  fi
+  _open_url "$tasks_url"
 
   echo "Opening Google Tasks"
 }
@@ -180,11 +164,7 @@ gtasks-gmail() {
   # Open Gmail with Tasks sidebar
   local gmail_url="https://mail.google.com/mail/u/0/#inbox?taskPane=1"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$gmail_url"
-  else
-    xdg-open "$gmail_url" &> /dev/null
-  fi
+  _open_url "$gmail_url"
 
   echo "Opening Gmail with Google Tasks sidebar"
 }
@@ -205,11 +185,7 @@ gkeep-open() {
     keep_url="${keep_url}/#search/text=${search}"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$keep_url"
-  else
-    xdg-open "$keep_url" &> /dev/null
-  fi
+  _open_url "$keep_url"
 
   echo "Opening Google Keep"
 }
@@ -228,11 +204,7 @@ gkeep-capture() {
 
   local keep_url="https://keep.google.com/#create/text=${encoded_text}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$keep_url"
-  else
-    xdg-open "$keep_url" &> /dev/null
-  fi
+  _open_url "$keep_url"
 
   echo "Created Google Keep note"
 }
@@ -251,11 +223,7 @@ gkeep-label() {
 
   local keep_url="https://keep.google.com/#label/${encoded_label}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$keep_url"
-  else
-    xdg-open "$keep_url" &> /dev/null
-  fi
+  _open_url "$keep_url"
 
   echo "Opening Google Keep with label: $label"
 }
@@ -276,11 +244,7 @@ gmail-open() {
     gmail_url="${gmail_url}#label/${label}"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$gmail_url"
-  else
-    xdg-open "$gmail_url" &> /dev/null
-  fi
+  _open_url "$gmail_url"
 
   echo "Opening Gmail"
 }
@@ -300,11 +264,7 @@ gmail-search() {
 
   local gmail_url="https://mail.google.com/mail/u/0/#search/${encoded_query}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$gmail_url"
-  else
-    xdg-open "$gmail_url" &> /dev/null
-  fi
+  _open_url "$gmail_url"
 
   echo "Opening Gmail with search: $search_query"
 }
@@ -328,11 +288,7 @@ gmail-compose() {
 
   local mailto_url="mailto:${encoded_to}?subject=${encoded_subject}&body=${encoded_body}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$mailto_url"
-  else
-    xdg-open "$mailto_url" &> /dev/null
-  fi
+  _open_url "$mailto_url"
 
   echo "Creating email to $to"
 }
@@ -379,11 +335,7 @@ gmail-filter() {
   esac
 
   # Open Gmail with the filter
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$gmail_url"
-  else
-    xdg-open "$gmail_url" &> /dev/null
-  fi
+  _open_url "$gmail_url"
 
   echo "Opening Gmail with filter: $filter"
 }
@@ -411,11 +363,7 @@ gdrive-open() {
     echo "Opening Google Drive My Drive"
   fi
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$drive_url"
-  else
-    xdg-open "$drive_url" &> /dev/null
-  fi
+  _open_url "$drive_url"
 }
 
 # Open Google Drive search
@@ -433,11 +381,7 @@ gdrive-search() {
 
   local drive_url="https://drive.google.com/drive/u/0/search?q=${encoded_term}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$drive_url"
-  else
-    xdg-open "$drive_url" &> /dev/null
-  fi
+  _open_url "$drive_url"
 
   echo "Searching Google Drive for: $search_term"
 }
@@ -451,11 +395,7 @@ gdocs-new() {
 
   local docs_url="https://docs.google.com/document/u/0/create?title=${encoded_title}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$docs_url"
-  else
-    xdg-open "$docs_url" &> /dev/null
-  fi
+  _open_url "$docs_url"
 
   echo "Creating new Google Doc: $title"
 }
@@ -469,11 +409,7 @@ gsheets-new() {
 
   local sheets_url="https://sheets.google.com/create?title=${encoded_title}"
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    open "$sheets_url"
-  else
-    xdg-open "$sheets_url" &> /dev/null
-  fi
+  _open_url "$sheets_url"
 
   echo "Creating new Google Sheet: $title"
 }

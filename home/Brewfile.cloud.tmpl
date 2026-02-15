@@ -5,7 +5,7 @@
 tap "homebrew/bundle"
 tap "homebrew/core"
 
-{{ if .cloud.aws -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "aws") .cloud.aws -}}
 # AWS Tools
 brew "awscli"              # AWS Command Line Interface
 brew "aws-iam-authenticator" # Authenticate to AWS EKS
@@ -13,29 +13,29 @@ brew "aws-vault"           # Securely store and access AWS credentials
 brew "chamber"             # AWS Parameter Store manager
 {{ end -}}
 
-{{ if .cloud.azure -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "azure") .cloud.azure -}}
 # Azure Tools
 brew "azure-cli"           # Microsoft Azure CLI
 brew "aztfexport"          # Azure Terraform exporter
 {{ end -}}
 
-{{ if .cloud.gcp -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "gcp") .cloud.gcp -}}
 # Google Cloud Tools
 brew "google-cloud-sdk"    # Google Cloud CLI
 brew "terraform-validator" # Validator for GCP Terraform
 {{ end -}}
 
-{{ if .cloud.digitalocean -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "digitalocean") .cloud.digitalocean -}}
 # DigitalOcean Tools
 brew "doctl"               # DigitalOcean CLI
 {{ end -}}
 
-{{ if .cloud.oracle -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "oracle") .cloud.oracle -}}
 # Oracle Cloud Tools
 brew "oci-cli"             # Oracle Cloud Infrastructure CLI
 {{ end -}}
 
-{{ if .cloud.linode -}}
+{{ if and (hasKey . "cloud") (hasKey .cloud "linode") .cloud.linode -}}
 # Linode Tools
 brew "linode-cli"          # Linode CLI
 {{ end -}}

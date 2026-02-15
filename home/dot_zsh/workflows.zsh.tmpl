@@ -9,7 +9,7 @@
 new-project() {
   local project_name=$1
   local project_type=${2:-generic}  # default to generic
-  local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+  local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: new-project <project-name> [project-type]"
@@ -76,7 +76,7 @@ new-project() {
   esac
 
   # Initialize pre-commit hooks if installed
-  if command -v pre-commit >/dev/null; then
+  if (( $+commands[pre-commit] )); then
     pre-commit init
   fi
 
@@ -153,7 +153,7 @@ dev-start() {
     cd "." || return 1
   else
     # Navigate to project directory
-    cd "{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name" || {
+    cd "{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name" || {
       echo "Project $project_name not found!"
       return 1
     }
@@ -162,7 +162,7 @@ dev-start() {
   echo "Starting development session for $project_name..."
 
   # Start tmux session for the project if tmux is installed
-  if command -v tmux >/dev/null; then
+  if (( $+commands[tmux] )); then
     if ! tmux has-session -t "$project_name" 2>/dev/null; then
       tmux new-session -d -s "$project_name"
       tmux rename-window -t "$project_name:0" "editor"
@@ -197,13 +197,13 @@ dev-start() {
     tmux attach-session -t "$project_name"
   else
     # If tmux is not available, open editor
-    {{ if eq .preferences.editor "vscode" -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vscode") -}}
     code .
-    {{ else if eq .preferences.editor "vim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vim") -}}
     vim .
-    {{ else if eq .preferences.editor "neovim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "neovim") -}}
     nvim .
-    {{ else if eq .preferences.editor "emacs" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "emacs") -}}
     emacs .
     {{ else -}}
     echo "No preferred editor found. Opening default editor."
@@ -248,8 +248,11 @@ release-version() {
     git commit -m "Bump version to $version"
   elif [[ -f "pyproject.toml" ]]; then
     # For Python projects
-    sed -i.bak "s/version = \".*\"/version = \"$version\"/" pyproject.toml
-    rm pyproject.toml.bak
+    if (( IS_MACOS )); then
+      sed -i '' "s/version = \".*\"/version = \"$version\"/" pyproject.toml
+    else
+      sed -i "s/version = \".*\"/version = \"$version\"/" pyproject.toml
+    fi
     git add pyproject.toml
     git commit -m "Bump version to $version"
   else
@@ -321,13 +324,13 @@ code-review() {
     gh pr view "$pr_number" --repo "$repo"
 
     # Open in editor
-    {{ if eq .preferences.editor "vscode" -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vscode") -}}
     code .
-    {{ else if eq .preferences.editor "vim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vim") -}}
     vim .
-    {{ else if eq .preferences.editor "neovim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "neovim") -}}
     nvim .
-    {{ else if eq .preferences.editor "emacs" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "emacs") -}}
     emacs .
     {{ else -}}
     echo "No preferred editor found. Opening default editor."
@@ -368,7 +371,7 @@ docker-run-project() {
     project_name=$(basename "$PWD")
   else
     # Navigate to project directory
-    cd "{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name" || {
+    cd "{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name" || {
       echo "Project $project_name not found!"
       return 1
     }
@@ -412,7 +415,7 @@ docker-logs-project() {
     project_name=$(basename "$PWD")
   else
     # Navigate to project directory
-    cd "{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name" || {
+    cd "{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name" || {
       echo "Project $project_name not found!"
       return 1
     }
@@ -568,33 +571,33 @@ edit-project() {
 
   if [[ -z "$project_name" ]]; then
     # If no project specified, use current directory
-    {{ if eq .preferences.editor "vscode" -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vscode") -}}
     code .
-    {{ else if eq .preferences.editor "vim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vim") -}}
     vim .
-    {{ else if eq .preferences.editor "neovim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "neovim") -}}
     nvim .
-    {{ else if eq .preferences.editor "emacs" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "emacs") -}}
     emacs .
     {{ else -}}
     echo "No preferred editor found. Opening default editor."
     {{ end -}}
   else
     # Navigate to project directory
-    local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
+    local project_dir="{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"
     if [[ ! -d "$project_dir" ]]; then
       echo "Project $project_name not found!"
       return 1
     fi
 
     # Open in editor
-    {{ if eq .preferences.editor "vscode" -}}
+    {{ if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vscode") -}}
     code "$project_dir"
-    {{ else if eq .preferences.editor "vim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "vim") -}}
     vim "$project_dir"
-    {{ else if eq .preferences.editor "neovim" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "neovim") -}}
     nvim "$project_dir"
-    {{ else if eq .preferences.editor "emacs" -}}
+    {{ else if and (hasKey . "preferences") (hasKey .preferences "editor") (eq .preferences.editor "emacs") -}}
     emacs "$project_dir"
     {{ else -}}
     echo "No preferred editor found. Opening default editor."

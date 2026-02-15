@@ -45,3 +45,15 @@ _require_cmd() {
   echo "Error: $1 is not installed.${2:+ Install with: $2}"
   return 1
 }
+
+# Cross-platform URL/file opener
+_open_url() {
+  if (( IS_MACOS )); then
+    open "$@"
+  elif (( $+commands[xdg-open] )); then
+    xdg-open "$@"
+  else
+    print "No opener found (install xdg-utils)" >&2
+    return 1
+  fi
+}

@@ -5,12 +5,12 @@
 # Java/Gradle Development Workflows
 # ==================================
 
-{{ if or (eq .preferences.enable_java true) (eq .enable_dev_tools true) -}}
+{{ if or (and (hasKey . "preferences") (hasKey .preferences "enable_java") .preferences.enable_java) (and (hasKey . "enable_dev_tools") .enable_dev_tools) -}}
 # Initialize a new Java project with Gradle
 java-init-gradle() {
   local project_name=$1
   local package_name=${2:-"com.example.$project_name"}
-  local directory=${3:-"{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"}
+  local directory=${3:-"{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"}
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: java-init-gradle <project-name> [package-name] [directory]"
@@ -305,7 +305,7 @@ EOF
 java-init-spring() {
   local project_name=$1
   local package_name=${2:-"com.example.$project_name"}
-  local directory=${3:-"{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"}
+  local directory=${3:-"{{ if and (hasKey . "preferences") (hasKey .preferences "projects_dir") }}{{ .preferences.projects_dir }}{{ else }}$HOME/Projects{{ end }}/$project_name"}
 
   if [[ -z "$project_name" ]]; then
     echo "Usage: java-init-spring <project-name> [package-name] [directory]"
@@ -713,7 +713,7 @@ java-gen-pojo() {
 
   local class_file="$package_dir/$class_name.java"
 
-  IFS=',' read -ra FIELD_ARRAY <<< "$fields"
+  FIELD_ARRAY=( ${(@s:,:)fields} )
 
   # Create field declarations
   local field_declarations=""
@@ -736,7 +736,7 @@ java-gen-pojo() {
     field_declarations+="    private $field_type $field_name;\n"
 
     # Capitalize first letter for getter/setter
-    local field_name_cap="${field_name^}"
+    local field_name_cap="${(C)field_name}"
 
     # Add getter and setter
     getters_setters+="    /**\n"

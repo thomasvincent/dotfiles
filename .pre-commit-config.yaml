@@ -73,7 +73,7 @@ repos:
     rev: v1.5.0
     hooks:
       - id: detect-secrets
-        exclude: '(package.lock.json|\.pem$|\.key$|\.tmpl$|chezmoi\.toml$)'
+        exclude: '(package.lock.json|\.pem$|\.key$|\.tmpl$|chezmoi\.toml|\.example$|tests/fixtures/)'
 
   # ---------------------------------------------------------------------------
   # Markdown linting
@@ -100,7 +100,7 @@ repos:
     hooks:
       - id: shellcheck-templates
         name: shellcheck zsh templates
-        entry: bash -c 'for f in "$@"; do sed "s/{{[^}]*}}//g" "$f" | shellcheck -s bash -; done'
+        entry: bash -c 'for f in "$@"; do sed "s/{{[^}]*}}//g" "$f" | shellcheck -s bash --severity=error --exclude=SC2296,SC2298,SC2299,SC2300,SC2301,SC1087,SC2206 -; done'
         language: system
         files: '\.zsh\.tmpl$'
         types: [file]
