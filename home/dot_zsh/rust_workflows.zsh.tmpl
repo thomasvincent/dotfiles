@@ -31,11 +31,7 @@ rust-init() {
     return 1
   fi
 
-  if ! command -v cargo &>/dev/null; then
-    echo "Error: Rust's Cargo not found."
-    echo "Install Rust and Cargo with: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
-    return 1
-  fi
+  _require_cmd "cargo" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh" || return 1
 
   local project_dir="{{ .preferences.projects_dir | default "$HOME/Projects" }}/$project_name"
 
@@ -263,10 +259,7 @@ rust-depgraph() {
     cargo install cargo-depgraph
   fi
 
-  if ! command -v dot &>/dev/null; then
-    echo "Error: 'dot' command not found. Please install graphviz."
-    return 1
-  fi
+  _require_cmd "dot" "Install graphviz" || return 1
 
   echo "Generating dependency graph at $output..."
   cargo depgraph | dot -Tpng > "$output"

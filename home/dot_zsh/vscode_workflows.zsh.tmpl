@@ -55,10 +55,7 @@ vsproj() {
 vscode-export-extensions() {
   local output_file=${1:-"vscode-extensions.txt"}
 
-  if ! command -v code &>/dev/null; then
-    echo "Error: VS Code is not installed or not in PATH."
-    return 1
-  fi
+  _require_cmd "code" || return 1
 
   echo "Exporting VS Code extensions to $output_file..."
   code --list-extensions > "$output_file"
@@ -70,10 +67,7 @@ vscode-export-extensions() {
 vscode-install-extensions() {
   local input_file=${1:-"vscode-extensions.txt"}
 
-  if ! command -v code &>/dev/null; then
-    echo "Error: VS Code is not installed or not in PATH."
-    return 1
-  fi
+  _require_cmd "code" || return 1
 
   if [[ ! -f "$input_file" ]]; then
     echo "Error: Extensions list file not found: $input_file"
@@ -852,10 +846,7 @@ EOF
 vscode-customize() {
   local keybinding_style=${1:-"default"}
 
-  if ! command -v code &>/dev/null; then
-    echo "Error: VS Code is not installed or not in PATH."
-    return 1
-  fi
+  _require_cmd "code" || return 1
 
   local settings_dir
 

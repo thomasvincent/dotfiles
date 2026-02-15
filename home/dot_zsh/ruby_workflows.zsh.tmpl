@@ -659,10 +659,7 @@ ruby-install() {
     return 1
   fi
 
-  if ! command -v rbenv &>/dev/null; then
-    echo "rbenv not found. Please install rbenv first."
-    return 1
-  fi
+  _require_cmd "rbenv" || return 1
 
   echo "Installing Ruby $ruby_version..."
   rbenv install "$ruby_version"

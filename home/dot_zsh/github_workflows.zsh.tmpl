@@ -46,11 +46,7 @@ gh-init() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   # Check if user is authenticated with gh
   if ! gh auth status &>/dev/null; then
@@ -92,11 +88,7 @@ gh-init-current() {
 
   local repo_name=$(basename "$PWD")
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   # Check if user is authenticated with gh
   if ! gh auth status &>/dev/null; then
@@ -145,11 +137,7 @@ gh-fork() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   echo "Forking repository: $repo"
   if [[ -z "$clone_dir" ]]; then
@@ -195,11 +183,7 @@ gh-new-issue() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   local -a cmd=(gh issue create --title "$title")
 
@@ -240,11 +224,7 @@ gh-new-pr() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   local -a cmd=(gh pr create --title "$title")
 
@@ -285,11 +265,7 @@ gh-search-repos() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   echo "Searching GitHub repositories for: \"$query\""
   gh search repos "$query" --limit "$limit"
@@ -306,11 +282,7 @@ gh-search-issues() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   echo "Searching GitHub issues for: \"$query\""
   gh search issues "$query" --limit "$limit"
@@ -327,11 +299,7 @@ gh-clone() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   local clone_dir
   if [[ -z "$dest_dir" ]]; then
@@ -376,11 +344,7 @@ gh-new-gist() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   if [[ ! -f "$file_path" ]]; then
     echo "Error: File not found: $file_path"
@@ -416,11 +380,7 @@ gh-release() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   local -a cmd=(gh release create "$tag_name" --title "$title")
 
@@ -458,10 +418,7 @@ gh-release-notes() {
     return 1
   fi
 
-  if ! command -v git &>/dev/null; then
-    echo "Error: git not found."
-    return 1
-  fi
+  _require_cmd "git" || return 1
 
   echo "Generating release notes from $previous_tag to $new_tag..."
 
@@ -502,11 +459,7 @@ EOF
 gh-workflows() {
   local repo=${1:-""}
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   local -a cmd=(gh workflow list)
 
@@ -532,11 +485,7 @@ gh-run-workflow() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   local -a cmd=(gh workflow run "$workflow" --ref "$ref")
 
@@ -1186,11 +1135,7 @@ gh-stats() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   echo "Fetching stats for $repo..."
 
@@ -1457,11 +1402,7 @@ gh-branch-protection() {
     return 1
   fi
 
-  if ! command -v gh &>/dev/null; then
-    echo "Error: GitHub CLI not found."
-    echo "Install it with: brew install gh"
-    return 1
-  fi
+  _require_cmd "gh" "brew install gh" || return 1
 
   echo "Setting up branch protection for $branch in $repo..."
 

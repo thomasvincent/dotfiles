@@ -528,10 +528,7 @@ EOF
 tf-visualize() {
   local planfile="${1:-tfplan.out}"
 
-  if ! command -v terraform &>/dev/null; then
-    echo "Error: terraform not found."
-    return 1
-  fi
+  _require_cmd "terraform" || return 1
 
   if ! command -v dot &>/dev/null; then
     echo "Error: graphviz is not installed."
@@ -716,10 +713,7 @@ tf-cost() {
 tf-export() {
   echo "Exporting Terraform outputs as environment variables..."
 
-  if ! command -v terraform &>/dev/null; then
-    echo "Error: terraform not found."
-    return 1
-  fi
+  _require_cmd "terraform" || return 1
 
   # Get outputs in JSON format
   local outputs_json=$(terraform output -json)
@@ -1657,10 +1651,7 @@ EOF
 packer-lint() {
   local dir=${1:-.}
 
-  if ! command -v packer &>/dev/null; then
-    echo "Error: packer not found."
-    return 1
-  fi
+  _require_cmd "packer" || return 1
 
   echo "Validating Packer templates in $dir..."
 
