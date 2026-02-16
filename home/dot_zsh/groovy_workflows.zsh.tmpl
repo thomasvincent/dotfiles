@@ -596,8 +596,10 @@ groovy-convert-java() {
     return 1
   fi
 
-  local class_name=$(basename "$java_file" .java)
-  local package_name=$(grep -o "package [a-zA-Z0-9_.]*;" "$java_file" | sed "s/package //;s/;//")
+  local class_name
+  class_name=$(basename "$java_file" .java) || return 1
+  local package_name
+  package_name=$(grep -o "package [a-zA-Z0-9_.]*;" "$java_file" | sed "s/package //;s/;//") || return 1
 
   # Create output directory
   local output_package_dir="$output_dir/${package_name//./\/}"
@@ -850,7 +852,7 @@ groovy-install() {
     read -r install_sdkman
 
     if [[ "$install_sdkman" =~ ^[Yy]$ ]]; then
-      curl -s "https://get.sdkman.io" | bash
+      curl -fsSL "https://get.sdkman.io" | bash
       source "$HOME/.sdkman/bin/sdkman-init.sh"
     else
       echo "SDKMAN is required for this command."

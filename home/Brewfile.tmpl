@@ -40,7 +40,7 @@ brew "hub"
 # Cloud & DevOps Tools
 brew "awscli"
 brew "aws-iam-authenticator"
-brew "gcloud"
+# Note: gcloud is not a valid Homebrew formula. Use google-cloud-sdk instead (see cask below)
 {{ if and (hasKey . "cloud") (hasKey .cloud "oracle") .cloud.oracle -}}
 brew "oci-cli"
 {{ end -}}
@@ -75,14 +75,8 @@ cask "slack"
 cask "zoom"
 
 # Cloud Provider GUIs
-{{ if and (hasKey . "cloud") (hasKey .cloud "aws") .cloud.aws -}}
-cask "aws-vault"
-{{ end -}}
 {{ if and (hasKey . "cloud") (hasKey .cloud "gcp") .cloud.gcp -}}
 cask "google-cloud-sdk"
-{{ end -}}
-{{ if and (hasKey . "cloud") (hasKey .cloud "oracle") .cloud.oracle -}}
-cask "oracle-cloud-cli"
 {{ end -}}
 
 # Development Tools

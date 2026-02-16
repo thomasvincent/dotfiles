@@ -78,10 +78,10 @@ flush-dns() {
     sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
     echo "DNS cache flushed"
   else
-    if command -v systemd-resolve &>/dev/null; then
+    if (( $+commands[systemd-resolve] )); then
       sudo systemd-resolve --flush-caches
       echo "DNS cache flushed (systemd-resolved)"
-    elif command -v resolvectl &>/dev/null; then
+    elif (( $+commands[resolvectl] )); then
       sudo resolvectl flush-caches
       echo "DNS cache flushed (resolvectl)"
     else

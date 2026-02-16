@@ -166,13 +166,12 @@ render_module() {
     [[ "$output" == *"Usage:"* ]]
 }
 
-@test "unshorten requires URL argument" {
+@test "unshorten handles missing URL argument" {
     local utils=$(render_module "utils")
-    local result
-    # Without argument, curl will error
-    result=$(zsh -c "source '$utils' 2>/dev/null; unshorten 2>&1" 2>&1 || true)
-    # The function should at least be defined and run
-    [ -n "$result" ] || [ -z "$result" ]
+    run zsh -c "source '$utils' 2>/dev/null; unshorten 2>&1"
+    # Without a URL, curl will succeed but return no output
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }
 
 @test "weather function is defined" {

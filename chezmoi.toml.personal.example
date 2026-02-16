@@ -85,14 +85,14 @@
     enable_github = true
     enable_ai = true             # AI/LLM workflow functions
 
-  [data.ai]
-    default_provider = "claude"  # Options: claude, openai, gemini
-
     # Pomodoro timer settings
     pomodoro_work = 25
     pomodoro_break = 5
     pomodoro_longbreak = 15
     pomodoro_cycles = 4
+
+[data.ai]
+    default_provider = "claude"  # Options: claude, openai, gemini
 
 [data.security]
     # Security settings - personal machine

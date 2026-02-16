@@ -59,9 +59,6 @@
     time_track_dir = "$HOME/.timetrack"
     enable_ai = true             # AI/LLM workflow functions
 
-  [data.ai]
-    default_provider = "openai"  # Options: claude, openai, gemini
-
     # GTD-specific directories
     notes_folder = "Work Notes"
     meeting_folder = "Work Meetings"
@@ -93,6 +90,9 @@
     pomodoro_break = 5
     pomodoro_longbreak = 15
     pomodoro_cycles = 4
+
+[data.ai]
+    default_provider = "openai"  # Options: claude, openai, gemini
 
 [data.security]
     # Security settings - enterprise requirements

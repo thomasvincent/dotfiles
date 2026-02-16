@@ -8,7 +8,7 @@ export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-$AWS_REGION}"
 export AWS_SDK_LOAD_CONFIG=1
 
 # AWS CLI completions
-if command -v aws_completer &>/dev/null; then
+if (( $+commands[aws_completer] )); then
   complete -C aws_completer aws
 fi
 

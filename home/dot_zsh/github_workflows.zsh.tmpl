@@ -447,7 +447,7 @@ EOF
   read "view_notes?Do you want to view the release notes? (y/N) "
 
   if [[ "$view_notes" == "y" || "$view_notes" == "Y" ]]; then
-    if command -v bat &>/dev/null; then
+    if (( $+commands[bat] )); then
       bat "$output_file"
     else
       cat "$output_file"
@@ -787,7 +787,7 @@ EOF
   read "view_file?Do you want to view the workflow file? (y/N) "
 
   if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
-    if command -v bat &>/dev/null; then
+    if (( $+commands[bat] )); then
       bat "$workflow_file"
     else
       cat "$workflow_file"
@@ -1186,7 +1186,7 @@ EOF
     read "view_file?Do you want to view the CODEOWNERS file? (y/N) "
 
     if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
-      if command -v bat &>/dev/null; then
+      if (( $+commands[bat] )); then
         bat .github/CODEOWNERS
       else
         cat .github/CODEOWNERS
@@ -1260,10 +1260,10 @@ $badge_markdown/" README.md
   fi
 
   # Copy badge markdown to clipboard if possible
-  if command -v pbcopy &>/dev/null; then
+  if (( $+commands[pbcopy] )); then
     echo "$badge_markdown" | pbcopy
     echo "Badge markdown copied to clipboard."
-  elif command -v xclip &>/dev/null; then
+  elif (( $+commands[xclip] )); then
     echo "$badge_markdown" | xclip -selection clipboard
     echo "Badge markdown copied to clipboard."
   fi
@@ -1300,11 +1300,11 @@ EOF
   read "customize?Do you want to customize the dependabot configuration? (y/N) "
 
   if [[ "$customize" == "y" || "$customize" == "Y" ]]; then
-    if command -v code &>/dev/null; then
+    if (( $+commands[code] )); then
       code .github/dependabot.yml
-    elif command -v vim &>/dev/null; then
+    elif (( $+commands[vim] )); then
       vim .github/dependabot.yml
-    elif command -v nano &>/dev/null; then
+    elif (( $+commands[nano] )); then
       nano .github/dependabot.yml
     else
       echo "No editor found. Please edit .github/dependabot.yml manually."
@@ -1349,7 +1349,7 @@ EOF
   read "view_file?Do you want to view the PR template? (y/N) "
 
   if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
-    if command -v bat &>/dev/null; then
+    if (( $+commands[bat] )); then
       bat .github/pull_request_template.md
     else
       cat .github/pull_request_template.md
@@ -1388,7 +1388,7 @@ EOF
   read "view_file?Do you want to view the security policy? (y/N) "
 
   if [[ "$view_file" == "y" || "$view_file" == "Y" ]]; then
-    if command -v bat &>/dev/null; then
+    if (( $+commands[bat] )); then
       bat SECURITY.md
     else
       cat SECURITY.md

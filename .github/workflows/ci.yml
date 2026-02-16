@@ -153,7 +153,7 @@ jobs:
         FAILED=0
         for template in $(find home -name "*.tmpl" -type f 2>/dev/null); do
           echo "Verifying $template..."
-          if chezmoi --config=tests/fixtures/chezmoi-minimal.toml execute-template < "$template" > /dev/null 2>&1; then
+          if chezmoi --config tests/fixtures/chezmoi-minimal.toml execute-template < "$template" > /dev/null 2>&1; then
             echo "  OK"
           else
             echo "  FAILED"
@@ -202,7 +202,7 @@ jobs:
         FAILED=0
         for tmpl in home/dot_zsh/*.zsh.tmpl; do
           name=$(basename "$tmpl")
-          rendered=$(chezmoi execute-template --config tests/fixtures/chezmoi-minimal.toml < "$tmpl" 2>/dev/null) || continue
+          rendered=$(chezmoi --config tests/fixtures/chezmoi-minimal.toml execute-template < "$tmpl" 2>/dev/null) || continue
           [ -z "$rendered" ] && continue
           if ! echo "$rendered" | shellcheck --shell=bash --severity=error -; then
             echo "FAIL: $name"

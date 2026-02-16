@@ -690,7 +690,7 @@ github-actions-status() {
     return 1
   fi
 
-  if command -v gh >/dev/null 2>&1; then
+  if (( $+commands[gh] )); then
     if [[ -z "$workflow" ]]; then
       gh workflow list --repo "$repo"
     else
@@ -716,7 +716,7 @@ github-actions-run() {
     return 1
   fi
 
-  if command -v gh >/dev/null 2>&1; then
+  if (( $+commands[gh] )); then
     if [[ -z "$repo" ]]; then
       gh workflow run "$workflow" --ref "$branch"
     else

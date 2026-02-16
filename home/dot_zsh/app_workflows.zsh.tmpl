@@ -107,7 +107,7 @@ EOF
     echo "Slack opened and navigated to #$channel"
   else
     # Linux/Other - Just open Slack
-    if command -v slack >/dev/null 2>&1; then
+    if (( $+commands[slack] )); then
       slack &
       echo "Slack opened. Please navigate to #$channel manually."
     else

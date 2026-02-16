@@ -1214,7 +1214,7 @@ pomodoro() {
       osascript -e "display notification \"Focus time started for: $task\" with title \"Pomodoro Timer\""
     else
       # Use notify-send on Linux if available
-      command -v notify-send >/dev/null && notify-send "Pomodoro Timer" "Focus time started for: $task"
+      (( $+commands[notify-send] )) && notify-send "Pomodoro Timer" "Focus time started for: $task"
     fi
 
     sleep $(( POMODORO_WORK * 60 ))
@@ -1223,7 +1223,7 @@ pomodoro() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
       osascript -e "display notification \"Time for a ${break_type}!\" with title \"Pomodoro Timer\" sound name \"Glass\""
     else
-      command -v notify-send >/dev/null && notify-send -u critical "Pomodoro Timer" "Time for a ${break_type}!"
+      (( $+commands[notify-send] )) && notify-send -u critical "Pomodoro Timer" "Time for a ${break_type}!"
     fi
 
     echo "Work period complete! Time for a $break_type"
@@ -1238,7 +1238,7 @@ pomodoro() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
       osascript -e "display notification \"Break over. Back to work!\" with title \"Pomodoro Timer\" sound name \"Glass\""
     else
-      command -v notify-send >/dev/null && notify-send -u critical "Pomodoro Timer" "Break over. Back to work!"
+      (( $+commands[notify-send] )) && notify-send -u critical "Pomodoro Timer" "Break over. Back to work!"
     fi
 
     [[ $cycle -lt $cycles ]] && echo "Break complete! Back to work"
@@ -1275,7 +1275,7 @@ timer() {
   if [[ "$OSTYPE" == "darwin"* ]]; then
     osascript -e "display notification \"$description timer complete!\" with title \"Timer\" sound name \"Glass\""
   else
-    command -v notify-send >/dev/null && notify-send -u critical "Timer" "$description timer complete!"
+    (( $+commands[notify-send] )) && notify-send -u critical "Timer" "$description timer complete!"
   fi
 
   echo "Timer complete! $description"

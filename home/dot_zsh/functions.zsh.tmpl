@@ -1,6 +1,9 @@
 # Shell functions
 # Managed by chezmoi - DO NOT EDIT DIRECTLY
 
+# Platform detection — set once, used by all modules
+(( IS_MACOS = VENDOR == "apple" ))
+
 # Create a directory and cd into it
 mkd() { mkdir -p "$@" && cd "$_" || return; }
 # Backward compatibility wrapper

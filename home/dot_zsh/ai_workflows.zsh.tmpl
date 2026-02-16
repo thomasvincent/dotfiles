@@ -4,7 +4,7 @@
 {{ if and (hasKey . "preferences") (hasKey .preferences "enable_ai") .preferences.enable_ai -}}
 
 # Tool availability guard
-if ! command -v curl &>/dev/null || ! command -v jq &>/dev/null; then
+if (( ! $+commands[curl] )) || (( ! $+commands[jq] )); then
   return 0
 fi
 

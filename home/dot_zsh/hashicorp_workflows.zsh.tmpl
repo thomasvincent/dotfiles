@@ -530,7 +530,7 @@ tf-visualize() {
 
   _require_cmd "terraform" || return 1
 
-  if ! command -v dot &>/dev/null; then
+  if (( ! $+commands[dot] )); then
     echo "Error: graphviz is not installed."
     echo "Please install graphviz to visualize Terraform graphs."
     {{ if eq .chezmoi.os "darwin" }}
@@ -575,7 +575,7 @@ tf-visualize() {
 tf-docs() {
   local dir="${1:-.}"
 
-  if ! command -v terraform-docs &>/dev/null; then
+  if (( ! $+commands[terraform-docs] )); then
     echo "Error: terraform-docs not found."
     echo "Install it with:"
     {{ if eq .chezmoi.os "darwin" }}
@@ -599,15 +599,15 @@ tf-check() {
   # Check for required tools
   local missing_tools=()
 
-  if ! command -v terraform &>/dev/null; then
+  if (( ! $+commands[terraform] )); then
     missing_tools+=("terraform")
   fi
 
-  if ! command -v tflint &>/dev/null; then
+  if (( ! $+commands[tflint] )); then
     missing_tools+=("tflint")
   fi
 
-  if ! command -v tfsec &>/dev/null; then
+  if (( ! $+commands[tfsec] )); then
     missing_tools+=("tfsec")
   fi
 
@@ -680,7 +680,7 @@ EOF
 tf-cost() {
   local env="${1:-dev}"
 
-  if ! command -v infracost &>/dev/null; then
+  if (( ! $+commands[infracost] )); then
     echo "Error: infracost not found."
     echo "Install it with:"
     {{ if eq .chezmoi.os "darwin" }}
@@ -788,7 +788,7 @@ alias vkm='vault kv metadata'
 vault-dev() {
   local vault_dir=${1:-"$HOME/.vault-dev"}
 
-  if ! command -v vault &>/dev/null; then
+  if (( ! $+commands[vault] )); then
     echo "Error: vault not found."
     echo "Install it with:"
     {{ if eq .chezmoi.os "darwin" }}
@@ -1038,7 +1038,7 @@ alias cln='consul nodes'
 consul-dev() {
   local data_dir=${1:-"$HOME/.consul-dev"}
 
-  if ! command -v consul &>/dev/null; then
+  if (( ! $+commands[consul] )); then
     echo "Error: consul not found."
     echo "Install it with:"
     {{ if eq .chezmoi.os "darwin" }}
@@ -1217,7 +1217,7 @@ alias ndns='nomad node status'
 nomad-dev() {
   local data_dir=${1:-"$HOME/.nomad-dev"}
 
-  if ! command -v nomad &>/dev/null; then
+  if (( ! $+commands[nomad] )); then
     echo "Error: nomad not found."
     echo "Install it with:"
     {{ if eq .chezmoi.os "darwin" }}
@@ -1755,7 +1755,7 @@ boundary-env() {
   echo "Boundary environment variables set:"
   echo "BOUNDARY_ADDR=$BOUNDARY_ADDR"
 
-  if ! command -v boundary &>/dev/null; then
+  if (( ! $+commands[boundary] )); then
     echo "Warning: boundary command not found."
     echo "Install it with:"
     {{ if eq .chezmoi.os "darwin" }}
@@ -2082,7 +2082,7 @@ EOF
 
 # Initialize Waypoint server in development mode
 waypoint-server-dev() {
-  if ! command -v waypoint &>/dev/null; then
+  if (( ! $+commands[waypoint] )); then
     echo "Error: waypoint not found."
     echo "Install it with:"
     {{ if eq .chezmoi.os "darwin" }}

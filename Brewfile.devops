@@ -30,7 +30,7 @@ brew "cdktf"                  # CDK for Terraform
 # =============================================================================
 
 # Core tools
-brew "kubectl"                # Kubernetes CLI
+brew "kubernetes-cli"         # Kubernetes CLI (provides kubectl)
 brew "kubectx"                # Context/namespace switcher
 brew "helm"                   # Kubernetes package manager
 brew "kustomize"              # Kubernetes configuration management
@@ -62,14 +62,13 @@ brew "flux"                   # Flux CD CLI
 
 # AWS
 brew "awscli"                 # AWS CLI v2
-brew "aws-vault"              # Secure AWS credential storage
 brew "aws-iam-authenticator"  # EKS authentication
 brew "eksctl"                 # EKS cluster management
 brew "chamber"                # AWS Parameter Store secrets
 brew "aws-sam-cli"            # Serverless Application Model
 
 # Google Cloud
-brew "google-cloud-sdk"       # GCP CLI
+cask "google-cloud-sdk"       # GCP CLI
 
 # Azure
 brew "azure-cli"              # Azure CLI
@@ -97,7 +96,7 @@ brew "ctop"                   # Container metrics
 brew "vault"                  # HashiCorp Vault
 brew "sops"                   # Secrets encryption
 brew "age"                    # Modern encryption tool
-brew "1password-cli"          # 1Password CLI
+cask "1password-cli"          # 1Password CLI
 
 # =============================================================================
 # CI/CD TOOLS

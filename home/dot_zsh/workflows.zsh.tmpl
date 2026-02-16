@@ -275,7 +275,7 @@ release-version() {
   git push --tags
 
   # Check if GitHub CLI is available
-  if command -v gh >/dev/null; then
+  if (( $+commands[gh] )); then
     echo "Creating GitHub release..."
     if [[ -n "$release_notes" && -f "$release_notes" ]]; then
       gh release create "v$version" -F "$release_notes"
@@ -315,7 +315,7 @@ code-review() {
   cd "$temp_dir" || return 1
 
   # Check if GitHub CLI is available
-  if command -v gh >/dev/null; then
+  if (( $+commands[gh] )); then
     echo "Checking out PR #$pr_number from $repo..."
     gh pr checkout "$pr_number" --repo "$repo"
 
@@ -337,7 +337,7 @@ code-review() {
     {{ end -}}
 
     # If tmux is available, create a review session
-    if command -v tmux >/dev/null; then
+    if (( $+commands[tmux] )); then
       local session_name="review-pr-$pr_number"
       if ! tmux has-session -t "$session_name" 2>/dev/null; then
         tmux new-session -d -s "$session_name"
@@ -500,7 +500,7 @@ git-publish() {
   git push -u origin "$branch_name"
 
   # Check if GitHub CLI is available to create a PR
-  if command -v gh >/dev/null; then
+  if (( $+commands[gh] )); then
     read -r -p "Do you want to create a pull request for this branch? [y/N] " response
     if [[ "$response" =~ ^[Yy]$ ]]; then
       gh pr create --web

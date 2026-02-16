@@ -25,7 +25,7 @@ wp-init() {
 
   _require_cmd "docker" "Install Docker from https://docs.docker.com/get-docker/" || return 1
 
-  if ! command -v docker-compose >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
+  if (( ! $+commands[docker-compose] )) && ! docker compose version >/dev/null 2>&1; then
     echo "Error: docker-compose is not installed. Please install docker-compose first."
     return 1
   fi
@@ -155,7 +155,7 @@ EOF
   git commit -m "Initial WordPress development environment setup"
 
   echo "Starting WordPress containers..."
-  if command -v docker-compose >/dev/null 2>&1; then
+  if (( $+commands[docker-compose] )); then
     docker-compose up -d
   else
     docker compose up -d
@@ -311,7 +311,7 @@ wp-export-db() {
 # Install WP-CLI in a WordPress project
 wp-install-cli() {
   # Check if WP-CLI is already installed
-  if command -v wp >/dev/null 2>&1; then
+  if (( $+commands[wp] )); then
     echo "WP-CLI is already installed globally."
     return 0
   fi
@@ -341,7 +341,7 @@ wp-install-cli() {
     echo "WP-CLI installed at $HOME/bin/wp"
   fi
 
-  if command -v wp >/dev/null 2>&1; then
+  if (( $+commands[wp] )); then
     wp --info
   else
     echo "You can now use WP-CLI with: $HOME/bin/wp --info"
@@ -570,7 +570,7 @@ chef-upload() {
     return 1
   fi
 
-  if ! command -v knife >/dev/null 2>&1; then
+  if (( ! $+commands[knife] )); then
     echo "Error: knife command not found."
     echo "Please ensure Chef Workstation is installed and knife is configured."
     return 1
@@ -580,7 +580,7 @@ chef-upload() {
 
   echo "Uploading cookbook $cookbook_name to Chef server..."
 
-  if command -v foodcritic >/dev/null 2>&1; then
+  if (( $+commands[foodcritic] )); then
     echo "Running foodcritic..."
     foodcritic .
 
@@ -621,11 +621,11 @@ puppet-init-module() {
     return 1
   fi
 
-  if command -v pdk >/dev/null 2>&1; then
+  if (( $+commands[pdk] )); then
     echo "Creating new Puppet module with PDK..."
     pdk new module "$module_name" --skip-interview
   else
-    if ! command -v puppet >/dev/null 2>&1; then
+    if (( ! $+commands[puppet] )); then
       echo "Error: Neither PDK nor Puppet is installed."
       echo "Install PDK (recommended) or Puppet to create modules."
       return 1
@@ -696,7 +696,7 @@ puppet-gen-class() {
     return 1
   fi
 
-  if command -v pdk >/dev/null 2>&1; then
+  if (( $+commands[pdk] )); then
     echo "Creating class with PDK..."
     pdk new class "$class_name"
   else
@@ -834,7 +834,7 @@ puppet-test() {
   fi
 
   # Run tests using PDK if available
-  if command -v pdk >/dev/null 2>&1; then
+  if (( $+commands[pdk] )); then
     echo "Running PDK validate..."
     pdk validate
 
@@ -844,17 +844,17 @@ puppet-test() {
     # Fallback to direct commands
     echo "PDK not found. Running tests directly..."
 
-    if command -v puppet-lint >/dev/null 2>&1; then
+    if (( $+commands[puppet-lint] )); then
       echo "Running puppet-lint..."
       puppet-lint --relative .
     fi
 
-    if command -v puppet-syntax >/dev/null 2>&1; then
+    if (( $+commands[puppet-syntax] )); then
       echo "Running puppet-syntax..."
       puppet-syntax --future_parser .
     fi
 
-    if command -v rspec >/dev/null 2>&1 && [[ -d "spec" ]]; then
+    if (( $+commands[rspec] )) && [[ -d "spec" ]]; then
       echo "Running rspec..."
       rspec spec
     fi
@@ -878,12 +878,12 @@ puppet-build() {
   module_version=$(grep -o '"version": *"[^"]*"' metadata.json | cut -d'"' -f4)
 
   # Build using PDK if available
-  if command -v pdk >/dev/null 2>&1; then
+  if (( $+commands[pdk] )); then
     echo "Building module package with PDK..."
     pdk build
   else
     # Fallback to puppet module build
-    if command -v puppet >/dev/null 2>&1; then
+    if (( $+commands[puppet] )); then
       echo "Building module package with puppet module build..."
       puppet module build .
     else

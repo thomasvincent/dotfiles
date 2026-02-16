@@ -375,7 +375,8 @@ ansible-scan-network() {
 
   mkdir -p "$(dirname "$output_file")"
 
-  local temp_file=$(mktemp)
+  local temp_file
+  temp_file=$(mktemp) || return 1
   nmap -sn "$network" -oG "$temp_file"
 
   cat > "$output_file" << 'EOF'

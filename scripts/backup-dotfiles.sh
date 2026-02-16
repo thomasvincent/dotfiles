@@ -101,6 +101,7 @@ if [[ -d "$BACKUP_BASE" ]]; then
     if [[ $BACKUP_COUNT -gt 5 ]]; then
         echo ""
         echo "🧹 Cleaning old backups (keeping last 5)..."
-        ls -1d "$BACKUP_BASE"/backup_* | head -n -5 | xargs rm -rf
+        total=$(ls -1d "$BACKUP_BASE"/backup_* | wc -l)
+        ls -1d "$BACKUP_BASE"/backup_* | head -n $((total - 5)) | xargs rm -rf
     fi
 fi

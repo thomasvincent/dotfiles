@@ -221,7 +221,7 @@ EOF
 
 # Check rust project dependencies for security vulnerabilities
 rust-audit() {
-  if ! command -v cargo-audit &>/dev/null; then
+  if (( ! $+commands[cargo-audit] )); then
     echo "Installing cargo-audit..."
     cargo install cargo-audit
   fi
@@ -241,7 +241,7 @@ rust-profile() {
 
 # Check for outdated dependencies
 rust-outdated() {
-  if ! command -v cargo-outdated &>/dev/null; then
+  if (( ! $+commands[cargo-outdated] )); then
     echo "Installing cargo-outdated..."
     cargo install cargo-outdated
   fi
@@ -254,7 +254,7 @@ rust-outdated() {
 rust-depgraph() {
   local output=${1:-"deps-graph.png"}
 
-  if ! command -v cargo-depgraph &>/dev/null; then
+  if (( ! $+commands[cargo-depgraph] )); then
     echo "Installing cargo-depgraph..."
     cargo install cargo-depgraph
   fi
@@ -265,9 +265,7 @@ rust-depgraph() {
   cargo depgraph | dot -Tpng > "$output"
 
   echo "Dependency graph generated at $output"
-  if command -v open &>/dev/null; then
-    open "$output"
-  fi
+  _open_url "$output"
 }
 
 # Start a new Rust application with a basic CLI

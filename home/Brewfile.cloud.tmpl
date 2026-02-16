@@ -32,7 +32,8 @@ brew "doctl"               # DigitalOcean CLI
 
 {{ if and (hasKey . "cloud") (hasKey .cloud "oracle") .cloud.oracle -}}
 # Oracle Cloud Tools
-brew "oci-cli"             # Oracle Cloud Infrastructure CLI
+# Note: oci-cli should be installed via pip (pip install oci-cli), not Homebrew
+# brew "oci-cli"             # Oracle Cloud Infrastructure CLI
 {{ end -}}
 
 {{ if and (hasKey . "cloud") (hasKey .cloud "linode") .cloud.linode -}}
@@ -49,13 +50,12 @@ brew "tfsec"               # Terraform security scanner
 
 # Kubernetes Tools
 {{ if .enable_kubernetes -}}
-brew "kubectl"             # Kubernetes CLI
+brew "kubernetes-cli"      # Kubernetes CLI (provides kubectl)
 brew "helm"                # Kubernetes package manager
 brew "kubectx"             # Switch Kubernetes contexts
 brew "kustomize"           # Kubernetes customization
 brew "k9s"                 # Kubernetes CLI UI
 brew "stern"               # Multi-pod log tailing
-brew "kubernetes-cli"      # Kubernetes CLI
 brew "kube-ps1"            # Kubernetes prompt
 {{ end -}}
 

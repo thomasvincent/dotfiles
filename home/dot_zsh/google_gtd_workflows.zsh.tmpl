@@ -576,7 +576,7 @@ ggoog-gtd-focus() {
     # Notify when done
     if [[ "$OSTYPE" == "darwin"* ]]; then
       osascript -e "display notification \"Focus session complete: $task\" with title \"Focus Timer\" sound name \"Glass\""
-    elif command -v notify-send &> /dev/null; then
+    elif (( $+commands[notify-send] )); then
       notify-send -u critical "Focus Timer" "Focus session complete: $task"
     fi
 

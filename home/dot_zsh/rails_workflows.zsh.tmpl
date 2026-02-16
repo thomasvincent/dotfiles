@@ -1279,7 +1279,8 @@ rails-gen-api-resource() {
   fi
 
   # Convert resource name to singular form
-  local resource_singular=$(echo "$resource_name" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.singularize")
+  local resource_singular
+  resource_singular=$(echo "$resource_name" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.singularize") || return 1
 
   # Generate the model
   rails generate model "$resource_singular" $fields
@@ -1293,7 +1294,8 @@ rails-gen-api-resource() {
 
   if [[ -f "$controller_file" ]]; then
     # Get the model class name in proper case
-    local model_class=$(echo "$resource_singular" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.camelize")
+    local model_class
+    model_class=$(echo "$resource_singular" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.camelize") || return 1
 
     # Create or override the controller file
     cat > "$controller_file" << EOF
@@ -1640,7 +1642,8 @@ rails-gen-service() {
   mkdir -p app/services
 
   # Convert service name to proper class name
-  local service_class=$(echo "$service_name" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.camelize")
+  local service_class
+  service_class=$(echo "$service_name" | ruby -e "require 'active_support/all'; puts STDIN.read.strip.camelize") || return 1
 
   # Create the service file
   local service_file="app/services/${service_name.rb}"
